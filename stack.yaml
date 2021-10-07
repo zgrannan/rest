@@ -1,0 +1,6 @@
+compiler: ghc-8.10.4
+resolver: lts-15.4
+packages:
+  - .
+extra-deps:
+  - unordered-containers-0.2.13.0@sha256:6310c636f92ed4908fdd0de582b6be31c2851c7b5f2ec14e9f416eb94df7a078,4978
