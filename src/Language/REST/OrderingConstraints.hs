@@ -28,7 +28,7 @@ import Prelude hiding (GT, EQ)
 
 import qualified Language.REST.WQO as WQO
 import Language.REST.Types
-import Language.REST.SMT
+import Language.REST.SMT (ToSMTVar)
 
 type WQO = WQO.WQO
 

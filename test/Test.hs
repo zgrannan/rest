@@ -2,12 +2,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
 import Data.Hashable
 import Control.Monad.Identity
 import qualified Arith as A
+
 import qualified Data.HashMap.Strict as M
 import OpOrdering
 import DSL
@@ -15,6 +17,7 @@ import WQO as WQO
 import MultisetOrder as MultisetOrder
 import Nat
 import RPO as RPO
+import KBO as KBO
 import StrictOC as StrictOC
 import LazyOC as LazyOC
 import qualified QuickCheckTests as QuickCheckTests
@@ -22,6 +25,7 @@ import System.IO
 import Language.REST.AbstractOC
 import Language.REST.OCToAbstract
 import Language.REST.Core
+import Language.REST.KBO (kbo)
 import Language.REST.OrderingConstraints as OC
 import Language.REST.Op
 import Language.REST.RPO
@@ -39,14 +43,15 @@ import Language.REST.WorkStrategy
 import qualified Data.Maybe as Mb
 import qualified Data.HashSet as S
 
-diverges :: (Show oc)
-  => (?impl :: AbstractOC oc RuntimeTerm IO) => [RuntimeTerm] -> IO Bool
-diverges ts = not <$> (isSat ?impl $ orient ts)
+diverges :: (Show oc) => AbstractOC oc RuntimeTerm IO -> [RuntimeTerm] -> IO Bool
+diverges impl ts = not <$> (isSat impl $ orient ts)
+  where
+    ?impl = impl
 
 rewrites :: (Show oc, Hashable oc, Eq oc)
-  => (?impl :: AbstractOC oc RuntimeTerm IO)
-  => S.HashSet Rewrite -> S.HashSet Rewrite -> RuntimeTerm -> IO (S.HashSet RuntimeTerm)
-rewrites evalRWs userRWs t0 =
+  => AbstractOC oc RuntimeTerm IO
+  -> S.HashSet Rewrite -> S.HashSet Rewrite -> RuntimeTerm -> IO (S.HashSet RuntimeTerm)
+rewrites impl evalRWs userRWs t0 =
   terms <$> fst <$> rest
     RESTParams
       { re           = evalRWs
@@ -57,6 +62,8 @@ rewrites evalRWs userRWs t0 =
       , ocImpl       = ?impl
       , initRes      = termsResult
       } t0
+  where
+    ?impl = impl
 
 runTest :: (String, IO Bool) -> IO ()
 runTest (name, test) = do
@@ -96,26 +103,27 @@ orderingTests =
   where
     permits' = permits ?impl
 
-proveEQ :: (Show oc, Hashable oc, Eq oc) => (?impl :: AbstractOC oc RuntimeTerm IO)
-  => S.HashSet Rewrite -> S.HashSet Rewrite -> RuntimeTerm -> RuntimeTerm -> IO Bool
-proveEQ evalRWs userRWs have want =
+proveEQ :: (Show oc, Hashable oc, Eq oc) =>
+     AbstractOC oc RuntimeTerm IO
+  -> S.HashSet Rewrite -> S.HashSet Rewrite
+  -> RuntimeTerm -> RuntimeTerm -> IO Bool
+proveEQ impl evalRWs userRWs have want =
   do
-    rw1 <- (rewrites evalRWs userRWs have)
-    rw2 <- (rewrites evalRWs userRWs want)
+    rw1 <- (rewrites impl evalRWs userRWs have)
+    rw2 <- (rewrites impl evalRWs userRWs want)
     return $ not $ disjoint rw1 rw2
   where
     disjoint s1 s2 = S.null $ s1 `S.intersection` s2
 
-arithTests :: (Show oc, Hashable oc, Eq oc)
-  => (?impl :: AbstractOC oc RuntimeTerm IO) => [(String, IO Bool)]
-arithTests =
+arithTests :: (Show oc, Hashable oc, Eq oc) => AbstractOC oc RuntimeTerm IO -> [(String, IO Bool)]
+arithTests impl =
   [
     ("Contains", return $ contains (intToTerm 2) (intToTerm 1))
-  , ("Diverge", not <$> (diverges [ (intToTerm 2) .+ t1
+  , ("Diverge", not <$> (diverges impl [ (intToTerm 2) .+ t1
                                , (intToTerm 1) .+ t1
                                ]
                     ))
-  , ("Diverge3", not <$> (diverges [ (t1 .+ t2) .+ t3
+  , ("Diverge3", not <$> (diverges impl [ (t1 .+ t2) .+ t3
                                , t1 .+ (t2 .+ t3)
                                , (t2 .+ t3) .+ t1
                                ]
@@ -144,7 +152,7 @@ arithTests =
       return $ termToInt t' == Just n
 
 
-    termTest = proveEQ evalRWs userRWs (App f [t1]) zero
+    termTest = proveEQ impl evalRWs userRWs (App f [t1]) zero
       where
         evalRWs = S.union termEvalRWs  A.evalRWs
         userRWs = S.insert (MT.RWApp g [x] ~> MT.RWApp f [x]) A.userRWs
@@ -155,9 +163,9 @@ arithTests =
         f = Op "f"
         g = Op "g"
 
-    termTest2 = proveEQ evalRWs userRWs (App f [zero]) (App g [zero])
+    termTest2 = proveEQ impl evalRWs userRWs (App f [zero]) (App g [zero])
       where
-        evalRWs = S.union termEvalRWs  A.evalRWs
+        evalRWs = S.union termEvalRWs A.evalRWs
         userRWs = S.insert (MT.RWApp f [x] ~> MT.RWApp g [(suc' (suc' x))]) A.userRWs
         termEvalRWs = S.fromList
           [  MT.RWApp f [suc' x] ~> MT.RWApp g [suc' x]
@@ -169,11 +177,11 @@ arithTests =
         g = Op "g"
 
 
-    eq = proveEQ A.evalRWs A.userRWs
+    eq = proveEQ impl A.evalRWs A.userRWs
 
-completeTests :: (Show oc, Hashable oc, Eq oc) => (?impl :: AbstractOC oc RuntimeTerm IO) => [(String, IO Bool)]
-completeTests =
-  [ ("CompleteDiverges", not <$> diverges [App start [], App mid [], App finish []])
+completeTests :: (Show oc, Hashable oc, Eq oc) => AbstractOC oc RuntimeTerm IO -> [(String, IO Bool)]
+completeTests impl =
+  [ ("CompleteDiverges", not <$> diverges impl [App start [], App mid [], App finish []])
   , ("Complete1"     , eq (App start []) (App finish []))
   , ("EvalComplete2" , (== (App finish [])) <$> eval completeUserRWs (App start' [App s1 []]) )
   , ("Complete2"     , eq (App start' [App s1 []]) (App finish []))
@@ -190,7 +198,7 @@ completeTests =
       ]
 
     eq :: RuntimeTerm -> RuntimeTerm -> IO Bool
-    eq = proveEQ S.empty completeUserRWs
+    eq = proveEQ impl S.empty completeUserRWs
 
     start  = Op "start"
     mid    = Op "mid"
@@ -212,16 +220,21 @@ ocTests z3 = do
 
 main :: IO ()
 main = spawnZ3 >>= go where
+
+  implTests implName impl = do
+    runTestSuite ("Arith" ++ implName) (arithTests impl)
+    runTestSuite ("Complete" ++ implName) (completeTests impl)
+
+  go :: SolverHandle -> IO ()
   go z3 =
     do
       putStrLn "Running REST Test Suite"
+      runTestSuite "KBO" (KBO.tests z3)
       QuickCheckTests.tests
       runTestSuite "OpOrdering" OpOrdering.tests
       ocTests z3
       runTestSuite "MultisetOrder" MultisetOrder.tests
       runTestSuite "WQO" WQO.tests
-      runTestSuite "Arith" arithTests
-      runTestSuite "Complete" completeTests
+      implTests "KBO" (kbo z3)
+      implTests "RPO" (lift (AC.adtOC z3) rpo)
       killZ3 z3
-    where
-      ?impl = lift (AC.adtOC z3) rpo

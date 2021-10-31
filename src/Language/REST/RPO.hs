@@ -9,15 +9,12 @@
 module Language.REST.RPO (rpo, rpoTerm, rpoGTE, rpoGTE', synGTE) where
 
 import Prelude hiding (EQ, GT)
-import Debug.Trace (trace)
-import Text.Printf
 
 import Control.Monad.Identity
 import Control.Monad.State.Strict
 import GHC.Generics
 import Data.Hashable
 import qualified Data.List as L
-import qualified Data.HashSet as S
 import qualified Data.HashMap.Strict as M
 
 import qualified Language.REST.MultiSet as MS
@@ -42,18 +39,11 @@ instance Show RuntimeTerm where
 instance MT.ToMetaTerm RuntimeTerm where
   toMetaTerm (App op xs) = MT.RWApp op (map MT.toMetaTerm $ MS.toList xs)
 
-ops :: RuntimeTerm -> S.HashSet Op
-ops (App f ts) = S.insert f (S.unions $ map ops (MS.distinctElems ts))
-
 rpoTerm :: RT.RuntimeTerm -> RuntimeTerm
 rpoTerm (RT.App f xs) = App f $ MS.fromList (map rpoTerm xs)
 
 isSubtermOf :: RuntimeTerm -> RuntimeTerm -> Bool
 isSubtermOf t u@(App _ us) = t == u || any (t `isSubtermOf`) (MS.distinctElems us)
-
-trace' :: String -> a -> a
--- trace' = trace
-trace' _ x = x
 
 type CacheKey oc = ((oc Op), Relation, RuntimeTerm, RuntimeTerm)
 
@@ -76,18 +66,14 @@ incDepth action = do
 
 
 cached :: (Eq (oc Op), Hashable (oc Op)) => CacheKey oc -> RMonad oc (oc Op) -> RMonad oc (oc Op)
-cached key@(_,_,t1,t2) thunk = do
+cached key thunk = do
   cache <- gets rpoCache
   case M.lookup key cache of
-    Just result -> trace' ("Cache hit" ++ show (t1, t2)) $ return result
-    Nothing     -> trace' ("Cache miss" ++ show (t1, t2)) $ do
-      result <- trace' "Do thunk" thunk
-      trace' "Done" $ modify (\st -> st{ rpoCache = M.insert key result (rpoCache st)})
+    Just result -> return result
+    Nothing     -> do
+      result <- thunk
+      modify (\st -> st{ rpoCache = M.insert key result (rpoCache st)})
       return result
- where
-   trace' _  x = x
-   -- trace' = trace
-
 
 rpo :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) => ConstraintGen oc Op RT.RuntimeTerm Identity
 rpo = runStateConstraints (cmapConstraints rpoTerm rpo') (RPOState M.empty 0)
@@ -100,41 +86,27 @@ rpo' impl _      oc _  _ | oc == unsatisfiable impl           = return $ unsatis
 rpo' OC{unsatisfiable} r oc      t u      | t == u            = return $ if r == GT then unsatisfiable else oc
 rpo' OC{unsatisfiable} _ _       t u      | t `isSubtermOf` u = return unsatisfiable
 rpo' OC{unsatisfiable} r oc      t u      | u `isSubtermOf` t = return $ if r == EQ then unsatisfiable else oc
-rpo' oc r cs t@(App f ts) u@(App g us)    | f == g            = rpoMul oc r cs ts us
+rpo' oc r cs (App f ts) (App g us)        | f == g            = rpoMul oc r cs ts us
 
 rpo' oc r cs t@(App f ts) u@(App g us) = incDepth result
   where
-    traceString depth = printf "%s %s %s %s" (take depth $ repeat '.') (show t) (show r) (show u)
-    cs'    = noConstraints oc -- relevantConstraints oc cs (ops t) (ops u)
+    cs'    = noConstraints oc
     result = cached (cs, r, t, u) $ (intersect oc cs <$> result')
-    result' = cached (cs', r, t, u) $ do
-      depth <- gets rpoDepth
-      trace' (traceString depth) $
-        if r == EQ
-        then rpoMul oc r (addConstraint oc (f =. g) cs') ts us
-        else
-          unionAll oc <$> sequence [
-            rpoMul oc GT  (addConstraint oc (f >. g) cs') (MS.singleton t) us
-          , rpoMul oc r   (addConstraint oc (f =. g) cs') ts               us
-          , rpoMul oc GTE cs'                             ts               (MS.singleton u)
-          ]
+    result' = cached (cs', r, t, u) $
+      if r == EQ
+      then rpoMul oc r (addConstraint oc (f =. g) cs') ts us
+      else
+        unionAll oc <$> sequence [
+          rpoMul oc GT  (addConstraint oc (f >. g) cs') (MS.singleton t) us
+        , rpoMul oc r   (addConstraint oc (f =. g) cs') ts               us
+        , rpoMul oc GTE cs'                             ts               (MS.singleton u)
+        ]
 
 
 
 rpoGTE t u = runIdentity $ rpoGTE' ?impl (noConstraints ?impl) t u
 
 rpoGTE' impl oc t u = rpo impl GTE oc t u
-
-
-
-
-
-
-
-
-
-
-
 
 
 -- Non symbolic version

@@ -14,7 +14,7 @@ import Control.Monad.Identity
 import Language.REST.AbstractOC
 import qualified Language.REST.OrderingConstraints as OC
 import Language.REST.Types
-import Language.REST.SMT
+import Language.REST.SMT (ToSMTVar)
 
 showHash :: Show a => a -> String
 showHash = show . hash . show
@@ -41,13 +41,7 @@ lift oc cgen =
     refine' :: impl base -> lifted -> lifted -> impl base
     refine' c t u =
       let
-        msg = "Start refine " ++ (show t) ++ " >= " ++ (show u) ++ " from " ++ show c ++ "\n\n\n"
-        pair = -- trace' msg $
-          runIdentity $ cgen oc GTE top' t u
-        result          = -- trace' ("Start intersect " ++ showHash pair ++ "\n\n\n with \n\n" ++ showHash c) $
-          OC.intersect oc c pair
+        pair   = runIdentity $ cgen oc GTE top' t u
+        result = OC.intersect oc c pair
       in
         result
-
--- trace' _ x = x
-trace' = trace

@@ -20,10 +20,9 @@ import Language.REST.MultisetOrder
 import Language.REST.Rest
 import Language.REST.OrderingConstraints as OC
 import Language.REST.OrderingConstraints.Strict as SC
-import Language.REST.WQO as WQO
 import Language.REST.WorkStrategy
 import Language.REST.Types
-import Language.REST.SMT
+import Language.REST.SMT hiding (GTE)
 
 import qualified Data.List as L
 import qualified Data.HashSet as S

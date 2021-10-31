@@ -1,6 +1,6 @@
 name:               rest-rewrite
 build-type:         Simple
-version:            0.1.1
+version:            0.2.0-DEV
 cabal-version:      1.22
 category:           Rewriting
 maintainer:         Zack Grannan <zgrannan@cs.ubc.ca>
@@ -29,8 +29,10 @@ library
     Language.REST.OrderingConstraints.Strict
     Language.REST.OrderingConstraints.Lazy
     Language.REST.OrderingConstraints.ADT
+    Language.REST.KBO
     Language.REST.Path
     Language.REST.Rest
+    Language.REST.RPO
     Language.REST.RewriteRule
     Language.REST.RuntimeTerm
     Language.REST.SMT
@@ -44,7 +46,6 @@ library
     Language.REST.OpOrdering
     Language.REST.PartialOrder
     Language.REST.Rewrite
-    Language.REST.RPO
     Language.REST.WQO
 
   hs-source-dirs: src
@@ -74,6 +75,7 @@ Test-Suite test-rest
   other-modules:
     Arith
     DSL
+    KBO
     Language.REST.MultiSet
     Language.REST.AbstractOC
     Language.REST.Core
@@ -90,6 +92,7 @@ Test-Suite test-rest
     Language.REST.OrderingConstraints.Strict
     Language.REST.PartialOrder
     Language.REST.Path
+    Language.REST.KBO
     Language.REST.RPO
     Language.REST.Rest
     Language.REST.Rewrite
@@ -99,6 +102,7 @@ Test-Suite test-rest
     Language.REST.WorkStrategy
     Language.REST.WQO
     Language.REST.SMT
+    LazyOC
     MultisetOrder
     Nat
     OpOrdering
