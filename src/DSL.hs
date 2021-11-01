@@ -8,8 +8,6 @@ import           Language.REST.RuntimeTerm as RT
 import           Language.REST.Rewrite
 import           Nat
 
-type MetaTerm = MT.MetaTerm
-
 commutes op      = x `op` y            ~> y `op` x
 assocL   op      = (x `op` y) `op` z'   ~> x `op` (y `op` z')
 assocR   op      = x `op` (y `op` z')   ~> (x `op` y) `op` z'
@@ -59,19 +57,19 @@ infixl 1 .+
 (.+) :: RuntimeTerm -> RuntimeTerm -> RuntimeTerm
 (.+) x y = App plus [x, y]
 
-(#+) :: MetaTerm -> MetaTerm -> MetaTerm
+(#+) :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
 (#+) x y = MT.RWApp plus [x, y]
 
-(#-) :: MetaTerm -> MetaTerm -> MetaTerm
+(#-) :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
 (#-) x y = MT.RWApp minus [x, y]
 
-(#*) :: MetaTerm -> MetaTerm -> MetaTerm
+(#*) :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
 (#*) x y = MT.RWApp times [x, y]
 
 infix 0 ~>
-(~>) :: MetaTerm -> MetaTerm -> Rewrite
+(~>) :: MT.MetaTerm -> MT.MetaTerm -> Rewrite
 t ~> u = Rewrite t u Nothing
 
 infix 0 <~>
-(<~>) :: MetaTerm -> MetaTerm -> [Rewrite]
+(<~>) :: MT.MetaTerm -> MT.MetaTerm -> [Rewrite]
 t <~> u = [ t ~> u, u ~> t ]

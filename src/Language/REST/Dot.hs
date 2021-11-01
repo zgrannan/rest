@@ -48,10 +48,11 @@ edgeString (Edge from to label color subLabel style) =
                 go '\\' = "\\"
                 go '\n' = "<br />"
                 go '>'  = "&gt;"
+                go '<'  = "&lt;"
                 go o    = [o]
         labelPart =
           if label /= ""
-          then printf "<font color =\"red\">%s</font>" label
+          then printf "<font color =\"red\">%s</font>" (escape label)
           else ""
     in
         printf "\t%s -> %s [label = <%s<br/>%s>\ncolor=\"%s\"\nstyle=\"%s\"];" from to labelPart sub color style

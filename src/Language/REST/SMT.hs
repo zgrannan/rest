@@ -12,6 +12,7 @@ module Language.REST.SMT where
 
 import Control.Monad.IO.Class
 import Data.Hashable
+import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
@@ -33,6 +34,10 @@ data SMTExpr a where
 -- TODO: Make this an actual equality check
 instance (Eq (SMTExpr a)) where
   t == u = exprString t == exprString u
+
+-- TODO: Make this an actual ord check
+instance (Ord (SMTExpr a)) where
+  t <= u = exprString t <= exprString u
 
 -- TODO: Make this an actual hash
 instance Hashable (SMTExpr a) where
@@ -59,6 +64,12 @@ smtFalse = Or []
 
 smtTrue :: SMTExpr Bool
 smtTrue  = And []
+
+smtAnd :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
+smtAnd (And xs) (And ys) = And $ L.nub (xs ++ ys)
+smtAnd (And xs) e        = And $ L.nub (xs ++ [e])
+smtAnd e        (And ys) = And $ L.nub (e:ys)
+smtAnd t        u        = And [t, u]
 
 app :: T.Text -> [SMTExpr a] -> T.Text
 app op trms = T.concat $ ["(", op, " ", (T.intercalate " " (map exprString trms)), ")"]

@@ -26,10 +26,6 @@ import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT
 import           Language.REST.MultisetOrder
 
-type MultiSet = MS.MultiSet
-
-data RuntimeTerm = App Op (MultiSet RuntimeTerm) deriving (Generic, Eq, Hashable, Ord)
-
 instance Show RuntimeTerm where
   show (App op trms) =
       if MS.null trms
@@ -38,6 +34,10 @@ instance Show RuntimeTerm where
 
 instance MT.ToMetaTerm RuntimeTerm where
   toMetaTerm (App op xs) = MT.RWApp op (map MT.toMetaTerm $ MS.toList xs)
+
+type MultiSet = MS.MultiSet
+
+data RuntimeTerm = App Op (MultiSet RuntimeTerm) deriving (Generic, Eq, Hashable, Ord)
 
 rpoTerm :: RT.RuntimeTerm -> RuntimeTerm
 rpoTerm (RT.App f xs) = App f $ MS.fromList (map rpoTerm xs)
@@ -101,8 +101,6 @@ rpo' oc r cs t@(App f ts) u@(App g us) = incDepth result
         , rpoMul oc r   (addConstraint oc (f =. g) cs') ts               us
         , rpoMul oc GTE cs'                             ts               (MS.singleton u)
         ]
-
-
 
 rpoGTE t u = runIdentity $ rpoGTE' ?impl (noConstraints ?impl) t u
 

@@ -8,13 +8,20 @@ import Language.REST.Op
 
 import qualified Data.HashSet as S
 
+neg :: MetaTerm -> MetaTerm
 neg x = RWApp (Op "neg") [x]
+
 double x = RWApp (Op "double") [x]
 twicePlus x y = RWApp (Op "twicePlus") [x, y]
 
+(<#) :: MetaTerm -> MetaTerm -> MetaTerm
+x <# y = RWApp (Op "<") [x, y]
+
 evalRWs =
     S.fromList
-      [ (suc' x) #+ y ~> suc' (x #+ y)
+      [
+        (suc' x) <# (suc' y) ~> x <# y
+      , (suc' x) #+ y ~> suc' (x #+ y)
       , zero'    #+ x ~> x
 
       , (suc' x) #* y ~> y #+ (x #* y)

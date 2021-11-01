@@ -22,7 +22,7 @@ termSize :: RuntimeTerm -> SMTExpr Int
 termSize t = Add (map toSMT (ops t))
 
 kboGTE :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
-kboGTE t u = And [allGT0, termSize t `GTE` termSize u]
+kboGTE t u = allGT0 `smtAnd` (termSize t `GTE` termSize u)
   where
     uniqOps = L.nub (ops t ++ ops u)
     allGT0  = And (map gt0 uniqOps)
@@ -39,5 +39,5 @@ kbo solver = AbstractOC
   }
   where
     union  e1 e2          = Or [e1, e2]
-    refine e t u          = And [e,  kboGTE t u]
+    refine e t u          = e `smtAnd` kboGTE t u
     notStrongerThan e1 e2 = checkSat' solver (Implies e2 e1)

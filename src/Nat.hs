@@ -9,9 +9,7 @@ module Nat (termToInt, intToTerm, parseTerm, pp, s, z) where
 import Data.Text
 import Text.ParserCombinators.Parsec.Char
 import Text.ParserCombinators.Parsec
-import Text.Printf
 import Data.String
-import qualified Data.List as L
 
 import qualified Language.REST.MetaTerm as MT
 import           Language.REST.Op
@@ -37,7 +35,8 @@ instance ToRuntimeTerm Int where
 
 pp :: MT.ToMetaTerm a => a -> String
 pp = prettyPrint (PPArgs []
-                  [ ("+", "+")
+                  [ ("<", "<")
+                  , ("+", "+")
                   , ("*", "*")
                   , ("∪", "∪")
                   , ("union", "∪")
@@ -68,6 +67,7 @@ term = try infixTerm <|> nonInfixTerm
 
     infixOp =
           try (string "+")
+      <|> try (string "<")
       <|> (try (string "\\/") >> return "∪")
       <|> string "*"
 
