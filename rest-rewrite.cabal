@@ -109,6 +109,7 @@ Test-Suite test-rest
     QuickCheckTests
     RPO
     Set
+    SMT
     StrictOC
     WQO
 
@@ -143,6 +144,7 @@ executable rest
       Language.REST.Dot
       Language.REST.EquivalenceClass
       Language.REST.ExploredTerms
+      Language.REST.KBO
       Language.REST.MetaTerm
       Language.REST.MultiSet
       Language.REST.MultisetOrder

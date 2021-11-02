@@ -1,24 +1,66 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Language.REST.SMT where
 
 import Control.Monad.IO.Class
 import Data.Hashable
+import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
+import Text.Parsec (ParsecT, endBy, sepBy)
+import Text.Parsec.Prim
+import Text.ParserCombinators.Parsec (many)
+import Text.ParserCombinators.Parsec.Char
+import GHC.Generics (Generic)
 import GHC.IO.Handle
 
-newtype SMTVar = SMTVar T.Text deriving (Eq, Ord)
+type Z3Model = M.Map String String
+
+parens :: Text.Parsec.Prim.Stream s m Char => ParsecT s u m a -> ParsecT s u m a
+parens p = do
+  _ <- char '('
+  r <- p
+  _ <- char ')'
+  return r
+
+parseFunDef :: Text.Parsec.Prim.Stream s m Char => ParsecT s u m (String, String)
+parseFunDef = parens $ do
+  _     <- string "define-fun "
+  var   <- many (noneOf " ")
+  _     <- spaces
+  _     <- many (noneOf " ") -- args
+  _     <- spaces
+  _     <- many (noneOf " ") -- type
+  _     <- spaces
+  value <- many (noneOf ")")
+  return (var, value)
+
+modelParser :: Text.Parsec.Prim.Stream s m Char => ParsecT s u m Z3Model
+modelParser = parens $ do
+  spaces
+  defs <- endBy parseFunDef spaces
+  return $ M.fromList defs
+
+parseModel :: String -> Z3Model
+parseModel str = case parse modelParser "" str of
+  Left err -> error (show err)
+  Right t  -> t
+
+newtype SMTVar a = SMTVar T.Text deriving (Eq, Ord)
 
 data SMTExpr a where
     And     :: [SMTExpr Bool] -> SMTExpr Bool
@@ -28,36 +70,57 @@ data SMTExpr a where
     Greater :: SMTExpr Int    -> SMTExpr Int  -> SMTExpr Bool
     GTE     :: SMTExpr Int    -> SMTExpr Int  -> SMTExpr Bool
     Implies :: SMTExpr Bool   -> SMTExpr Bool -> SMTExpr Bool
-    Var     :: SMTVar         -> SMTExpr a
+    Var     :: SMTVar a       -> SMTExpr a
     Const   :: Int            -> SMTExpr Int
 
--- TODO: Make this an actual equality check
+
+data UntypedExpr =
+    UAnd [UntypedExpr]
+  | UAdd [UntypedExpr]
+  | UOr  [UntypedExpr]
+  | UEqual  [UntypedExpr]
+  | UGreater UntypedExpr UntypedExpr
+  | UGTE UntypedExpr UntypedExpr
+  | UImplies UntypedExpr UntypedExpr
+  | UVar T.Text
+  | UConst Int
+  deriving (Show, Eq, Ord, Hashable, Generic)
+
+toUntyped :: SMTExpr a -> UntypedExpr
+toUntyped (And xs) = UAnd (map toUntyped xs)
+toUntyped (Add xs) = UAdd (map toUntyped xs)
+toUntyped (Or xs)  = UOr (map toUntyped xs)
+toUntyped (Equal xs) = UEqual (map toUntyped xs)
+toUntyped (Greater t u) = UGreater (toUntyped t) (toUntyped u)
+toUntyped (GTE t u) = UGTE (toUntyped t) (toUntyped u)
+toUntyped (Implies t u) = UImplies (toUntyped t) (toUntyped u)
+toUntyped (Var (SMTVar text)) = UVar text
+toUntyped (Const i) = UConst i
+
 instance (Eq (SMTExpr a)) where
-  t == u = exprString t == exprString u
+  t == u = toUntyped t == toUntyped u
 
--- TODO: Make this an actual ord check
 instance (Ord (SMTExpr a)) where
-  t <= u = exprString t <= exprString u
+  t <= u = toUntyped t <= toUntyped u
 
--- TODO: Make this an actual hash
 instance Hashable (SMTExpr a) where
-  hashWithSalt salt e = hashWithSalt salt (exprString e)
+  hashWithSalt salt e = hashWithSalt salt (toUntyped e)
 
 instance Show (SMTExpr a) where
   show = T.unpack . exprString
 
-vars :: SMTExpr a -> S.Set SMTVar
+vars :: SMTExpr a -> S.Set T.Text
 vars (And ts)        = S.unions (map vars ts)
 vars (Add ts)        = S.unions (map vars ts)
 vars (Or ts)         = S.unions (map vars ts)
 vars (Equal ts)      = S.unions (map vars ts)
 vars (Greater t u)   = S.union (vars t) (vars u)
 vars (GTE t u)       = S.union (vars t) (vars u)
-vars (Var var)       = S.singleton var
+vars (Var (SMTVar var)) = S.singleton var
 vars (Implies e1 e2) = S.union (vars e1) (vars e2)
 vars (Const _)       = S.empty
 
-data SMTCommand = SMTAssert (SMTExpr Bool) | DeclareVar SMTVar | CheckSat | Push | Pop
+data SMTCommand = SMTAssert (SMTExpr Bool) | DeclareVar T.Text | CheckSat | Push | Pop
 
 smtFalse :: SMTExpr Bool
 smtFalse = Or []
@@ -90,7 +153,7 @@ exprString (Const i)          = T.pack (show i)
 
 commandString :: SMTCommand -> T.Text
 commandString (SMTAssert expr) = app "assert" [expr]
-commandString (DeclareVar (SMTVar var)) = T.concat $ ["(declare-const ", var,  " Int)"]
+commandString (DeclareVar var) = T.concat $ ["(declare-const ", var,  " Int)"]
 commandString CheckSat = "(check-sat)"
 commandString Push     = "(push)"
 commandString Pop      = "(pop)"
@@ -114,6 +177,11 @@ withZ3 f =
     liftIO $ killZ3 z3
     return result
 
+getModel :: (Handle,  Handle) -> IO ()
+getModel (stdIn, stdOut) = do
+  hPutStr stdIn "(get-model)\n"
+  hFlush stdIn
+
 checkSat' :: (Handle,  Handle) -> SMTExpr Bool -> IO Bool
 checkSat' (stdIn, stdOut) expr = do
   hPutStr stdIn prog
@@ -134,7 +202,7 @@ checkSat expr = do
   return result
 
 class ToSMTVar a b | a -> b where
-  toSMTVar :: a -> SMTVar
+  toSMTVar :: a -> SMTVar b
 
 class ToSMT a b where
   toSMT :: a -> SMTExpr b

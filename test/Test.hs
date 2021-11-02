@@ -20,6 +20,7 @@ import RPO as RPO
 import KBO as KBO
 import StrictOC as StrictOC
 import LazyOC as LazyOC
+import SMT as SMT
 import qualified QuickCheckTests as QuickCheckTests
 import System.IO
 import Language.REST.AbstractOC
@@ -229,6 +230,7 @@ main = spawnZ3 >>= go where
   go z3 =
     do
       putStrLn "Running REST Test Suite"
+      runTestSuite "SMT" SMT.tests
       runTestSuite "KBO" (KBO.tests z3)
       QuickCheckTests.tests
       runTestSuite "OpOrdering" OpOrdering.tests
