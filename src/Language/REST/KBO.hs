@@ -12,21 +12,21 @@ import           Language.REST.Op
 import           Language.REST.Types hiding (GTE)
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.SMT
+import           Language.REST.Util
 
 type MultiSet = MS.MultiSet
 
-ops :: RuntimeTerm -> [Op]
-ops (App f xs) = f:(concatMap ops xs)
-
-termSize :: RuntimeTerm -> SMTExpr Int
-termSize t = Add (map toSMT (ops t))
+termOps :: RuntimeTerm -> [Op]
+termOps (App f xs) = f:(concatMap termOps xs)
 
 kboGTE :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
-kboGTE t u = allGT0 `smtAnd` (termSize t `GTE` termSize u)
+kboGTE t u = allGT0 `smtAnd` (size tOps `smtGTE` size uOps)
   where
-    uniqOps = L.nub (ops t ++ ops u)
-    allGT0  = And (map gt0 uniqOps)
-    gt0 op  = toSMT op `Greater` (Const 0)
+    (tOps, uOps) = removeEqBy (==) (termOps t) (termOps u)
+    uniqOps      = L.nub (tOps ++ uOps)
+    allGT0       = And (map gt0 uniqOps)
+    gt0 op       = toSMT op `Greater` (Const 0)
+    size ops     = smtAdd (map toSMT ops)
 
 
 kbo :: SolverHandle -> AbstractOC (SMTExpr Bool) RuntimeTerm IO

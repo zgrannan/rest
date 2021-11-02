@@ -14,7 +14,6 @@ module Language.REST.OrderingConstraints
   , intersectRelation
   , runStateConstraints
   , singleton
-  , simplify
   )  where
 
 import Control.Monad.Identity

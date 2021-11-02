@@ -25,6 +25,7 @@ import qualified Language.REST.MetaTerm as MT
 import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT
 import           Language.REST.MultisetOrder
+import           Language.REST.Util
 
 instance Show RuntimeTerm where
   show (App op trms) =
@@ -112,14 +113,6 @@ rpoGTE' impl oc t u = rpo impl GTE oc t u
 synEQ :: OpOrdering -> RuntimeTerm -> RuntimeTerm -> Bool
 synEQ o l r = synGTE' o l r && synGTE' o r l
 
-removeSynEQs :: OpOrdering -> [RuntimeTerm] -> [RuntimeTerm] -> ([RuntimeTerm], [RuntimeTerm])
-removeSynEQs _ [] ys = ([], ys)
-removeSynEQs ordering (x : xs) ys
-  | Just y <- L.find (synEQ ordering x) ys
-  = removeSynEQs ordering xs $ L.delete y ys
-  | otherwise
-  = let (xs', ys') = removeSynEQs ordering xs ys in (x : xs', ys')
-
 synGTE :: OpOrdering -> RT.RuntimeTerm -> RT.RuntimeTerm -> Bool
 synGTE o t u = synGTE' o (rpoTerm t) (rpoTerm u)
 
@@ -136,10 +129,10 @@ rpoT :: OpOrdering -> RuntimeTerm -> RuntimeTerm -> Bool
 rpoT o t1 t2 = synGTE' o t1 t2 && not (synGTE' o t2 t1)
 
 synGTEM :: OpOrdering -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> Bool
-synGTEM ordering xs ys = case removeSynEQs ordering (MS.toList xs) (MS.toList ys) of
+synGTEM ordering xs ys = case removeEqBy (synEQ ordering) (MS.toList xs) (MS.toList ys) of
   (xs', ys') -> all (\y -> any (\x -> rpoT ordering x y) xs') ys'
 
 synGTM :: OpOrdering -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> Bool
-synGTM ordering xs ys = case removeSynEQs ordering (MS.toList xs) (MS.toList ys) of
+synGTM ordering xs ys = case removeEqBy (synEQ ordering) (MS.toList xs) (MS.toList ys) of
   ([] , [] ) -> False
   (xs', ys') -> all (\y -> any (\x -> rpoT ordering x y) xs') ys'

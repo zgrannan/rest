@@ -107,7 +107,23 @@ instance Hashable (SMTExpr a) where
   hashWithSalt salt e = hashWithSalt salt (toUntyped e)
 
 instance Show (SMTExpr a) where
-  show = T.unpack . exprString
+  show = T.unpack . toFormula
+
+
+toFormula :: SMTExpr a -> T.Text
+toFormula = go False where
+  go :: Bool -> SMTExpr a -> T.Text
+  go _ (And [])         = "⊤"
+  go p (And ts)         = parens p $ T.intercalate " ∧ " $ map (go (not p)) ts
+  go p (Add ts)         = parens p $ T.intercalate " + " $ map (go (not p)) ts
+  go p (GTE t u)        = parens p $ T.intercalate " ≥ " $ map (go True) $ [t, u]
+  go p (Greater t u)    = parens p $ T.intercalate " > " $ map (go True) $ [t, u]
+  go _ (Var (SMTVar v)) = v
+  go _ (Const c)        = T.pack (show c)
+  go _ e                = undefined
+
+  parens True t = T.concat ["(", t, ")"]
+  parens False t = t
 
 vars :: SMTExpr a -> S.Set T.Text
 vars (And ts)        = S.unions (map vars ts)
@@ -128,11 +144,19 @@ smtFalse = Or []
 smtTrue :: SMTExpr Bool
 smtTrue  = And []
 
+smtAdd :: [SMTExpr Int] -> SMTExpr Int
+smtAdd [] = Const 0
+smtAdd ts = Add ts
+
 smtAnd :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
 smtAnd (And xs) (And ys) = And $ L.nub (xs ++ ys)
 smtAnd (And xs) e        = And $ L.nub (xs ++ [e])
 smtAnd e        (And ys) = And $ L.nub (e:ys)
 smtAnd t        u        = And [t, u]
+
+smtGTE :: SMTExpr Int -> SMTExpr Int -> SMTExpr Bool
+smtGTE t u | t == u    = smtTrue
+smtGTE t u | otherwise = GTE t u
 
 app :: T.Text -> [SMTExpr a] -> T.Text
 app op trms = T.concat $ ["(", op, " ", (T.intercalate " " (map exprString trms)), ")"]
