@@ -103,6 +103,7 @@ Test-Suite test-rest
     Language.REST.Types
     Language.REST.WorkStrategy
     Language.REST.WQO
+    Language.REST.Util
     Language.REST.SMT
     LazyOC
     MultisetOrder
@@ -169,6 +170,7 @@ executable rest
       Language.REST.SMT
       Language.REST.Types
       Language.REST.WQO
+      Language.REST.Util
       Language.REST.WorkStrategy
       Lists
       Multiset
