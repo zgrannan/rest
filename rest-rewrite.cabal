@@ -47,6 +47,8 @@ library
     Language.REST.PartialOrder
     Language.REST.Rewrite
     Language.REST.WQO
+    Language.REST.Util
+
 
   hs-source-dirs: src
   build-depends:  base                 >= 4.7 && < 5
