@@ -30,3 +30,22 @@ contramap f aoc = aoc{refine = refine'}
   where
     refine' :: c -> b -> b -> c
     refine' c t1 t2 = refine aoc c (f t1) (f t2)
+
+bimapConstraints :: forall c d a m .
+     (c -> d)
+  -> (d -> c)
+  -> OCAlgebra c a m
+  -> OCAlgebra d a m
+bimapConstraints to from aoc = OCAlgebra isSat' refine' (to (top aoc)) union' notStrongerThan'
+  where
+    isSat' :: d -> m Bool
+    isSat' c = isSat aoc (from c)
+
+    refine' :: d -> a -> a -> d
+    refine' c t1 t2 = to $ refine aoc (from c) t1 t2
+
+    union' :: d -> d -> d
+    union' c1 c2 = to $ union aoc (from c1) (from c2)
+
+    notStrongerThan' :: d -> d -> m Bool
+    notStrongerThan' c1 c2 = notStrongerThan aoc (from c1) (from c2)
