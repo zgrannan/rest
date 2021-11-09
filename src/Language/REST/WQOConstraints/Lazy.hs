@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Language.REST.OrderingConstraints.Lazy (
+module Language.REST.WQOConstraints.Lazy (
       lazyOC
     , addConstraint
     , intersect
@@ -23,8 +23,8 @@ import qualified Data.List as L
 import qualified Data.Set as S
 
 import qualified Language.REST.WQO as WQO
-import qualified Language.REST.OrderingConstraints as OC
-import qualified Language.REST.OrderingConstraints.ADT as ADT
+import qualified Language.REST.WQOConstraints as OC
+import qualified Language.REST.WQOConstraints.ADT as ADT
 
 type WQO = WQO.WQO
 
@@ -102,7 +102,7 @@ addConstraint o c = eval $ ADT.addConstraint o (toADT c)
 permits Unsat _            = False
 permits (Sat s1 thunk) wqo = s1 `WQO.notStrongerThan` wqo || permits (eval thunk) wqo
 
-lazyOC :: Monad m => OC.OrderingConstraints LazyOC m
+lazyOC :: Monad m => OC.WQOConstraints LazyOC m
 lazyOC = OC.OC
   addConstraint
   intersect

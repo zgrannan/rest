@@ -23,11 +23,11 @@ import LazyOC as LazyOC
 import SMT as SMT
 import qualified QuickCheckTests as QuickCheckTests
 import System.IO
-import Language.REST.AbstractOC
+import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
 import Language.REST.Core
 import Language.REST.KBO (kbo)
-import Language.REST.OrderingConstraints as OC
+import Language.REST.WQOConstraints as OC
 import Language.REST.Op
 import Language.REST.RPO
 import Language.REST.OpOrdering
@@ -37,20 +37,20 @@ import Language.REST.Rewrite
 import Language.REST.Rest
 import Language.REST.Path
 import Language.REST.SMT
-import qualified Language.REST.OrderingConstraints.Lazy as LC
-import qualified Language.REST.OrderingConstraints.Strict as SC
-import qualified Language.REST.OrderingConstraints.ADT as AC
+import qualified Language.REST.WQOConstraints.Lazy as LC
+import qualified Language.REST.WQOConstraints.Strict as SC
+import qualified Language.REST.WQOConstraints.ADT as AC
 import Language.REST.WorkStrategy
 import qualified Data.Maybe as Mb
 import qualified Data.HashSet as S
 
-diverges :: (Show oc) => AbstractOC oc RuntimeTerm IO -> [RuntimeTerm] -> IO Bool
+diverges :: (Show oc) => OCAlgebra oc RuntimeTerm IO -> [RuntimeTerm] -> IO Bool
 diverges impl ts = not <$> (isSat impl $ orient ts)
   where
     ?impl = impl
 
 rewrites :: (Show oc, Hashable oc, Eq oc)
-  => AbstractOC oc RuntimeTerm IO
+  => OCAlgebra oc RuntimeTerm IO
   -> S.HashSet Rewrite -> S.HashSet Rewrite -> RuntimeTerm -> IO (S.HashSet RuntimeTerm)
 rewrites impl evalRWs userRWs t0 =
   terms <$> fst <$> rest
@@ -92,7 +92,7 @@ runTestSuite name tests = do
     go (name, test) = (name, toTest test)
 
 
-orderingTests :: (Hashable (oc Op), Show (oc Op), Ord (oc Op)) => (?impl :: OrderingConstraints oc IO) => [(String, IO Bool)]
+orderingTests :: (Hashable (oc Op), Show (oc Op), Ord (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
 orderingTests =
   [
     ("simple1", return $ not $ (rpoGTE "f(t1)" "g(t2)") `permits'` (t1Op =. t2Op))
@@ -105,7 +105,7 @@ orderingTests =
     permits' = permits ?impl
 
 proveEQ :: (Show oc, Hashable oc, Eq oc) =>
-     AbstractOC oc RuntimeTerm IO
+     OCAlgebra oc RuntimeTerm IO
   -> S.HashSet Rewrite -> S.HashSet Rewrite
   -> RuntimeTerm -> RuntimeTerm -> IO Bool
 proveEQ impl evalRWs userRWs have want =
@@ -116,7 +116,7 @@ proveEQ impl evalRWs userRWs have want =
   where
     disjoint s1 s2 = S.null $ s1 `S.intersection` s2
 
-arithTests :: (Show oc, Hashable oc, Eq oc) => AbstractOC oc RuntimeTerm IO -> [(String, IO Bool)]
+arithTests :: (Show oc, Hashable oc, Eq oc) => OCAlgebra oc RuntimeTerm IO -> [(String, IO Bool)]
 arithTests impl =
   [
     ("Contains", return $ contains (intToTerm 2) (intToTerm 1))
@@ -180,7 +180,7 @@ arithTests impl =
 
     eq = proveEQ impl A.evalRWs A.userRWs
 
-completeTests :: (Show oc, Hashable oc, Eq oc) => AbstractOC oc RuntimeTerm IO -> [(String, IO Bool)]
+completeTests :: (Show oc, Hashable oc, Eq oc) => OCAlgebra oc RuntimeTerm IO -> [(String, IO Bool)]
 completeTests impl =
   [ ("CompleteDiverges", not <$> diverges impl [App start [], App mid [], App finish []])
   , ("Complete1"     , eq (App start []) (App finish []))

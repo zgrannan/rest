@@ -6,7 +6,7 @@ import Control.Monad.Identity
 
 import qualified Data.List as L
 
-import           Language.REST.AbstractOC
+import           Language.REST.OCAlgebra
 import qualified Language.REST.MultiSet as MS
 import           Language.REST.Op
 import           Language.REST.Types hiding (GTE)
@@ -29,8 +29,8 @@ kboGTE t u = allGT0 `smtAnd` (size tOps `smtGTE` size uOps)
     size ops     = smtAdd (map toSMT ops)
 
 
-kbo :: SolverHandle -> AbstractOC (SMTExpr Bool) RuntimeTerm IO
-kbo solver = AbstractOC
+kbo :: SolverHandle -> OCAlgebra (SMTExpr Bool) RuntimeTerm IO
+kbo solver = OCAlgebra
   {  isSat           = checkSat' solver
   ,  refine          = refine
   ,  top             = smtTrue

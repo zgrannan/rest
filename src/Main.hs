@@ -34,14 +34,14 @@ import qualified Lists as Li
 import Language.REST.MultisetOrder (possibilities)
 import Language.REST.ConcreteOC
 import Language.REST.Core
-import Language.REST.AbstractOC
+import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
 import Language.REST.Op
 import Language.REST.OpOrdering
-import Language.REST.OrderingConstraints as OC
-import qualified Language.REST.OrderingConstraints.Strict as SC
-import qualified Language.REST.OrderingConstraints.Lazy   as LC
-import qualified Language.REST.OrderingConstraints.ADT    as AC
+import Language.REST.WQOConstraints as OC
+import qualified Language.REST.WQOConstraints.Strict as SC
+import qualified Language.REST.WQOConstraints.Lazy   as LC
+import qualified Language.REST.WQOConstraints.ADT    as AC
 import Language.REST.KBO (kbo)
 import Language.REST.RPO
 import Language.REST.WQO as WQO
@@ -118,7 +118,7 @@ mkRESTGraph (Fuel n) evalRWs userRWs name term params =
   mkRESTGraph' (fuelOC n) evalRWs userRWs name term params
 
 mkRESTGraph' :: (MonadIO m, Show c, Hashable c, Ord c) =>
-     AbstractOC c RuntimeTerm m
+     OCAlgebra c RuntimeTerm m
   -> S.HashSet Rewrite
   -> S.HashSet Rewrite
   -> String

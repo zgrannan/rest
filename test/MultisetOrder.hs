@@ -8,8 +8,8 @@ import Debug.Trace (trace)
 
 import Language.REST.MultiSet as M
 import Language.REST.MultisetOrder
-import Language.REST.OrderingConstraints.Strict as SC
-import Language.REST.OrderingConstraints as OC
+import Language.REST.WQOConstraints.Strict as SC
+import Language.REST.WQOConstraints as OC
 import Language.REST.Types
 
 compareChar :: ConstraintGen impl Char Char Identity

@@ -3,7 +3,7 @@
 
 module Language.REST.ConcreteOC where
 
-import qualified Language.REST.AbstractOC as AOC
+import qualified Language.REST.OCAlgebra as AOC
 import qualified Language.REST.WQO as WQO
 import           Language.REST.RuntimeTerm
 import           Language.REST.RPO
@@ -40,8 +40,8 @@ orients ordering terms =
   in
     all (uncurry $ synGTE ordering) pairs
 
-concreteOC :: Monad m => AOC.AbstractOC ConcreteOC RuntimeTerm m
-concreteOC = AOC.AbstractOC (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) union notStrongerThan
+concreteOC :: Monad m => AOC.OCAlgebra ConcreteOC RuntimeTerm m
+concreteOC = AOC.OCAlgebra (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) union notStrongerThan
   where
     union t1 _ = t1
     notStrongerThan _ _ = return False

@@ -10,7 +10,7 @@ import DSL
 import Nat
 import Language.REST.Op
 import Language.REST.OpOrdering as OpOrdering
-import Language.REST.OrderingConstraints as OC
+import Language.REST.WQOConstraints as OC
 import Language.REST.RuntimeTerm
 import Language.REST.RPO
 import Language.REST.WQO
@@ -43,7 +43,7 @@ rpoSeq xs = go (OC.noConstraints ?impl) xs where
   go c _        = c
 
 
-tests :: (Hashable (oc Op), Eq (oc Op), Show (oc Op)) => (?impl :: OrderingConstraints oc IO) => [(String, IO Bool)]
+tests :: (Hashable (oc Op), Eq (oc Op), Show (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
 tests =
   let
     f = Op "f"

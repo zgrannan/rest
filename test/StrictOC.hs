@@ -3,7 +3,7 @@ module StrictOC where
 
 import Data.Maybe
 
-import Language.REST.OrderingConstraints.Strict
+import Language.REST.WQOConstraints.Strict
 import Language.REST.WQO
 import Language.REST.Op
 import DSL

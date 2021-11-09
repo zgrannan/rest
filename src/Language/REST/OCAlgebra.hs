@@ -1,8 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Language.REST.AbstractOC where
+module Language.REST.OCAlgebra where
 
-data AbstractOC c a m = AbstractOC
+data OCAlgebra c a m = OCAlgebra
   {
     isSat  :: c -> m Bool
   , refine :: c -> a -> a -> c
@@ -14,8 +14,8 @@ data AbstractOC c a m = AbstractOC
   , notStrongerThan :: c -> c -> m Bool
   }
 
-fuelOC :: (Monad m) => Int -> AbstractOC Int a m
-fuelOC initFuel = AbstractOC isSat' refine' initFuel union' notStrongerThan'
+fuelOC :: (Monad m) => Int -> OCAlgebra Int a m
+fuelOC initFuel = OCAlgebra isSat' refine' initFuel union' notStrongerThan'
   where
     isSat'  c             = return $ c >= 0
     refine' c _ _         = c - 1
@@ -24,8 +24,8 @@ fuelOC initFuel = AbstractOC isSat' refine' initFuel union' notStrongerThan'
 
 contramap :: forall c a b m .
      (b -> a)
-  -> AbstractOC c a m
-  -> AbstractOC c b m
+  -> OCAlgebra c a m
+  -> OCAlgebra c b m
 contramap f aoc = aoc{refine = refine'}
   where
     refine' :: c -> b -> b -> c

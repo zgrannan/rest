@@ -18,8 +18,8 @@ import Language.REST.RewriteRule
 import qualified Language.REST.MultiSet as M
 import Language.REST.MultisetOrder
 import Language.REST.Rest
-import Language.REST.OrderingConstraints as OC
-import Language.REST.OrderingConstraints.Strict as SC
+import Language.REST.WQOConstraints as OC
+import Language.REST.WQOConstraints.Strict as SC
 import Language.REST.WorkStrategy
 import Language.REST.Types
 import Language.REST.SMT hiding (GTE)

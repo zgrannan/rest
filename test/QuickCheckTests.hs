@@ -13,9 +13,9 @@ import Debug.Trace (trace)
 import           Language.REST.Core hiding (syms)
 import qualified Language.REST.PartialOrder as PO
 import qualified Language.REST.WQO as WQO
-import qualified Language.REST.OrderingConstraints        as OC
-import qualified Language.REST.OrderingConstraints.Strict as SC
-import qualified Language.REST.OrderingConstraints.Lazy   as LC
+import qualified Language.REST.WQOConstraints        as OC
+import qualified Language.REST.WQOConstraints.Strict as SC
+import qualified Language.REST.WQOConstraints.Lazy   as LC
 import           Language.REST.RPO
 import           Nat
 import           Language.REST.Op

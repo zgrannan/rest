@@ -12,9 +12,9 @@ import           Data.Functor.Identity
 import qualified Data.List                     as L
 import qualified Data.HashSet                      as S
 
-import           Language.REST.AbstractOC
+import           Language.REST.OCAlgebra
 import           Language.REST.Op
-import           Language.REST.OrderingConstraints
+import           Language.REST.WQOConstraints
 import           Language.REST.RPO
 import           Language.REST.OpOrdering as OO
 import           Language.REST.Types
@@ -32,17 +32,17 @@ contains t1 t2 | t1 == t2 = True
 contains (App _ ts) t     = any (contains t) ts
 
 
-orient' :: Show oc => (?impl :: AbstractOC oc RuntimeTerm m) => oc -> [RuntimeTerm] -> oc
+orient' :: Show oc => (?impl :: OCAlgebra oc RuntimeTerm m) => oc -> [RuntimeTerm] -> oc
 orient' oc0 ts0 = go oc0 (zip ts0 (tail ts0))
   where
     go oc []            = oc
     go oc ((t0, t1):ts) = go (refine ?impl oc t0 t1) ts
 
-orient :: Show oc => (?impl :: AbstractOC oc RuntimeTerm m) => [RuntimeTerm] -> oc
+orient :: Show oc => (?impl :: OCAlgebra oc RuntimeTerm m) => [RuntimeTerm] -> oc
 orient = orient' (top ?impl)
 
 canOrient :: forall oc m . Show oc
-  => (?impl :: AbstractOC oc RuntimeTerm m) => [RuntimeTerm] -> m Bool
+  => (?impl :: OCAlgebra oc RuntimeTerm m) => [RuntimeTerm] -> m Bool
 canOrient terms = trace ("Try to orient " ++ termPathStr terms) $ isSat ?impl (orient terms)
 
 syms :: MetaTerm -> S.HashSet String

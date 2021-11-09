@@ -18,17 +18,17 @@ library
   default-language:  Haskell2010
   exposed-modules:
     Language.REST
-    Language.REST.AbstractOC
+    Language.REST.OCAlgebra
     Language.REST.Core
     Language.REST.ExploredTerms
     Language.REST.MetaTerm
     Language.REST.Dot
     Language.REST.RESTDot
     Language.REST.Op
-    Language.REST.OrderingConstraints
-    Language.REST.OrderingConstraints.Strict
-    Language.REST.OrderingConstraints.Lazy
-    Language.REST.OrderingConstraints.ADT
+    Language.REST.WQOConstraints
+    Language.REST.WQOConstraints.Strict
+    Language.REST.WQOConstraints.Lazy
+    Language.REST.WQOConstraints.ADT
     Language.REST.KBO
     Language.REST.Path
     Language.REST.Rest
@@ -79,7 +79,7 @@ Test-Suite test-rest
     DSL
     KBO
     Language.REST.MultiSet
-    Language.REST.AbstractOC
+    Language.REST.OCAlgebra
     Language.REST.Core
     Language.REST.EquivalenceClass
     Language.REST.ExploredTerms
@@ -88,10 +88,10 @@ Test-Suite test-rest
     Language.REST.OCToAbstract
     Language.REST.Op
     Language.REST.OpOrdering
-    Language.REST.OrderingConstraints
-    Language.REST.OrderingConstraints.ADT
-    Language.REST.OrderingConstraints.Lazy
-    Language.REST.OrderingConstraints.Strict
+    Language.REST.WQOConstraints
+    Language.REST.WQOConstraints.ADT
+    Language.REST.WQOConstraints.Lazy
+    Language.REST.WQOConstraints.Strict
     Language.REST.PartialOrder
     Language.REST.Path
     Language.REST.KBO
@@ -141,7 +141,7 @@ executable rest
       Compiler
       DSL
       Group
-      Language.REST.AbstractOC
+      Language.REST.OCAlgebra
       Language.REST.ConcreteOC
       Language.REST.Core
       Language.REST.Dot
@@ -154,10 +154,10 @@ executable rest
       Language.REST.OCToAbstract
       Language.REST.Op
       Language.REST.OpOrdering
-      Language.REST.OrderingConstraints
-      Language.REST.OrderingConstraints.ADT
-      Language.REST.OrderingConstraints.Lazy
-      Language.REST.OrderingConstraints.Strict
+      Language.REST.WQOConstraints
+      Language.REST.WQOConstraints.ADT
+      Language.REST.WQOConstraints.Lazy
+      Language.REST.WQOConstraints.Strict
       Language.REST.PartialOrder
       Language.REST.Path
       Language.REST.ProofGen

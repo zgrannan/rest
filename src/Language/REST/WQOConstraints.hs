@@ -1,9 +1,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Language.REST.OrderingConstraints
+module Language.REST.WQOConstraints
   (
-    OrderingConstraints(..)
+    WQOConstraints(..)
   , ConstraintGen
   , liftC
   , cmapConstraints
@@ -33,7 +33,7 @@ type WQO = WQO.WQO
 
 trace' _ x = x
 
-data OrderingConstraints impl m = OC
+data WQOConstraints impl m = OC
   { addConstraint       :: forall a. (Eq a, Ord a, Hashable a) => WQO a -> impl a -> impl a
   , intersect           :: forall a. (Show a, Eq a, Ord a, Hashable a) => impl a -> impl a -> impl a
   , isSatisfiable       :: forall a. (ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) => impl a -> m Bool
@@ -48,22 +48,22 @@ data OrderingConstraints impl m = OC
   , simplify            :: forall a. (Eq a, Ord a, Hashable a) => impl a -> impl a
   }
 
-numOrderings :: (Show a, Ord a, Eq a, Ord a, Hashable a) => S.Set a -> OrderingConstraints oc m -> oc a -> Int
+numOrderings :: (Show a, Ord a, Eq a, Ord a, Hashable a) => S.Set a -> WQOConstraints oc m -> oc a -> Int
 numOrderings elems impl oc = S.size $ S.filter (permits impl oc) (WQO.orderings elems)
 
-isUnsatisfiable :: (Functor m, ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) => OrderingConstraints oc m -> oc a -> m Bool
+isUnsatisfiable :: (Functor m, ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) => WQOConstraints oc m -> oc a -> m Bool
 isUnsatisfiable OC{isSatisfiable} c = not <$> isSatisfiable c
 
-singleton :: (Eq a, Ord a, Hashable a) => OrderingConstraints oc m -> WQO a -> oc a
+singleton :: (Eq a, Ord a, Hashable a) => WQOConstraints oc m -> WQO a -> oc a
 singleton OC{addConstraint, noConstraints} c = addConstraint c noConstraints
 
-intersectAll :: (Eq a, Ord a, Hashable a, Show a, Show (oc a)) => OrderingConstraints oc m -> [oc a] -> oc a
+intersectAll :: (Eq a, Ord a, Hashable a, Show a, Show (oc a)) => WQOConstraints oc m -> [oc a] -> oc a
 intersectAll OC{noConstraints} []     = noConstraints
 intersectAll OC{intersect}     (x:xs) = L.foldl' go x xs
   where
     go t1 t2 = trace' ("Intersect " ++ (show t1)) $ intersect t1 t2
 
-unionAll :: (Eq a, Ord a, Hashable a, Show a, Show (oc a)) => OrderingConstraints oc m -> [oc a] -> oc a
+unionAll :: (Eq a, Ord a, Hashable a, Show a, Show (oc a)) => WQOConstraints oc m -> [oc a] -> oc a
 unionAll OC{unsatisfiable} []     = unsatisfiable
 unionAll OC{union}         (x:xs) = L.foldl' go x xs
   where
@@ -71,7 +71,7 @@ unionAll OC{union}         (x:xs) = L.foldl' go x xs
 
 intersectRelation ::
   (Ord a, Eq a, Ord a, Hashable a, Show a) =>
-  OrderingConstraints oc m -> oc a -> (a, a, Relation) -> oc a
+  WQOConstraints oc m -> oc a -> (a, a, Relation) -> oc a
 intersectRelation oc impl (f, g, r) =
   case nc r of
     Just impl' -> intersect oc impl impl'
@@ -94,12 +94,12 @@ intersectRelation oc impl (f, g, r) =
 -- R is used to enable optimizations
 
 type ConstraintGen oc base lifted m =
-  forall m' . (OrderingConstraints oc m' -> Relation -> oc base -> lifted -> lifted -> m (oc base))
+  forall m' . (WQOConstraints oc m' -> Relation -> oc base -> lifted -> lifted -> m (oc base))
 
 cmapConstraints :: (lifted' -> lifted) -> ConstraintGen oc base lifted m -> ConstraintGen oc base lifted' m
 cmapConstraints f cgen impl r oc t u = cgen impl r oc (f t) (f u)
 
-liftC :: (m Bool  -> m' Bool) -> OrderingConstraints impl m -> OrderingConstraints impl m'
+liftC :: (m Bool  -> m' Bool) -> WQOConstraints impl m -> WQOConstraints impl m'
 liftC f oc = oc{
     isSatisfiable   = isSatisfiable'
   , notStrongerThan = notStrongerThan'

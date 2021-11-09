@@ -7,7 +7,7 @@
 
 #define OPTIMIZE_WQO
 
-module Language.REST.OrderingConstraints.ADT where
+module Language.REST.WQOConstraints.ADT where
 
 import GHC.Generics (Generic)
 
@@ -18,7 +18,7 @@ import qualified Data.Set as S
 import qualified Data.Maybe as Mb
 import qualified Data.Map.Strict as M
 import qualified Language.REST.WQO as WQO
-import qualified Language.REST.OrderingConstraints as OC
+import qualified Language.REST.WQOConstraints as OC
 import Language.REST.SMT
 import Language.REST.Op
 import System.IO.Unsafe

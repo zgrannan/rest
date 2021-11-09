@@ -14,7 +14,7 @@ import qualified Data.HashSet as S
 import Text.Printf
 
 import qualified Language.REST.MultiSet as M
-import Language.REST.OrderingConstraints as OC
+import Language.REST.WQOConstraints as OC
 import Language.REST.Types
 
 type MultiSet = M.MultiSet

@@ -20,7 +20,7 @@ import qualified Data.HashMap.Strict as M
 import qualified Language.REST.MultiSet as MS
 import           Language.REST.Op
 import           Language.REST.OpOrdering as OpOrdering
-import           Language.REST.OrderingConstraints as OC
+import           Language.REST.WQOConstraints as OC
 import qualified Language.REST.MetaTerm as MT
 import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT

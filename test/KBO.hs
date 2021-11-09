@@ -2,7 +2,7 @@
 
 module KBO where
 
-import Language.REST.AbstractOC
+import Language.REST.OCAlgebra
 import Language.REST.KBO
 import Language.REST.SMT
 import Language.REST.RuntimeTerm

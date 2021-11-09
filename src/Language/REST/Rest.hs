@@ -25,7 +25,7 @@ import qualified Data.Maybe   as Mb
 import Debug.Trace
 import Text.Printf
 
-import Language.REST.AbstractOC as AC
+import Language.REST.OCAlgebra as AC
 import Language.REST.RewriteRule
 import Language.REST.Path
 import Language.REST.Types
@@ -66,7 +66,7 @@ data RESTParams m rule term oc et rtype = RESTParams
   , toET         :: term -> et
   , target       :: Maybe term
   , workStrategy :: WorkStrategy rule term et oc
-  , ocImpl       :: AbstractOC oc term m
+  , ocImpl       :: OCAlgebra oc term m
   , initRes      :: rtype rule term oc
   }
 

@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Language.REST.OrderingConstraints.Strict (
+module Language.REST.WQOConstraints.Strict (
       strictOC
     , strictOC'
     , addConstraint
@@ -32,7 +32,7 @@ import Data.Maybe
 import qualified Data.List as L
 import qualified Data.Set as S
 
-import qualified Language.REST.OrderingConstraints as OC
+import qualified Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQO as WQO
 
 type WQO = WQO.WQO
@@ -133,7 +133,7 @@ permits :: (Eq a, Ord a, Hashable a) => StrictOC a -> WQO a -> Bool
 permits (StrictOC permitted) desired =
   any (`WQO.notStrongerThan` desired) (S.toList permitted)
 
-strictOC :: Monad m => OC.OrderingConstraints StrictOC m
+strictOC :: Monad m => OC.WQOConstraints StrictOC m
 strictOC = OC.OC
   addConstraint
   intersect
@@ -148,5 +148,5 @@ strictOC = OC.OC
   getOrdering
   id
 
-strictOC' :: OC.OrderingConstraints StrictOC Identity
+strictOC' :: OC.WQOConstraints StrictOC Identity
 strictOC' = strictOC

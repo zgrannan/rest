@@ -11,8 +11,8 @@ import Debug.Trace
 
 import Control.Monad.Identity
 
-import Language.REST.AbstractOC
-import qualified Language.REST.OrderingConstraints as OC
+import Language.REST.OCAlgebra
+import qualified Language.REST.WQOConstraints as OC
 import Language.REST.Types
 import Language.REST.SMT (ToSMTVar)
 
@@ -20,11 +20,11 @@ showHash :: Show a => a -> String
 showHash = show . hash . show
 
 lift :: forall impl base lifted m . (ToSMTVar base Int, Ord base, Eq base, Hashable base, Show lifted, Show base, Show (impl base)) =>
-     OC.OrderingConstraints impl m
+     OC.WQOConstraints impl m
   -> OC.ConstraintGen impl base lifted Identity
-  -> AbstractOC (impl base) lifted m
+  -> OCAlgebra (impl base) lifted m
 lift oc cgen =
-  AbstractOC {
+  OCAlgebra {
     isSat  = isSat'
   , top    = top'
   , refine = refine'
