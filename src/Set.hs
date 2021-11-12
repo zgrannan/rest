@@ -31,8 +31,8 @@ userRWs = S.union A.evalRWs $ S.fromList $
   , x /\ x        ~> x
   , x \/ x        ~> x
   , x \/ emptyset ~> x
-  , commutes (\/)
-  , commutes (/\)
+  -- , commutes (\/)
+  -- , commutes (/\)
 
   -- Example 1
   , s1 /\ s0      ~> emptyset

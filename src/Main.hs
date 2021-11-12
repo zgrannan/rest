@@ -43,6 +43,7 @@ import qualified Language.REST.WQOConstraints.Strict as SC
 import qualified Language.REST.WQOConstraints.Lazy   as LC
 import qualified Language.REST.WQOConstraints.ADT    as AC
 import Language.REST.KBO (kbo)
+import Language.REST.LPO (lpo, lpoStrict)
 import Language.REST.RPO
 import Language.REST.WQO as WQO
 import Language.REST.WorkStrategy
@@ -100,7 +101,7 @@ withTarget target gp = gp{gTarget = Just target}
 withShowConstraints :: GraphParams -> GraphParams
 withShowConstraints gp = gp{gShowConstraints = True}
 
-data SolverType = RPO | KBO | Fuel Int
+data SolverType = LPOStrict | LPO | RPO | KBO | Fuel Int
 
 mkRESTGraph ::
      SolverType
@@ -110,6 +111,10 @@ mkRESTGraph ::
   -> String
   -> GraphParams
   -> IO ()
+mkRESTGraph LPOStrict evalRWs userRWs name term params =
+  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpoStrict) evalRWs userRWs name term params
+mkRESTGraph LPO evalRWs userRWs name term params =
+  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs userRWs name term params
 mkRESTGraph RPO evalRWs userRWs name term params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs userRWs name term params
 mkRESTGraph KBO evalRWs userRWs name term params =
