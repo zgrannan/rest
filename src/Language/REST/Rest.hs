@@ -102,7 +102,7 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target} t =
       se <- shouldExplore (toET t) lastOrdering et
       if se
         then do
-          evalRWs <- candidates re -- trace ("Explore " ++ (show $ toET t)) $ candidates re
+          evalRWs <- candidates re
           userRWs <- candidates ru
           acceptedUserRWs <- accepted userRWs
           go evalRWs userRWs acceptedUserRWs

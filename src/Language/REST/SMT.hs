@@ -55,6 +55,16 @@ modelParser = parens $ do
   defs <- endBy parseFunDef spaces
   return $ M.fromList defs
 
+readModel :: Handle -> IO String
+readModel handle = go "" where
+  closedTerm t = length (filter (== '(') t) == length (filter (== ')') t)
+  go buf = do
+    line <- hGetLine handle
+    let buf' = buf ++ line ++ "\n"
+    if closedTerm buf'
+    then return buf'
+    else go buf'
+
 parseModel :: String -> Z3Model
 parseModel str = case parse modelParser "" str of
   Left err -> error (show err)
@@ -183,7 +193,7 @@ commandString Push     = "(push)"
 commandString Pop      = "(pop)"
 
 askCmds :: SMTExpr Bool -> [SMTCommand]
-askCmds expr = [Push] ++ varDecls ++ [SMTAssert expr, CheckSat, Pop] where
+askCmds expr = varDecls ++ [SMTAssert expr, CheckSat] where
   varDecls = map DeclareVar $ S.toList (vars expr)
 
 type SolverHandle = (Handle, Handle)
@@ -201,22 +211,29 @@ withZ3 f =
     liftIO $ killZ3 z3
     return result
 
-getModel :: (Handle,  Handle) -> IO ()
-getModel (stdIn, stdOut) = do
+getModel :: Handle -> IO ()
+getModel stdIn = do
   hPutStr stdIn "(get-model)\n"
   hFlush stdIn
 
 checkSat' :: (Handle,  Handle) -> SMTExpr Bool -> IO Bool
 checkSat' (stdIn, stdOut) expr = do
-  hPutStr stdIn prog
-  hFlush stdIn
+  sendCommands $ Push:askCmds expr
   result <- hGetLine stdOut
-  return $ case result of
-    "sat"   -> True
-    "unsat" -> False
+  sat <- case result of
+    "sat"   -> do
+      -- getModel stdIn
+      -- model <- readModel stdOut
+      -- putStrLn model
+      return True
+    "unsat" -> return False
     other   -> error other
+  sendCommands [Pop]
+  return sat
   where
-    prog = (T.unpack $ (T.intercalate "\n" (map commandString $ askCmds expr))) ++ "\n"
+    sendCommands cmds = do
+      hPutStr stdIn $ (T.unpack (T.intercalate "\n" (map commandString cmds))) ++ "\n"
+      hFlush stdIn
 
 checkSat :: SMTExpr Bool -> IO Bool
 checkSat expr = do

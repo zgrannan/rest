@@ -6,6 +6,7 @@
 
 module Main where
 
+import qualified Data.List as L
 import Data.Hashable
 import Control.Monad.Identity
 import qualified Arith as A
@@ -26,6 +27,7 @@ import System.IO
 import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
 import Language.REST.Core
+import Language.REST.LPO (lpo)
 import Language.REST.KBO (kbo)
 import Language.REST.WQOConstraints as OC
 import Language.REST.Op
@@ -45,9 +47,7 @@ import qualified Data.Maybe as Mb
 import qualified Data.HashSet as S
 
 diverges :: (Show oc) => OCAlgebra oc RuntimeTerm IO -> [RuntimeTerm] -> IO Bool
-diverges impl ts = not <$> (isSat impl $ orient ts)
-  where
-    ?impl = impl
+diverges impl ts = not <$> (isSat impl $ orient impl ts)
 
 rewrites :: (Show oc, Hashable oc, Eq oc)
   => OCAlgebra oc RuntimeTerm IO
@@ -222,9 +222,15 @@ ocTests z3 = do
 main :: IO ()
 main = spawnZ3 >>= go where
 
-  implTests implName impl = do
-    runTestSuite ("Arith" ++ implName) (arithTests impl)
-    runTestSuite ("Complete" ++ implName) (completeTests impl)
+  implTests implName impl toSkip = do
+    runTestSuite ("Arith" ++ implName) (withSkips $ arithTests impl)
+    runTestSuite ("Complete" ++ implName) (withSkips $ completeTests impl)
+    where
+      withSkips tests = do
+        (name, test) <- tests
+        guard $ L.notElem name toSkip
+        return (name, test)
+
 
   go :: SolverHandle -> IO ()
   go z3 =
@@ -237,6 +243,7 @@ main = spawnZ3 >>= go where
       ocTests z3
       runTestSuite "MultisetOrder" MultisetOrder.tests
       runTestSuite "WQO" WQO.tests
-      implTests "KBO" (kbo z3)
-      implTests "RPO" (lift (AC.adtOC z3) rpo)
+      implTests "KBO" (kbo z3) []
+      implTests "RPO" (lift (AC.adtOC z3) rpo) []
+      implTests "LPO" (lift (AC.adtOC z3) lpo) ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
       killZ3 z3

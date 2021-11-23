@@ -68,23 +68,23 @@ mkNonTermRestGraph ct = mkRESTGraph ct NT.evalRWs NT.userRWs
 mkMSRESTGraph ct = mkRESTGraph ct MS.evalRWs MS.userRWs
 
 
-explain z3 (t, u) = printf "%s ≥ %s requires:\n%s\n\n\n" (show t) (show u) (show $ rpoGTE t u)
-  where
-    ?impl = AC.adtOC z3
+explain f (t, u) = printf "%s ≥ %s requires:\n%s\n\n\n" (show t) (show u) (show $ f t u)
 
 explainOrient :: [String] -> IO ()
 explainOrient ts0 = withZ3 go where
+  go :: SolverHandle -> IO ()
   go z3 =
     let
       ts             = map parseTerm ts0
       pairs          = zip ts (tail ts)
     in
       do
-        mapM_ (explain z3) pairs
-        printf "Result:\n%s\n" (show $ orient ts)
-        (isSatisfiable (AC.adtOC z3) (orient ts)) >>= print
+        mapM_ (explain (refine impl (top impl))) pairs
+        printf "Result:\n%s\n" (show $ orient impl ts)
+        (isSatisfiable SC.strictOC (orient impl ts)) >>= print
     where
-      ?impl = lift (AC.adtOC z3) rpo
+      impl :: OCAlgebra (SC.StrictOC Op) RuntimeTerm Identity
+      impl = lift SC.strictOC lpo
 
 data GraphParams = GraphParams
   {  gShowConstraints :: Bool

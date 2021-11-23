@@ -38,12 +38,14 @@ orient' oc0 ts0 = go oc0 (zip ts0 (tail ts0))
     go oc []            = oc
     go oc ((t0, t1):ts) = go (refine ?impl oc t0 t1) ts
 
-orient :: Show oc => (?impl :: OCAlgebra oc RuntimeTerm m) => [RuntimeTerm] -> oc
-orient = orient' (top ?impl)
+orient :: Show oc =>  OCAlgebra oc RuntimeTerm m -> [RuntimeTerm] -> oc
+orient impl = orient' (top impl)
+   where
+     ?impl = impl
 
 canOrient :: forall oc m . Show oc
   => (?impl :: OCAlgebra oc RuntimeTerm m) => [RuntimeTerm] -> m Bool
-canOrient terms = trace ("Try to orient " ++ termPathStr terms) $ isSat ?impl (orient terms)
+canOrient terms = trace ("Try to orient " ++ termPathStr terms) $ isSat ?impl (orient ?impl terms)
 
 syms :: MetaTerm -> S.HashSet String
 syms (MT.Var s)      = S.singleton s
