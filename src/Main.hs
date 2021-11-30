@@ -89,17 +89,21 @@ explainOrient ts0 = withZ3 go where
 data GraphParams = GraphParams
   {  gShowConstraints :: Bool
   ,  gTarget          :: Maybe String
-  ,  gGraphType        :: GraphType
+  ,  gGraphType       :: GraphType
+  ,  gShowRejects     :: Bool
   }
 
 defaultParams :: GraphParams
-defaultParams = GraphParams False Nothing Tree
+defaultParams = GraphParams False Nothing Tree True
 
 withTarget :: String -> GraphParams -> GraphParams
 withTarget target gp = gp{gTarget = Just target}
 
 withShowConstraints :: GraphParams -> GraphParams
 withShowConstraints gp = gp{gShowConstraints = True}
+
+withHideRejects :: GraphParams -> GraphParams
+withHideRejects gp = gp{gShowRejects = False}
 
 data SolverType = LPOStrict | LPO | RPO | KBO | Fuel Int
 
@@ -150,7 +154,7 @@ mkRESTGraph' impl evalRWs userRWs name term params =
     liftIO $ printf "REST run completed, in %s\n" $ show $ diffUTCTime end start
     liftIO $ putStrLn "Drawing graph"
     let showCons = if gShowConstraints params then show else const ""
-    let prettyPrinter = PrettyPrinter pr pp showCons True
+    let prettyPrinter = PrettyPrinter pr pp showCons (gShowRejects params)
     liftIO $ writeDot name (gGraphType params) prettyPrinter (toOrderedSet paths)
     liftIO $ case gTarget params of
       Just target ->

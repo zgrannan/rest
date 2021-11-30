@@ -14,18 +14,28 @@ import           Language.REST.RuntimeTerm as RT
 import           Language.REST.SMT
 import           Language.REST.Util
 
+import qualified Data.Map as M
+
 type MultiSet = MS.MultiSet
 
 termOps :: RuntimeTerm -> [Op]
 termOps (App f xs) = f:(concatMap termOps xs)
 
+arityConstraints :: RuntimeTerm -> SMTExpr Bool
+arityConstraints t = toExpr $ go M.empty t where
+  go :: M.Map Op Int -> RuntimeTerm -> M.Map Op Int
+  go m (App f [])  = M.insert f 1 m
+  go m (App f [t]) = go (M.insert f 1 m) t
+  go m (App f ts)  = foldl go (M.insert f 0 m) ts
+
+  toExpr m = And $ map toConstraint (M.toList m)
+  toConstraint (sym, n) = toSMT sym `smtGTE` (Const n)
+
+
 kboGTE :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
-kboGTE t u = allGT0 `smtAnd` (size tOps `smtGTE` size uOps)
+kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps `smtGTE` size uOps)
   where
     (tOps, uOps) = removeEqBy (==) (termOps t) (termOps u)
-    uniqOps      = L.nub (tOps ++ uOps)
-    allGT0       = And (map gt0 uniqOps)
-    gt0 op       = toSMT op `Greater` (Const 0)
     size ops     = smtAdd (map toSMT ops)
 
 
