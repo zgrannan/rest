@@ -12,6 +12,7 @@ import Prelude hiding (EQ, GT)
 
 import           Control.Monad.Identity
 import Language.REST.Dot
+import Language.REST.ExploredTerms
 import Language.REST.RESTDot
 import Language.REST.OCToAbstract
 import Language.REST.RewriteRule
@@ -106,6 +107,7 @@ mkBagGraph =
         , workStrategy = bfs
         , ocImpl       = impl
         , initRes      = pathsResult
+        , etStrategy   = ExploreWhenNeeded
         } (bag start)
     let prettyPrinter = PrettyPrinter showRule showBag show True
     writeDot "example" Tree prettyPrinter (toOrderedSet paths)

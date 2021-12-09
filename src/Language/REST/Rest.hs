@@ -68,6 +68,7 @@ data RESTParams m rule term oc et rtype = RESTParams
   , workStrategy :: WorkStrategy rule term et oc
   , ocImpl       :: OCAlgebra oc term m
   , initRes      :: rtype rule term oc
+  , etStrategy   :: ExploreStrategy
   }
 
 rest :: forall m rule term oc et rtype .
@@ -87,11 +88,11 @@ rest :: forall m rule term oc et rtype .
   => RESTParams m rule term oc et rtype
   -> term
   -> m ((rtype rule term oc), Maybe (Path rule term oc))
-rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target} t =
+rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
   rest' (RESTState initRes [([], PathTerm t S.empty)] initET Nothing)
   where
     (WorkStrategy ws) = workStrategy
-    initET = ET.empty $ EF (AC.union ocImpl) (AC.notStrongerThan ocImpl)
+    initET = ET.empty (EF (AC.union ocImpl) (AC.notStrongerThan ocImpl)) etStrategy
 
     rest' (RESTState fin [] _ targetPath)            = return (fin, targetPath)
     rest' state@(RESTState _   paths et (Just targetPath))

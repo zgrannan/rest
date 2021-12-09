@@ -9,6 +9,7 @@ module Language.REST.ExploredTerms
    , size
    , visited
    , ExploreFuncs(..)
+   , ExploreStrategy(..)
    )  where
 
 import Debug.Trace
@@ -38,8 +39,8 @@ trace' _ x = x
 size :: ExploredTerms term c m -> Int
 size (ET m _ _) = M.size m
 
-empty :: ExploreFuncs c m -> ExploredTerms term c m
-empty ef = ET M.empty ef ExploreWhenNeeded
+empty :: ExploreFuncs c m -> ExploreStrategy -> ExploredTerms term c m
+empty = ET M.empty
 
 visited :: (Eq term, Hashable term) => term -> ExploredTerms term c m -> Bool
 visited t (ET m _ _) = M.member t m

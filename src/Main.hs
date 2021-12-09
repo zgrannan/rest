@@ -24,9 +24,10 @@ import BagExample
 import WQODot as WQODot
 import Language.REST.RESTDot
 import Language.REST.Dot
+import Language.REST.WorkStrategy
 import DSL
 import Nat
-import qualified Set as Set
+import Set as Set
 import qualified Multiset as MS
 import NonTerm as NT
 import qualified Lists as Li
@@ -34,6 +35,7 @@ import qualified Lists as Li
 import Language.REST.MultisetOrder (possibilities)
 import Language.REST.ConcreteOC
 import Language.REST.Core
+import Language.REST.ExploredTerms
 import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
 import Language.REST.Op
@@ -91,16 +93,20 @@ data GraphParams = GraphParams
   ,  gTarget          :: Maybe String
   ,  gGraphType       :: GraphType
   ,  gShowRejects     :: Bool
+  ,  gUseETOpt        :: Bool
   }
 
 defaultParams :: GraphParams
-defaultParams = GraphParams False Nothing Tree True
+defaultParams = GraphParams False Nothing Tree True True
 
 withTarget :: String -> GraphParams -> GraphParams
 withTarget target gp = gp{gTarget = Just target}
 
 withShowConstraints :: GraphParams -> GraphParams
 withShowConstraints gp = gp{gShowConstraints = True}
+
+withNoETOpt :: GraphParams -> GraphParams
+withNoETOpt gp = gp{gUseETOpt = False}
 
 withHideRejects :: GraphParams -> GraphParams
 withHideRejects gp = gp{gShowRejects = False}
@@ -146,9 +152,10 @@ mkRESTGraph' impl evalRWs userRWs name term params =
         , ru           = userRWs
         , toET         = id
         , target       = fmap parseTerm (gTarget params)
-        , workStrategy = notVisitedFirst
+        , workStrategy = bfs
         , ocImpl       = impl
         , initRes      = pathsResult
+        , etStrategy   = if gUseETOpt params then ExploreWhenNeeded else ExploreAlways
         } (parseTerm term)
     end <- liftIO $ getCurrentTime
     liftIO $ printf "REST run completed, in %s\n" $ show $ diffUTCTime end start
@@ -163,20 +170,21 @@ mkRESTGraph' impl evalRWs userRWs name term params =
           Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target)))
       Nothing -> return ()
 
-
-
-lhs :: RuntimeTerm
-lhs = "ite(isNull(ys), null, reverse(tail(ys)) + cons(head(ys),null)) + (reverse(tail(ds)) + cons(head(ds), null))"
-
-rhs :: RuntimeTerm
-rhs = "(ite(isNull(ys), null, reverse(tail(ys)) + cons(head(ys), null)) + reverse(tail(ds))) + cons(head(ds), null)"
-
-mkWQOGraph :: String -> String -> IO ()
-mkWQOGraph name wqoS = mkWQOGraph' name wqo where
-  Just wqo = parseOO wqoS
-
-mkWQOGraph' :: (Ord a, Hashable a, Show a) => String -> WQO.WQO a -> IO ()
-mkWQOGraph' name wqo = mkGraph name (WQODot.toDigraph wqo)
+challengeRulesNoCommute = S.fromList
+  [ x /\ x        ~> x
+  , x \/ x        ~> x
+  , x \/ emptyset ~> x
+  , x /\ emptyset ~> emptyset
+  , distribL (/\) (\/)
+  , distribR (/\) (\/)
+  , distribL (\/) (/\)
+  , distribR (\/) (/\)
+  , assocL (\/)
+  , assocR (\/)
+  ]
 
 main :: IO ()
-main = return ()
+main = do
+  mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
+  mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
+  mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams
