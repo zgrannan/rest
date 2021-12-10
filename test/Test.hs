@@ -24,6 +24,8 @@ import LazyOC as LazyOC
 import SMT as SMT
 import qualified QuickCheckTests as QuickCheckTests
 import System.IO
+
+import Language.REST.ExploredTerms
 import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
 import Language.REST.Core
@@ -62,6 +64,7 @@ rewrites impl evalRWs userRWs t0 =
       , workStrategy = notVisitedFirst
       , ocImpl       = ?impl
       , initRes      = termsResult
+      , etStrategy   = ExploreWhenNeeded
       } t0
   where
     ?impl = impl
