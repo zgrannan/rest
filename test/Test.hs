@@ -239,7 +239,7 @@ main = spawnZ3 >>= go where
       putStrLn "Running REST Test Suite"
       runTestSuite "SMT" SMT.tests
       runTestSuite "KBO" (KBO.tests z3)
-      QuickCheckTests.tests
+      _ <- QuickCheckTests.tests
       runTestSuite "OpOrdering" OpOrdering.tests
       ocTests z3
       runTestSuite "MultisetOrder" MultisetOrder.tests
