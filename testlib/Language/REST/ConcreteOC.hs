@@ -43,9 +43,9 @@ orients ordering terms =
     all (uncurry $ synGTE ordering) pairs
 
 concreteOC :: Monad m => AOC.OCAlgebra ConcreteOC RuntimeTerm m
-concreteOC = AOC.OCAlgebra (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) union notStrongerThan
+concreteOC = AOC.OCAlgebra (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) constUnion notStrongerThan
   where
-    union t1 _ = t1
+    constUnion t1 _ = t1
     notStrongerThan _ _ = return False
     refine :: ConcreteOC -> RuntimeTerm -> RuntimeTerm -> ConcreteOC
     refine (ConcreteOC ts (Just o)) _ u =

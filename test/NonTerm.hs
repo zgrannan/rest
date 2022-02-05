@@ -10,10 +10,10 @@ import Language.REST.Internal.Rewrite
 import qualified Data.HashSet as S
 
 a', b', c', d' :: MetaTerm -> MetaTerm
-a' x = RWApp (Op "a") [x]
-b' x = RWApp (Op "b") [x]
-c' x = RWApp (Op "c") [x]
-d' x = RWApp (Op "d") [x]
+a' x1 = RWApp (Op "a") [x1]
+b' x1 = RWApp (Op "b") [x1]
+c' x1 = RWApp (Op "c") [x1]
+d' x1 = RWApp (Op "d") [x1]
 
 userRWs :: S.HashSet Rewrite
 userRWs = S.fromList $

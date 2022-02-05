@@ -10,7 +10,7 @@ import Language.REST.MetaTerm
 import qualified Data.HashSet as S
 
 neg :: MetaTerm -> MetaTerm
-neg x = RWApp (Op "neg") [x]
+neg x1 = RWApp (Op "neg") [x1]
 
 evalRWs :: S.HashSet Rewrite
 evalRWs = S.empty

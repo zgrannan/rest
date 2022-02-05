@@ -9,16 +9,16 @@ import Language.REST.Op
 import qualified Data.HashSet as S
 
 neg :: MetaTerm -> MetaTerm
-neg x = RWApp (Op "neg") [x]
+neg x1 = RWApp (Op "neg") [x1]
 
 double :: MetaTerm -> MetaTerm
-double x = RWApp (Op "double") [x]
+double x1 = RWApp (Op "double") [x1]
 
 twicePlus :: MetaTerm -> MetaTerm -> MetaTerm
-twicePlus x y = RWApp (Op "twicePlus") [x, y]
+twicePlus x1 y1 = RWApp (Op "twicePlus") [x1, y1]
 
 (<#) :: MetaTerm -> MetaTerm -> MetaTerm
-x <# y = RWApp (Op "<") [x, y]
+x1 <# y1 = RWApp (Op "<") [x1, y1]
 
 evalRWs :: S.HashSet Rewrite
 evalRWs =

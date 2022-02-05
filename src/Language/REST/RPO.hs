@@ -128,7 +128,7 @@ synGTE :: OpOrdering -> RT.RuntimeTerm -> RT.RuntimeTerm -> Bool
 synGTE o t u = synGTE' o (rpoTerm t) (rpoTerm u)
 
 synGTE' :: OpOrdering -> RuntimeTerm -> RuntimeTerm -> Bool
-synGTE' ordering t@(App f ts) u@(App g us)
+synGTE' ordering t@(App f _ts) (App g us)
   | opGT ordering f g
   = synGTM ordering (MS.singleton t) us
 synGTE' ordering (App f ts) (App g us)

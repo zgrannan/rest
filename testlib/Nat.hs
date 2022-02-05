@@ -27,8 +27,8 @@ intToTerm n = App s [intToTerm (n - 1)]
 
 termToInt :: (MT.ToMetaTerm a) => a -> Maybe Int
 termToInt t = go (MT.toMetaTerm t) where
-  go (MT.RWApp op [])   | op == z = Just 0
-  go (MT.RWApp op [t1]) | op == s = (1 +) <$> go t1
+  go (MT.RWApp mop [])   | mop == z = Just 0
+  go (MT.RWApp mop [t1]) | mop == s = (1 +) <$> go t1
   go _                  = Nothing
 
 instance ToRuntimeTerm Int where
@@ -77,10 +77,10 @@ term = try infixTerm <|> nonInfixTerm
     infixTerm = do
       t1 <- nonInfixTerm
       _  <- spaces
-      op <- infixOp
+      top <- infixOp
       _  <- spaces
       t2 <- nonInfixTerm
-      return $ App (Op (pack op)) [t1, t2]
+      return $ App (Op (pack top)) [t1, t2]
 
     nullTerm = do
       o <- op

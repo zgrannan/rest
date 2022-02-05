@@ -13,15 +13,15 @@ emptyset :: MetaTerm
 emptyset  = RWApp "∅" []
 
 (/\), (\/) :: MetaTerm -> MetaTerm -> MetaTerm
-x /\ y = RWApp "intersect" [x, y]
-x \/ y  = RWApp "union" [x, y]
+x1 /\ y1 = RWApp "intersect" [x1, y1]
+x1 \/ y1  = RWApp "union" [x1, y1]
 
 s0, s1 :: MetaTerm
 s0 = RWApp "s₀" []
 s1 = RWApp "s₁" []
 
 isSubset :: MetaTerm -> MetaTerm -> Rewrite
-isSubset t1 t2 = t1 \/ t2 ~> t2
+isSubset mt1 mt2 = mt1 \/ mt2 ~> mt2
 
 userRWs :: S.HashSet Rewrite
 userRWs = S.union A.evalRWs $ S.fromList $

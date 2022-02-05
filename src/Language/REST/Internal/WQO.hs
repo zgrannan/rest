@@ -60,8 +60,8 @@ instance {-# OVERLAPPING #-} ToSMTVar a Int => ToSMT (WQO a) Bool where
       return $ Equal (map toSMT' ecl)
 
     posSMT = do
-      (ec, vars) <- PO.toDescsList po
-      var        <- S.toList vars
+      (ec, vs) <- PO.toDescsList po
+      var        <- S.toList vs
       return $ Greater (toSMT $ EC.head ec) (toSMT $ EC.head var)
 
 

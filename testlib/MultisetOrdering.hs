@@ -62,10 +62,10 @@ botNode tIndex mIndex =
   Node (botNodeName tIndex mIndex) "⊥" "solid" "black"
 
 toGraph' :: forall a. (Eq a, Hashable a, Show a) => GTE a -> [M.MultiSet a] -> DiGraph
-toGraph' gte mss = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes)) (toOrderedSet edges)
+toGraph' gte mss0 = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes)) (toOrderedSet edges)
   where
     indexed :: [(M.MultiSet (a, Int), Int)]
-    indexed = zindex (map indexMS mss)
+    indexed = zindex (map indexMS mss0)
 
     pairs :: [((M.MultiSet (a, Int), Int), (M.MultiSet (a, Int), Int))]
     pairs = zip indexed (tail indexed)
@@ -99,35 +99,35 @@ toGraph' gte mss = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes)
       where
         Just (MultisetGE repls) = multisetGE (\t u -> gte (fst t) (fst u)) ts us
 
-        lookup :: Int -> (Int, Int)
-        lookup tindex = case Mp.lookup (tindex, tsIndex) mp of
+        lookupTIndex :: Int -> (Int, Int)
+        lookupTIndex tindex = case Mp.lookup (tindex, tsIndex) mp of
           Just t  -> t
           Nothing -> (tindex, tsIndex)
 
         mp' = go mp repls where
           go mpi [] = mpi
           go mpi ((ReplaceOne (_, i) (_, j)):repls')
-            = go (Mp.insert (j, usIndex) (lookup i) mpi) repls'
+            = go (Mp.insert (j, usIndex) (lookupTIndex i) mpi) repls'
           go mpi (_:repls') = go mpi repls'
 
 
         redges (Replace (_, index) [])
           = [ ( Just (botNode index tsIndex)
               , mkEdge
-                (nodeName (lookup index))
+                (nodeName (lookupTIndex index))
                 (botNodeName index tsIndex)
               ) ]
         redges (ReplaceOne _ _) = []
         redges (Replace (_, tindex) us') = map go us' where
           go (_, uindex) =
-            (Nothing, mkEdge (nodeName (lookup tindex)) (nodeName (uindex,  usIndex)))
+            (Nothing, mkEdge (nodeName (lookupTIndex tindex)) (nodeName (uindex,  usIndex)))
 
     toNodes (ms, index) = map go (M.toList ms) where
 
-      go (elem, elemIndex) =
+      go (e, elemIndex) =
         Node
           (nodeName (elemIndex, index))
-          (show elem)
+          (show e)
           "solid"
           "black"
 

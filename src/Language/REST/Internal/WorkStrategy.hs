@@ -21,6 +21,7 @@ notVisitedFirst = WorkStrategy notVisitedFirst'
 
 bfs' :: [Path rule term oc] -> (term -> et) -> ExploredTerms et oc m -> (Path rule term oc, [Path rule term oc])
 bfs' (h:t) _ _ = (h, t)
+bfs' _ _ _ = error "empty path list"
 
 notVisitedFirst' :: (Eq term, Eq rule, Eq oc, Eq et, Hashable et) => GetWork m rule term et oc
 notVisitedFirst' paths toET et =

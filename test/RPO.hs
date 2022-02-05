@@ -48,7 +48,7 @@ rpoSeq
   => [RuntimeTerm]
   -> impl Op
 rpoSeq xs = go (OC.noConstraints ?impl) xs where
-  go c (t:u:xs) = OC.intersect ?impl c (rpoGTE t u)
+  go c (t:u:_xss) = OC.intersect ?impl c (rpoGTE t u)
   go c _        = c
 
 

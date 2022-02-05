@@ -123,16 +123,16 @@ toFormula :: SMTExpr a -> T.Text
 toFormula = go False where
   go :: Bool -> SMTExpr a -> T.Text
   go _ (And [])         = "⊤"
-  go p (And ts)         = parens p $ T.intercalate " ∧ " $ map (go (not p)) ts
-  go p (Add ts)         = parens p $ T.intercalate " + " $ map (go (not p)) ts
-  go p (GTE t u)        = parens p $ T.intercalate " ≥ " $ map (go True) $ [t, u]
-  go p (Greater t u)    = parens p $ T.intercalate " > " $ map (go True) $ [t, u]
+  go p (And ts)         = eparens p $ T.intercalate " ∧ " $ map (go (not p)) ts
+  go p (Add ts)         = eparens p $ T.intercalate " + " $ map (go (not p)) ts
+  go p (GTE t u)        = eparens p $ T.intercalate " ≥ " $ map (go True) $ [t, u]
+  go p (Greater t u)    = eparens p $ T.intercalate " > " $ map (go True) $ [t, u]
   go _ (Var (SMTVar v)) = v
   go _ (Const c)        = T.pack (show c)
-  go _ e                = undefined
+  go _ _e               = undefined
 
-  parens True t = T.concat ["(", t, ")"]
-  parens False t = t
+  eparens True t = T.concat ["(", t, ")"]
+  eparens False t = t
 
 vars :: SMTExpr a -> S.Set T.Text
 vars (And ts)        = S.unions (map vars ts)

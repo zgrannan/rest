@@ -5,7 +5,7 @@ import Prelude hiding (reverse)
 
 import           Language.REST.Internal.Rewrite (Rewrite)
 import qualified Language.REST.MetaTerm as MT
-import           DSL
+import           DSL hiding (t1, t2)
 
 import qualified Data.HashSet as S
 

@@ -36,13 +36,13 @@ data Edge = Edge
 type DotPath = [Node]
 
 nodeString :: Node -> String
-nodeString (Node id label style color) = 
-    printf "\t%s [label=\"%s\"\nstyle=\"%s\"\ncolor=\"%s\"];" id label style color
+nodeString (Node nid elabel style color) =
+    printf "\t%s [label=\"%s\"\nstyle=\"%s\"\ncolor=\"%s\"];" nid elabel style color
 
 edgeString :: Edge -> String
-edgeString (Edge from to label color subLabel style) = 
+edgeString (Edge efrom eto elabel color esubLabel style) =
     let 
-        sub = escape subLabel
+        sub = escape esubLabel
         escape xs = concatMap go xs
             where
                 go '\\' = "\\"
@@ -51,11 +51,11 @@ edgeString (Edge from to label color subLabel style) =
                 go '<'  = "&lt;"
                 go o    = [o]
         labelPart =
-          if label /= ""
-          then printf "<font color =\"red\">%s</font>" (escape label)
+          if elabel /= ""
+          then printf "<font color =\"red\">%s</font>" (escape elabel)
           else ""
     in
-        printf "\t%s -> %s [label = <%s<br/>%s>\ncolor=\"%s\"\nstyle=\"%s\"];" from to labelPart sub color style
+        printf "\t%s -> %s [label = <%s<br/>%s>\ncolor=\"%s\"\nstyle=\"%s\"];" efrom eto labelPart sub color style
 
 graphString :: DiGraph -> String
 graphString (DiGraph name nodes edges) = 

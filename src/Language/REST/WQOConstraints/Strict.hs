@@ -71,7 +71,7 @@ isSatisfiable :: Eq a => StrictOC a -> Bool
 isSatisfiable c = c /= unsatisfiable
 
 notStrongerThan :: forall m a. (Monad m, Eq a, Ord a, Hashable a) => StrictOC a -> StrictOC a -> m Bool
-notStrongerThan (StrictOC lhs) (StrictOC rhs) = return False
+notStrongerThan (StrictOC _lhs) (StrictOC _rhs) = return False
 
 -- The difference of two constraints `a` and `b` is new constraints such that
 -- intersect (diff a b) b = a

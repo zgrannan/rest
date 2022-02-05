@@ -61,14 +61,13 @@ mkSetsRESTGraph ct = mkRESTGraph ct Set.evalRWs Set.userRWs
 mkNonTermRestGraph ct = mkRESTGraph ct NT.evalRWs NT.userRWs
 mkMSRESTGraph ct = mkRESTGraph ct MS.evalRWs MS.userRWs
 
-
 explain :: (Show t2, Show t3, Show a) => (t2 -> t3 -> a) -> (t2, t3) -> IO ()
-explain f (t, u) = printf "%s ≥ %s requires:\n%s\n\n\n" (show t) (show u) (show $ f t u)
+explain f0 (t, u) = printf "%s ≥ %s requires:\n%s\n\n\n" (show t) (show u) (show $ f0 t u)
 
 explainOrient :: [String] -> IO ()
 explainOrient ts0 = withZ3 go where
   go :: SolverHandle -> IO ()
-  go z3 =
+  go _z3 =
     let
       ts             = map parseTerm ts0
       pairs          = zip ts (tail ts)
@@ -93,7 +92,7 @@ defaultParams :: GraphParams
 defaultParams = GraphParams False Nothing Tree True True
 
 withTarget :: String -> GraphParams -> GraphParams
-withTarget target gp = gp{gTarget = Just target}
+withTarget target0 gp = gp{gTarget = Just target0}
 
 withShowConstraints :: GraphParams -> GraphParams
 withShowConstraints gp = gp{gShowConstraints = True}
@@ -114,16 +113,16 @@ mkRESTGraph ::
   -> String
   -> GraphParams
   -> IO ()
-mkRESTGraph LPOStrict evalRWs userRWs name term params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpoStrict) evalRWs userRWs name term params
-mkRESTGraph LPO evalRWs userRWs name term params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs userRWs name term params
-mkRESTGraph RPO evalRWs userRWs name term params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs userRWs name term params
-mkRESTGraph KBO evalRWs userRWs name term params =
-  withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs userRWs name term params
-mkRESTGraph (Fuel n) evalRWs userRWs name term params =
-  mkRESTGraph' (fuelOC n) evalRWs userRWs name term params
+mkRESTGraph LPOStrict evalRWs0 userRWs0 name term0 params =
+  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpoStrict) evalRWs0 userRWs0 name term0 params
+mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
+  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs0 userRWs0 name term0 params
+mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
+  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs0 userRWs0 name term0 params
+mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =
+  withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs0 userRWs0 name term0 params
+mkRESTGraph (Fuel n) evalRWs0 userRWs0 name term0 params =
+  mkRESTGraph' (fuelOC n) evalRWs0 userRWs0 name term0 params
 
 mkRESTGraph' :: (MonadIO m, Show c, Hashable c, Ord c) =>
      OCAlgebra c RuntimeTerm m
@@ -133,23 +132,23 @@ mkRESTGraph' :: (MonadIO m, Show c, Hashable c, Ord c) =>
   -> String
   -> GraphParams
   -> m ()
-mkRESTGraph' impl evalRWs userRWs name term params =
+mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
   do
     let pr (Rewrite t u _) = printf "%s → %s" (pp t) (pp u)
-    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList userRWs
-    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList evalRWs
+    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList userRWs0
+    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList evalRWs0
     start <- liftIO $ getCurrentTime
     (PathsResult paths, targetPath) <- rest
       RESTParams
-        { re           = evalRWs
-        , ru           = userRWs
+        { re           = evalRWs0
+        , ru           = userRWs0
         , toET         = id
         , target       = fmap parseTerm (gTarget params)
         , workStrategy = bfs
         , ocImpl       = impl
         , initRes      = pathsResult
         , etStrategy   = if gUseETOpt params then ExploreWhenNeeded else ExploreAlways
-        } (parseTerm term)
+        } (parseTerm term0)
     end <- liftIO $ getCurrentTime
     liftIO $ printf "REST run completed, in %s\n" $ show $ diffUTCTime end start
     liftIO $ putStrLn "Drawing graph"
@@ -157,10 +156,10 @@ mkRESTGraph' impl evalRWs userRWs name term params =
     let prettyPrinter = PrettyPrinter pr pp showCons (gShowRejects params)
     liftIO $ writeDot name (gGraphType params) prettyPrinter (toOrderedSet paths)
     liftIO $ case gTarget params of
-      Just target ->
+      Just target1 ->
         (case targetPath of
           Just tp -> printf "FOUND TARGET. Proof:\n%s\n" (toProof tp)
-          Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target)))
+          Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target1)))
       Nothing -> return ()
 
 challengeRulesNoCommute :: S.HashSet Rewrite

@@ -61,10 +61,10 @@ one     = suc zero
 two     = suc one
 
 suc :: RuntimeTerm -> RuntimeTerm
-suc x   = App s [x]
+suc x1   = App s [x1]
 
 ack :: RuntimeTerm -> RuntimeTerm -> RuntimeTerm
-ack x y = App ackOp [x, y]
+ack x1 y1 = App ackOp [x1, y1]
 
 zero' :: MT.MetaTerm
 zero'    = MT.toMetaTerm zero
@@ -73,23 +73,23 @@ one' :: MT.MetaTerm
 one'     = suc' zero'
 
 suc' :: MT.MetaTerm -> MT.MetaTerm
-suc' x   = MT.RWApp s [x]
+suc' x1   = MT.RWApp s [x1]
 
 ack' :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
-ack' x y = MT.RWApp ackOp [x, y]
+ack' x1 y1 = MT.RWApp ackOp [x1, y1]
 
 infixl 1 .+
 (.+) :: RuntimeTerm -> RuntimeTerm -> RuntimeTerm
-(.+) x y = App plus [x, y]
+(.+) x1 y1 = App plus [x1, y1]
 
 (#+) :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
-(#+) x y = MT.RWApp plus [x, y]
+(#+) x1 y1 = MT.RWApp plus [x1, y1]
 
 (#-) :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
-(#-) x y = MT.RWApp minus [x, y]
+(#-) x1 y1 = MT.RWApp minus [x1, y1]
 
 (#*) :: MT.MetaTerm -> MT.MetaTerm -> MT.MetaTerm
-(#*) x y = MT.RWApp times [x, y]
+(#*) x1 y1 = MT.RWApp times [x1, y1]
 
 infix 0 ~>
 (~>) :: MT.MetaTerm -> MT.MetaTerm -> Rewrite

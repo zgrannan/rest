@@ -51,9 +51,9 @@ termPathStr terms = L.intercalate " --> \n" (map pp terms)
     pp = prettyPrint (PPArgs [] [] (const Nothing))
 
 eval :: S.HashSet Rewrite -> RuntimeTerm -> IO RuntimeTerm
-eval rws t =
+eval rws t0 =
   do
-    result <- mapM (apply t) (S.toList rws)
+    result <- mapM (apply t0) (S.toList rws)
     case S.toList $ S.unions result of
-      []      -> return t
+      []      -> return t0
       (t : _) -> eval rws t

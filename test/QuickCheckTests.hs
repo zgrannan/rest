@@ -106,7 +106,7 @@ prop_poTrans f g h po =
   PO.gt po f g && PO.gt po g h ==> PO.gt po f h
 
 prop_wqoTrans :: Op -> Op -> Op -> WQO.WQO Op -> Property
-prop_wqoTrans f g h wqo = f `gte` g &&  g `gte` h ==> f `gte` h
+prop_wqoTrans f0 g0 h wqo = f0 `gte` g0 &&  g0 `gte` h ==> f0 `gte` h
   where
     gte f g = Mb.isJust $ WQO.getRelation wqo f g
 

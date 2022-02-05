@@ -147,25 +147,25 @@ cached :: (Ord a) => ConstraintsADT a -> GCMonad a -> GCMonad a
 cached key thunk = do
   cache <- gets cs
   case M.lookup key cache of
-    Just result -> trace' ("ADT Cache hit") $ return result
-    Nothing     -> trace' ("ADT Cache miss") $ do
-      result <- trace' "Do thunk" thunk
-      trace' "Done" $ modify (\st -> st{cs = M.insert key result (cs st)})
+    Just result -> trace'' ("ADT Cache hit") $ return result
+    Nothing     -> trace'' ("ADT Cache miss") $ do
+      result <- trace'' "Do thunk" thunk
+      trace'' "Done" $ modify (\st -> st{cs = M.insert key result (cs st)})
       return result
  where
-   trace' _  x = x
+   trace'' _  x = x
    -- trace' = trace
 
 cached' :: (Hashable a, Show a, Ord a) => (WQO a, WQO a) -> Maybe (WQO a) -> State (GCState a) (Maybe (WQO a))
 cached' (lhs, rhs) thunk = do
   cache <- gets ms
   case M.lookup (lhs, rhs) cache of
-    Just result -> trace' ("WQO Cache hit") $ return result
-    Nothing     -> trace' ("WQO Cache miss" ++ show (lhs, rhs)) $ do
-      trace' "Done" $ modify (\st -> st{ms = M.insert (rhs, lhs) thunk $ M.insert (lhs, rhs) thunk (ms st)})
+    Just result -> trace'' ("WQO Cache hit") $ return result
+    Nothing     -> trace'' ("WQO Cache miss" ++ show (lhs, rhs)) $ do
+      trace'' "Done" $ modify (\st -> st{ms = M.insert (rhs, lhs) thunk $ M.insert (lhs, rhs) thunk (ms st)})
       return thunk
  where
-   trace' _  x = x
+   trace'' _  x = x
    -- trace' = trace
 
 getConstraints' :: forall a. (Show a, Ord a, Hashable a) => ConstraintsADT a -> State (GCState a) [WQO a]
@@ -200,7 +200,7 @@ getConstraints' c@(Intersect lhs rhs) = cached c $ do
         else (rhs, lhs)
 
 dnfSize :: ConstraintsADT a -> Int
-dnfSize (Sat w)       = 1
+dnfSize (Sat _w)       = 1
 dnfSize Unsat         = 0
 dnfSize (Union w1 w2) = dnfSize w1 + dnfSize w2
 dnfSize (Intersect w1 w2) = dnfSize w1 * dnfSize w2

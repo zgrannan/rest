@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Language.REST.KBO (kbo, kboGTE) where
 
@@ -17,7 +18,7 @@ arityConstraints :: RuntimeTerm -> SMTExpr Bool
 arityConstraints t = toExpr $ go M.empty t where
   go :: M.Map Op Int -> RuntimeTerm -> M.Map Op Int
   go m (App f [])  = M.insert f 1 m
-  go m (App f [t]) = go (M.insert f 1 m) t
+  go m (App f [targ]) = go (M.insert f 1 m) targ
   go m (App f ts)  = foldl go (M.insert f 0 m) ts
 
   toExpr m = And $ map toConstraint (M.toList m)
@@ -34,10 +35,10 @@ kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps 
 kbo :: SolverHandle -> OCAlgebra (SMTExpr Bool) RuntimeTerm IO
 kbo solver = OCAlgebra
   {  isSat           = checkSat' solver
-  ,  refine          = refine
+  ,  refine
   ,  top             = smtTrue
-  ,  union           = union
-  ,  notStrongerThan = notStrongerThan
+  ,  union
+  ,  notStrongerThan
   }
   where
     union  e1 e2          = Or [e1, e2]

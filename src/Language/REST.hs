@@ -27,7 +27,7 @@ adtRPO z3 = lift (adtOC z3) rpo
 -- Assume vars are arity 0, which is usually correct
 getVars :: RuntimeTerm -> S.HashSet Op
 getVars (App op []) = S.singleton op
-getVars (App op xs) = S.unions (map getVars xs)
+getVars (App _op xs) = S.unions (map getVars xs)
 
 
 varsEQ :: RuntimeTerm -> RuntimeTerm -> WQO.WQO Op

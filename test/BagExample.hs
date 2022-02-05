@@ -61,8 +61,8 @@ infixr 1 ~>
 (~>) = (:)
 
 instance RewriteRule IO Rewrite Bag where
-  apply bag (Rewrite bag' result) | bag == bag' = return result
-  apply _ _ | otherwise                         = return S.empty
+  apply bag1 (Rewrite bag' result) | bag1 == bag' = return result
+  apply _ _ | otherwise                           = return S.empty
 
 
 fromPath :: [String] -> S.HashSet Rewrite
@@ -86,7 +86,7 @@ rules = fromPaths $
   ]
 
 showBag :: Bag -> String
-showBag (Bag bag) = "{ " ++ (L.intercalate ", " $ map return bag) ++ " }"
+showBag (Bag bag1) = "{ " ++ (L.intercalate ", " $ map return bag1) ++ " }"
 
 showRule :: Rewrite -> String
 showRule _ = ""

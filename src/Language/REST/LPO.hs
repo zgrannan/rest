@@ -46,7 +46,7 @@ lex oc strict cs _ []    []    = if strict then unsatisfiable oc else cs
 lpo' :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) =>
   Bool -> WQOConstraints oc m -> Relation -> oc Op -> RuntimeTerm -> RuntimeTerm -> oc Op
 -- lpo' False oc EQ cs t u = intersect oc (lpo' False oc GTE cs t u) (lpo' False oc GTE cs u t)
-lpo' False oc EQ cs (App f ts) (App g us) | length ts /= length us = unsatisfiable oc
+lpo' False oc EQ _cs (App _f ts) (App _g us) | length ts /= length us = unsatisfiable oc
 lpo' False oc EQ cs (App f ts) (App g us) =
   let
     cs'  = intersect oc cs (singleton oc $ f =. g)
