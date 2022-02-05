@@ -17,15 +17,15 @@ import Data.Hashable
 import qualified Data.List as L
 import qualified Data.HashMap.Strict as M
 
-import qualified Language.REST.MultiSet as MS
+import qualified Language.REST.Internal.MultiSet as MS
 import           Language.REST.Op
-import           Language.REST.OpOrdering as OpOrdering
+import           Language.REST.Internal.OpOrdering as OpOrdering
 import           Language.REST.WQOConstraints as OC
 import qualified Language.REST.MetaTerm as MT
 import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT
-import           Language.REST.MultisetOrder
-import           Language.REST.Util
+import           Language.REST.Internal.MultisetOrder
+import           Language.REST.Internal.Util
 
 instance Show RuntimeTerm where
   show (App op trms) =

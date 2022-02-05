@@ -5,7 +5,7 @@ import Data.Hashable
 import Language.REST.Dot hiding (toGraph)
 import qualified Data.Maybe as Mb
 import qualified Data.List as L
-import qualified Language.REST.MultiSet as M
+import qualified Language.REST.Internal.MultiSet as M
 import qualified Data.HashMap.Strict as Mp
 import qualified Data.HashSet as S
 import Language.REST.Types

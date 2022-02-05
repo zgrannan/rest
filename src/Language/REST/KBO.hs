@@ -7,12 +7,12 @@ import Control.Monad.Identity
 import qualified Data.List as L
 
 import           Language.REST.OCAlgebra
-import qualified Language.REST.MultiSet as MS
+import qualified Language.REST.Internal.MultiSet as MS
 import           Language.REST.Op
 import           Language.REST.Types hiding (GTE)
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.SMT
-import           Language.REST.Util
+import           Language.REST.Internal.Util
 
 import qualified Data.Map as M
 

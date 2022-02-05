@@ -25,7 +25,7 @@ import qualified Data.Set as S
 
 import Prelude hiding (GT, EQ)
 
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 import Language.REST.Types
 import Language.REST.SMT (ToSMTVar)
 

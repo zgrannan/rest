@@ -6,8 +6,8 @@ import Prelude hiding (GT)
 import Control.Monad.Identity
 import Debug.Trace (trace)
 
-import Language.REST.MultiSet as M
-import Language.REST.MultisetOrder
+import Language.REST.Internal.MultiSet as M
+import Language.REST.Internal.MultisetOrder
 import Language.REST.WQOConstraints.Strict as SC
 import Language.REST.WQOConstraints as OC
 import Language.REST.Types

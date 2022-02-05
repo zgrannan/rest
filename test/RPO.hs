@@ -9,11 +9,11 @@ import Data.Hashable
 import DSL
 import Nat
 import Language.REST.Op
-import Language.REST.OpOrdering as OpOrdering
+import Language.REST.Internal.OpOrdering as OpOrdering
 import Language.REST.WQOConstraints as OC
 import Language.REST.RuntimeTerm
 import Language.REST.RPO
-import Language.REST.WQO
+import Language.REST.Internal.WQO
 
 import Data.Maybe as Mb
 

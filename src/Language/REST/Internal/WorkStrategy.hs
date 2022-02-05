@@ -1,10 +1,10 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Language.REST.WorkStrategy where
+module Language.REST.Internal.WorkStrategy where
 
 import Language.REST.ExploredTerms as ET
 import Language.REST.Path
-import Language.REST.Rewrite
+import Language.REST.Internal.Rewrite
 
 import Data.Hashable
 import qualified Data.List as L

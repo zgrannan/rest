@@ -17,8 +17,8 @@ import Language.REST.WQOConstraints.ADT (adtOC)
 import Language.REST.RPO
 import Language.REST.RuntimeTerm
 import Language.REST.Op
-import Language.REST.OpOrdering
-import qualified Language.REST.WQO as WQO
+import Language.REST.Internal.OpOrdering
+import qualified Language.REST.Internal.WQO as WQO
 
 
 adtRPO z3 = lift (adtOC z3) rpo

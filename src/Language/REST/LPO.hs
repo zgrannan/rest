@@ -15,7 +15,7 @@ import Data.Hashable
 import Debug.Trace
 
 import           Language.REST.Op
-import           Language.REST.OpOrdering as OpOrdering
+import           Language.REST.Internal.OpOrdering as OpOrdering
 import           Language.REST.WQOConstraints as OC
 import           Language.REST.Types
 import           Language.REST.RuntimeTerm

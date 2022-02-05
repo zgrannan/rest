@@ -6,7 +6,7 @@ import Data.Text ()
 import DSL
 import Language.REST.MetaTerm
 import Language.REST.Op
-import Language.REST.Rewrite
+import Language.REST.Internal.Rewrite
 import qualified Data.HashSet as S
 import Prelude hiding (singleton)
 

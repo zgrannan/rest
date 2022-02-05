@@ -4,10 +4,10 @@
 module Language.REST.ConcreteOC where
 
 import qualified Language.REST.OCAlgebra as AOC
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 import           Language.REST.RuntimeTerm
 import           Language.REST.RPO
-import           Language.REST.OpOrdering
+import           Language.REST.Internal.OpOrdering
 import           Language.REST.MetaTerm
 
 import Data.List as L

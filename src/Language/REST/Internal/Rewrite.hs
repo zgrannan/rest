@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Language.REST.Rewrite where
+module Language.REST.Internal.Rewrite where
 
 import GHC.Generics (Generic)
 

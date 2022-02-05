@@ -5,7 +5,7 @@ module DSL where
 import           Language.REST.Op
 import qualified Language.REST.MetaTerm as MT
 import           Language.REST.RuntimeTerm as RT
-import           Language.REST.Rewrite
+import           Language.REST.Internal.Rewrite
 import           Nat
 
 commutes op      = x `op` y            ~> y `op` x

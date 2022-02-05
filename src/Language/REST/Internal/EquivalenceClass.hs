@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.EquivalenceClass
+module Language.REST.Internal.EquivalenceClass
     ( isMember
     , isSingleton
     , insert

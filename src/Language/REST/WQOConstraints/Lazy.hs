@@ -22,7 +22,7 @@ import Data.Maybe
 import qualified Data.List as L
 import qualified Data.Set as S
 
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 import qualified Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.ADT as ADT
 

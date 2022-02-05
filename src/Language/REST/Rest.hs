@@ -30,7 +30,7 @@ import Language.REST.RewriteRule
 import Language.REST.Path
 import Language.REST.Types
 import Language.REST.ExploredTerms as ET
-import Language.REST.WorkStrategy
+import Language.REST.Internal.WorkStrategy
 
 newtype PathsResult rule term oc = PathsResult (S.HashSet (Path rule term oc))
 

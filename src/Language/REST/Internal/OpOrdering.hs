@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 
-module Language.REST.OpOrdering (
+module Language.REST.Internal.OpOrdering (
     empty
   , merge
   , OpOrdering
@@ -26,10 +26,10 @@ import Text.ParserCombinators.Parsec.Char
 import Text.ParserCombinators.Parsec
 import Text.Parsec (parserTrace)
 
-import qualified Language.REST.PartialOrder as PO
+import qualified Language.REST.Internal.PartialOrder as PO
 import           Language.REST.Op
 import           Language.REST.Types
-import           Language.REST.WQO as WQO
+import           Language.REST.Internal.WQO as WQO
 
 
 type PartialOrder = PO.PartialOrder

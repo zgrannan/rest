@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Language.REST.WQO (
+module Language.REST.Internal.WQO (
       empty
     , insert
     , insertMaybe
@@ -34,8 +34,8 @@ import Debug.Trace
 import qualified Data.List as L
 import qualified Data.Set as S
 
-import qualified Language.REST.EquivalenceClass as EC
-import qualified Language.REST.PartialOrder as PO
+import qualified Language.REST.Internal.EquivalenceClass as EC
+import qualified Language.REST.Internal.PartialOrder as PO
 import Language.REST.Op
 import Language.REST.Types
 import Language.REST.SMT

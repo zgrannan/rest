@@ -2,7 +2,7 @@ module LazyOC where
 
 import Data.Maybe
 import Language.REST.WQOConstraints.Lazy as LC
-import Language.REST.OpOrdering
+import Language.REST.Internal.OpOrdering
 
 oo = fromJust . parseOO
 

@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.MultisetOrder (multisetOrder, possibilities) where
+module Language.REST.Internal.MultisetOrder (multisetOrder, possibilities) where
 
 import GHC.Generics
 import qualified Data.List as L
@@ -13,7 +13,7 @@ import Data.Hashable
 import qualified Data.HashSet as S
 import Text.Printf
 
-import qualified Language.REST.MultiSet as M
+import qualified Language.REST.Internal.MultiSet as M
 import Language.REST.WQOConstraints as OC
 import Language.REST.Types
 

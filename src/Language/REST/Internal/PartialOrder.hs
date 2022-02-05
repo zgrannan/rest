@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.PartialOrder (
+module Language.REST.Internal.PartialOrder (
       empty
     , insert
     , replaceUnsafe

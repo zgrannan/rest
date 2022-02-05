@@ -21,36 +21,33 @@ library
     Language.REST.Core
     Language.REST.Dot
     Language.REST.ExploredTerms
+    Language.REST.Internal.EquivalenceClass
+    Language.REST.Internal.MultiSet
+    Language.REST.Internal.MultisetOrder
+    Language.REST.Internal.OpOrdering
+    Language.REST.Internal.PartialOrder
+    Language.REST.Internal.Rewrite
+    Language.REST.Internal.Util
+    Language.REST.Internal.WorkStrategy
+    Language.REST.Internal.WQO
     Language.REST.KBO
     Language.REST.LPO
     Language.REST.MetaTerm
-    Language.REST.MultiSet
-    Language.REST.MultisetOrder
     Language.REST.OCAlgebra
     Language.REST.OCToAbstract
     Language.REST.Op
-    Language.REST.OpOrdering
-    Language.REST.PartialOrder
     Language.REST.Path
     Language.REST.RESTDot
     Language.REST.RPO
     Language.REST.Rest
-    Language.REST.Rewrite
     Language.REST.RewriteRule
     Language.REST.RuntimeTerm
     Language.REST.SMT
     Language.REST.Types
-    Language.REST.WorkStrategy
-    Language.REST.WQO
     Language.REST.WQOConstraints
     Language.REST.WQOConstraints.ADT
     Language.REST.WQOConstraints.Lazy
     Language.REST.WQOConstraints.Strict
-  other-modules:
-    Language.REST.EquivalenceClass
-    Language.REST.Util
-
-
   hs-source-dirs: src
   build-depends:  base                 >= 4.7 && < 5
                 , containers           >= 0.6.2 && < 0.7

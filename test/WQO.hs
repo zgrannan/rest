@@ -1,6 +1,6 @@
 module WQO where
 
-import Language.REST.WQO as WQO
+import Language.REST.Internal.WQO as WQO
 
 basicInvalid :: Maybe (WQO Char)
 basicInvalid = do

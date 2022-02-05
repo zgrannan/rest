@@ -8,7 +8,7 @@ import DSL
 import Nat
 import Language.REST.Op
 import Language.REST.MetaTerm
-import Language.REST.Rewrite
+import Language.REST.Internal.Rewrite
 import qualified Data.HashSet as S
 
 a' x = RWApp (Op "a") [x]

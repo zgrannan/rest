@@ -16,12 +16,12 @@ import Language.REST.ExploredTerms
 import Language.REST.RESTDot
 import Language.REST.OCToAbstract
 import Language.REST.RewriteRule
-import qualified Language.REST.MultiSet as M
-import Language.REST.MultisetOrder
+import qualified Language.REST.Internal.MultiSet as M
+import Language.REST.Internal.MultisetOrder
 import Language.REST.Rest
 import Language.REST.WQOConstraints as OC
 import Language.REST.WQOConstraints.Strict as SC
-import Language.REST.WorkStrategy
+import Language.REST.Internal.WorkStrategy
 import Language.REST.Types
 import Language.REST.SMT hiding (GTE)
 

@@ -3,8 +3,8 @@
 module OpOrdering where
 
 import Language.REST.Op
-import Language.REST.OpOrdering
-import Language.REST.WQO
+import Language.REST.Internal.OpOrdering
+import Language.REST.Internal.WQO
 import Data.Maybe as Mb
 
 tests = [

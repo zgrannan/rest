@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.MultiSet
+module Language.REST.Internal.MultiSet
   ( MultiSet
   , delete
   , deleteMany

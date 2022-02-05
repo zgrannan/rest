@@ -16,11 +16,11 @@ import           Language.REST.OCAlgebra
 import           Language.REST.Op
 import           Language.REST.WQOConstraints
 import           Language.REST.RPO
-import           Language.REST.OpOrdering as OO
+import           Language.REST.Internal.OpOrdering as OO
 import           Language.REST.Types
 import qualified Language.REST.MetaTerm as MT
-import           Language.REST.WQO
-import           Language.REST.Rewrite
+import           Language.REST.Internal.WQO
+import           Language.REST.Internal.Rewrite
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.RewriteRule
 
