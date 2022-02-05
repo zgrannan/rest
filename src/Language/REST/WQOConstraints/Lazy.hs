@@ -9,6 +9,7 @@ module Language.REST.WQOConstraints.Lazy (
     , intersect
     , isSatisfiable
     , noConstraints
+    , singleton
     , union
     , unsatisfiable
     , LazyOC
