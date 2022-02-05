@@ -24,30 +24,30 @@ library
     Language.REST.KBO
     Language.REST.LPO
     Language.REST.MetaTerm
+    Language.REST.MultiSet
+    Language.REST.MultisetOrder
     Language.REST.OCAlgebra
     Language.REST.OCToAbstract
     Language.REST.Op
+    Language.REST.OpOrdering
+    Language.REST.PartialOrder
     Language.REST.Path
     Language.REST.RESTDot
     Language.REST.RPO
     Language.REST.Rest
+    Language.REST.Rewrite
     Language.REST.RewriteRule
     Language.REST.RuntimeTerm
     Language.REST.SMT
     Language.REST.Types
+    Language.REST.WorkStrategy
+    Language.REST.WQO
     Language.REST.WQOConstraints
     Language.REST.WQOConstraints.ADT
     Language.REST.WQOConstraints.Lazy
     Language.REST.WQOConstraints.Strict
   other-modules:
-    Language.REST.WorkStrategy
     Language.REST.EquivalenceClass
-    Language.REST.MultiSet
-    Language.REST.MultisetOrder
-    Language.REST.OpOrdering
-    Language.REST.PartialOrder
-    Language.REST.Rewrite
-    Language.REST.WQO
     Language.REST.Util
 
 
@@ -65,7 +65,7 @@ Test-Suite test-rest
   default-language:  Haskell2010
   type: exitcode-stdio-1.0
   main-is: Test.hs
-  hs-source-dirs: test src
+  hs-source-dirs: test testlib
   build-depends:  base
                 , hashable
                 , containers
@@ -75,38 +75,13 @@ Test-Suite test-rest
                 , unordered-containers
                 , text
                 , process
+                , rest-rewrite
   other-modules:
     Arith
     DSL
     KBO
-    Language.REST.MultiSet
-    Language.REST.OCAlgebra
-    Language.REST.Core
-    Language.REST.EquivalenceClass
-    Language.REST.ExploredTerms
-    Language.REST.MetaTerm
-    Language.REST.MultisetOrder
-    Language.REST.OCToAbstract
-    Language.REST.Op
-    Language.REST.OpOrdering
-    Language.REST.WQOConstraints
-    Language.REST.WQOConstraints.ADT
-    Language.REST.WQOConstraints.Lazy
-    Language.REST.WQOConstraints.Strict
-    Language.REST.PartialOrder
-    Language.REST.Path
-    Language.REST.LPO
-    Language.REST.KBO
-    Language.REST.RPO
-    Language.REST.Rest
-    Language.REST.Rewrite
-    Language.REST.RewriteRule
-    Language.REST.RuntimeTerm
-    Language.REST.Types
-    Language.REST.WorkStrategy
-    Language.REST.WQO
-    Language.REST.Util
-    Language.REST.SMT
+    Language.REST.ConcreteOC
+    Language.REST.ProofGen
     LazyOC
     MultisetOrder
     Nat
@@ -129,6 +104,7 @@ executable rest
                 , hashable
                 , process
                 , QuickCheck
+                , rest-rewrite
                 , parsec
                 , mtl
                 , monad-loops >= 0.4.3 && < 0.5
@@ -143,38 +119,8 @@ executable rest
       Compiler
       DSL
       Group
-      Language.REST.OCAlgebra
       Language.REST.ConcreteOC
-      Language.REST.Core
-      Language.REST.Dot
-      Language.REST.EquivalenceClass
-      Language.REST.ExploredTerms
-      Language.REST.KBO
-      Language.REST.LPO
-      Language.REST.MetaTerm
-      Language.REST.MultiSet
-      Language.REST.MultisetOrder
-      Language.REST.OCToAbstract
-      Language.REST.Op
-      Language.REST.OpOrdering
-      Language.REST.WQOConstraints
-      Language.REST.WQOConstraints.ADT
-      Language.REST.WQOConstraints.Lazy
-      Language.REST.WQOConstraints.Strict
-      Language.REST.PartialOrder
-      Language.REST.Path
       Language.REST.ProofGen
-      Language.REST.RESTDot
-      Language.REST.RPO
-      Language.REST.Rest
-      Language.REST.Rewrite
-      Language.REST.RewriteRule
-      Language.REST.RuntimeTerm
-      Language.REST.SMT
-      Language.REST.Types
-      Language.REST.WQO
-      Language.REST.Util
-      Language.REST.WorkStrategy
       Lists
       Multiset
       MultisetOrdering
@@ -183,4 +129,4 @@ executable rest
       Set
       WQODot
 
-  hs-source-dirs: src
+  hs-source-dirs: testlib
