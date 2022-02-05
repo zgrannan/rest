@@ -22,8 +22,7 @@ import qualified Data.Set as S
 import qualified Data.List as L
 import Prelude hiding (head)
 
-import Language.REST.Types
-import Language.REST.SMT
+import Language.REST.Types () -- Hashable (S.Set a)
 
 newtype EquivalenceClass a =
   EquivalenceClass (S.Set a) deriving (Ord, Eq, Generic, Hashable)

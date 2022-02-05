@@ -3,9 +3,6 @@ module Lists where
 
 import Prelude hiding (reverse)
 
-import           Language.REST.Op
-import           Language.REST.Core
-import           Language.REST.Types
 import qualified Language.REST.MetaTerm as MT
 import           DSL
 

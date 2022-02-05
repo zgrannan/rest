@@ -17,13 +17,12 @@ module Language.REST.Internal.PartialOrder (
     ) where
 
 import GHC.Generics (Generic)
-import Debug.Trace
 import Data.Hashable
 import qualified Data.Set as S
 import qualified Data.Map as M
 import qualified Data.List as L
 
-import Language.REST.Types
+import Language.REST.Types () -- Hashable (M.Map a b)
 import Text.Printf
 
 newtype PartialOrder a = PartialOrder (M.Map a (S.Set a))

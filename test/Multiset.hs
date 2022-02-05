@@ -5,10 +5,8 @@ module Multiset where
 import Data.Text ()
 import DSL
 import Language.REST.MetaTerm
-import Language.REST.Op
 import Language.REST.Internal.Rewrite
 import qualified Data.HashSet as S
-import Prelude hiding (singleton)
 
 x \/ y  = RWApp "union" [x, y]
 

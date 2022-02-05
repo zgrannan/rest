@@ -9,19 +9,11 @@ import Control.Monad.Identity
 import Data.Time.Clock
 import Data.Hashable
 import qualified Data.HashSet as S
-import qualified Data.HashMap.Strict as M
-import qualified Data.Maybe as Mb
-import Debug.Trace
-import Data.List (intercalate)
-import Control.Monad
-import Data.Bifunctor (bimap)
 import Text.Printf
 
 import qualified Arith as A
 import qualified Compiler as C
 import qualified Group as G
-import BagExample
-import WQODot as WQODot
 import Language.REST.RESTDot
 import Language.REST.Dot
 import Language.REST.Internal.WorkStrategy
@@ -32,29 +24,21 @@ import qualified Multiset as MS
 import NonTerm as NT
 import qualified Lists as Li
 
-import Language.REST.Internal.MultisetOrder (possibilities)
-import Language.REST.ConcreteOC
 import Language.REST.Core
 import Language.REST.ExploredTerms
 import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
 import Language.REST.Op
-import Language.REST.Internal.OpOrdering
 import Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
-import qualified Language.REST.WQOConstraints.Lazy   as LC
 import qualified Language.REST.WQOConstraints.ADT    as AC
 import Language.REST.KBO (kbo)
 import Language.REST.LPO (lpo, lpoStrict)
 import Language.REST.RPO
-import Language.REST.Internal.WQO as WQO
-import Language.REST.Internal.WorkStrategy
-import Language.REST.Path
 import Language.REST.ProofGen
 import Language.REST.Rest
 import Language.REST.Types
 import Language.REST.SMT
-import qualified Language.REST.MetaTerm as MT
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.Internal.Rewrite
 

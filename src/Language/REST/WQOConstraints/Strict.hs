@@ -24,8 +24,6 @@ module Language.REST.WQOConstraints.Strict (
     ) where
 
 import Control.Monad.Identity
-import Debug.Trace
-import Text.Printf
 import GHC.Generics (Generic)
 import Data.Hashable
 import Data.Maybe

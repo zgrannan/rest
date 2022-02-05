@@ -3,10 +3,7 @@
 
 module RPO where
 
-import Debug.Trace
-import Control.Monad.Identity
 import Data.Hashable
-import DSL
 import Nat
 import Language.REST.Op
 import Language.REST.Internal.OpOrdering as OpOrdering

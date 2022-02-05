@@ -3,9 +3,7 @@
 module NonTerm where
 
 import Arith as A
-import Data.Text
 import DSL
-import Nat
 import Language.REST.Op
 import Language.REST.MetaTerm
 import Language.REST.Internal.Rewrite

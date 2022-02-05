@@ -6,7 +6,7 @@ import Language.REST.OCAlgebra
 import Language.REST.KBO
 import Language.REST.SMT
 import Language.REST.RuntimeTerm
-import Nat
+import Nat () -- IsString RuntimeTerm
 
 tests :: SolverHandle -> [(String, IO Bool)]
 tests solver = testList where

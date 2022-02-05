@@ -6,13 +6,9 @@ import Control.Monad.Identity
 import Data.Hashable
 import Data.Maybe
 import qualified Data.HashSet as S
-import qualified Data.HashMap.Strict as M
 
-import Language.REST.Types
 import Language.REST.OCToAbstract
 import Language.REST.WQOConstraints
-import Language.REST.WQOConstraints.Strict (strictOC)
-import Language.REST.WQOConstraints.Lazy (lazyOC)
 import Language.REST.WQOConstraints.ADT (adtOC)
 import Language.REST.RPO
 import Language.REST.RuntimeTerm

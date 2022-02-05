@@ -21,7 +21,6 @@ import qualified Language.REST.Internal.WQO as WQO
 import qualified Language.REST.WQOConstraints as OC
 import Language.REST.SMT
 import Language.REST.Op
-import System.IO.Unsafe
 import Text.Printf
 
 type WQO = WQO.WQO

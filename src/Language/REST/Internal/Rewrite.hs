@@ -7,7 +7,6 @@ module Language.REST.Internal.Rewrite where
 
 import GHC.Generics (Generic)
 
-import           Control.Monad.Identity
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S

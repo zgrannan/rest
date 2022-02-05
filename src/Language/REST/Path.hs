@@ -7,7 +7,6 @@ module Language.REST.Path where
 import qualified Data.HashSet as S
 import GHC.Generics (Generic)
 import Data.Hashable
-import Language.REST.Types
 
 data Step rule term a = Step {
     term     :: PathTerm rule term

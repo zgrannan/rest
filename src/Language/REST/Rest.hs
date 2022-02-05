@@ -22,13 +22,10 @@ import qualified Data.HashSet as S
 import qualified Data.List    as L
 import qualified Data.HashMap.Strict     as M
 import qualified Data.Maybe   as Mb
-import Debug.Trace
-import Text.Printf
 
 import Language.REST.OCAlgebra as AC
 import Language.REST.RewriteRule
 import Language.REST.Path
-import Language.REST.Types
 import Language.REST.ExploredTerms as ET
 import Language.REST.Internal.WorkStrategy
 

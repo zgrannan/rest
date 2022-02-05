@@ -2,7 +2,6 @@
 
 module OpOrdering where
 
-import Language.REST.Op
 import Language.REST.Internal.OpOrdering
 import Language.REST.Internal.WQO
 import Data.Maybe as Mb

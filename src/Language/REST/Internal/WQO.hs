@@ -30,14 +30,12 @@ import qualified Data.Map as M
 import Control.Monad
 import Data.Hashable
 import Data.Maybe
-import Debug.Trace
 import qualified Data.List as L
 import qualified Data.Set as S
 
 import qualified Language.REST.Internal.EquivalenceClass as EC
 import qualified Language.REST.Internal.PartialOrder as PO
 import Language.REST.Op
-import Language.REST.Types
 import Language.REST.SMT
 
 type PartialOrder     = PO.PartialOrder

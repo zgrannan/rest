@@ -2,7 +2,6 @@
 
 module Group where
 
-import Data.Text
 import DSL
 import Language.REST.Op
 import Language.REST.MetaTerm

@@ -9,7 +9,6 @@ import qualified Data.HashSet as HS
 
 import Language.REST.Dot
 import Language.REST.Path
-import Language.REST.Types
 
 data PrettyPrinter rule term ord = PrettyPrinter
   { printRule    :: rule -> String

@@ -4,7 +4,6 @@ import Prelude hiding (GT)
 
 
 import Control.Monad.Identity
-import Debug.Trace (trace)
 
 import Language.REST.Internal.MultiSet as M
 import Language.REST.Internal.MultisetOrder

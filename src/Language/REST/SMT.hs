@@ -21,9 +21,8 @@ import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
-import Text.Parsec (ParsecT, endBy, sepBy)
+import Text.Parsec (endBy)
 import Text.Parsec.Prim
-import Text.ParserCombinators.Parsec (many)
 import Text.ParserCombinators.Parsec.Char
 import GHC.Generics (Generic)
 import GHC.IO.Handle

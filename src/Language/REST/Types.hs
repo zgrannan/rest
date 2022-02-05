@@ -27,7 +27,6 @@ import           Text.Printf
 
 import           Language.REST.Op
 import           Language.REST.MetaTerm as MT
-import           Language.REST.RuntimeTerm as MT
 
 data PPArgs = PPArgs
   { ppReplace  :: [(T.Text, T.Text)]

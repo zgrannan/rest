@@ -39,10 +39,7 @@ import Language.REST.RuntimeTerm
 import Language.REST.MetaTerm as MT
 import Language.REST.Internal.Rewrite
 import Language.REST.Rest
-import Language.REST.Path
 import Language.REST.SMT
-import qualified Language.REST.WQOConstraints.Lazy as LC
-import qualified Language.REST.WQOConstraints.Strict as SC
 import qualified Language.REST.WQOConstraints.ADT as AC
 import Language.REST.Internal.WorkStrategy
 import qualified Data.Maybe as Mb

@@ -17,22 +17,15 @@ module Language.REST.Internal.OpOrdering (
   ) where
 
 import Prelude hiding (GT, EQ)
-import GHC.Generics (Generic)
-import Data.Hashable
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Data.HashSet as S
 import Text.ParserCombinators.Parsec.Char
 import Text.ParserCombinators.Parsec
-import Text.Parsec (parserTrace)
 
-import qualified Language.REST.Internal.PartialOrder as PO
 import           Language.REST.Op
-import           Language.REST.Types
 import           Language.REST.Internal.WQO as WQO
 
 
-type PartialOrder = PO.PartialOrder
 type OpOrdering   = WQO Op
 
 

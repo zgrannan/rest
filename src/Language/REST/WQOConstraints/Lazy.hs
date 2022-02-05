@@ -14,12 +14,9 @@ module Language.REST.WQOConstraints.Lazy (
     , LazyOC
     ) where
 
-import Debug.Trace
 import Text.Printf
 import GHC.Generics (Generic)
 import Data.Hashable
-import Data.Maybe
-import qualified Data.List as L
 import qualified Data.Set as S
 
 import qualified Language.REST.Internal.WQO as WQO

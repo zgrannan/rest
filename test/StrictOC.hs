@@ -5,8 +5,6 @@ import Data.Maybe
 
 import Language.REST.WQOConstraints.Strict
 import Language.REST.Internal.WQO
-import Language.REST.Op
-import DSL
 import Language.REST.Internal.OpOrdering
 
 tests =

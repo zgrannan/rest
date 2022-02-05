@@ -7,11 +7,9 @@ module Language.REST.Internal.MultisetOrder (multisetOrder, possibilities) where
 
 import GHC.Generics
 import qualified Data.List as L
-import Debug.Trace (trace)
 import Prelude hiding (EQ, GT)
 import Data.Hashable
 import qualified Data.HashSet as S
-import Text.Printf
 
 import qualified Language.REST.Internal.MultiSet as M
 import Language.REST.WQOConstraints as OC

@@ -9,21 +9,15 @@ import Test.QuickCheck.Monadic
 import Control.Monad.Identity
 import Data.Maybe as Mb
 import qualified Data.Text as T
-import Debug.Trace (trace)
-import           Language.REST.Core hiding (syms)
 import qualified Language.REST.Internal.PartialOrder as PO
 import qualified Language.REST.Internal.WQO as WQO
 import qualified Language.REST.WQOConstraints        as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
 import qualified Language.REST.WQOConstraints.Lazy   as LC
 import           Language.REST.RPO
-import           Nat
 import           Language.REST.Op
-import           Language.REST.Types
 import           Language.REST.RuntimeTerm
 import Prelude hiding (EQ, GT)
-
-import Text.Printf
 
 type WQO = WQO.WQO
 

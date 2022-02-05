@@ -12,7 +12,6 @@ import Prelude hiding (EQ, GT, lex)
 
 import Control.Monad.Identity
 import Data.Hashable
-import Debug.Trace
 
 import           Language.REST.Op
 import           Language.REST.Internal.OpOrdering as OpOrdering

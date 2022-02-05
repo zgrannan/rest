@@ -18,7 +18,7 @@ module Language.REST.Internal.MultiSet
   , toSet
   ) where
 
-import Prelude hiding (null, filter, delete)
+import Prelude hiding (null, filter)
 
 import GHC.Generics
 import Data.Hashable

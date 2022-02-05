@@ -14,7 +14,6 @@ import Control.Monad.Identity
 import Control.Monad.State.Strict
 import GHC.Generics
 import Data.Hashable
-import qualified Data.List as L
 import qualified Data.HashMap.Strict as M
 
 import qualified Language.REST.Internal.MultiSet as MS

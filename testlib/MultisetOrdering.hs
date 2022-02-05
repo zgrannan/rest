@@ -2,7 +2,7 @@
 module MultisetOrdering where
 
 import Data.Hashable
-import Language.REST.Dot hiding (toGraph)
+import Language.REST.Dot
 import qualified Data.Maybe as Mb
 import qualified Data.List as L
 import qualified Language.REST.Internal.MultiSet as M

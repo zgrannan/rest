@@ -8,18 +8,12 @@ module Language.REST.Core where
 import Prelude hiding (GT, EQ)
 
 import           Debug.Trace                    ( trace )
-import           Data.Functor.Identity
 import qualified Data.List                     as L
 import qualified Data.HashSet                      as S
 
 import           Language.REST.OCAlgebra
-import           Language.REST.Op
-import           Language.REST.WQOConstraints
-import           Language.REST.RPO
-import           Language.REST.Internal.OpOrdering as OO
 import           Language.REST.Types
 import qualified Language.REST.MetaTerm as MT
-import           Language.REST.Internal.WQO
 import           Language.REST.Internal.Rewrite
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.RewriteRule

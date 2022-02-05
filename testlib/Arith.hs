@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Arith where
 
-import Data.Text
 import DSL
 import Language.REST.MetaTerm
 import Language.REST.Op

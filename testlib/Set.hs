@@ -3,10 +3,8 @@
 module Set where
 
 import Arith as A
-import Data.Text
 import DSL
 import Language.REST.MetaTerm
-import Language.REST.Op
 
 import qualified Data.HashSet as S
 

@@ -15,7 +15,6 @@ import qualified Language.REST.MetaTerm as MT
 import           Language.REST.Op
 import           Language.REST.Types
 import           Language.REST.RuntimeTerm as RT
-import           Language.REST.Types
 
 s      = Op "s"
 z      = Op "z"

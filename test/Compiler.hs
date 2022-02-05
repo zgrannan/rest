@@ -2,7 +2,6 @@
 
 module Compiler where
 
-import Data.Text
 import qualified Arith as A
 import DSL
 import Language.REST.MetaTerm
