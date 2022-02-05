@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# OPTIONS_GHC -Wno-error=deprecations #-}
 
 module Language.REST.Rest (
     rest
