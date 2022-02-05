@@ -91,12 +91,10 @@ Test-Suite test-rest
   build-depends:  base
                 , hashable
                 , containers
-                , parsec
                 , QuickCheck >= 2.14.2 && < 2.15
                 , mtl
                 , unordered-containers
                 , text
-                , process
                 , rest-rewrite
                 , testlib
   other-modules:
@@ -118,12 +116,8 @@ Test-Suite rest
   build-depends:  base >= 4.7
                 , containers
                 , hashable
-                , process
-                , QuickCheck
                 , rest-rewrite
-                , parsec
                 , mtl
-                , monad-loops >= 0.4.3 && < 0.5
                 , unordered-containers >= 0.2.11
                 , testlib
                 , text >= 1.2.2
