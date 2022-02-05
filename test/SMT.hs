@@ -3,6 +3,7 @@ module SMT where
 import Language.REST.SMT
 import qualified Data.Map as M
 
+model :: String
 model = "(\n\
  \ (define-fun op_j () Int \n\
  \  1) \n\
@@ -16,6 +17,7 @@ model = "(\n\
  \  5) \n\
  \ )"
 
+expected :: M.Map String String
 expected = M.fromList
   [ ("op_j", "1")
   , ("op_+", "2")
@@ -24,4 +26,5 @@ expected = M.fromList
   , ("op_<", "5")
   ]
 
+tests :: [(String, Bool)]
 tests = [("Parse SMT Model", parseModel model == expected)]

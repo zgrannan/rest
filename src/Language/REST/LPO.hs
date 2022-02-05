@@ -19,6 +19,15 @@ import           Language.REST.WQOConstraints as OC
 import           Language.REST.Types
 import           Language.REST.RuntimeTerm
 
+lex
+  :: (Eq a, Ord b, Hashable b)
+  => WQOConstraints impl m
+  -> Bool
+  -> impl b
+  -> (WQOConstraints impl m -> Relation -> impl b -> a -> a -> impl b)
+  -> [a]
+  -> [a]
+  -> impl b
 lex oc strict cs f (t:ts) (u:us) | t == u = lex oc strict cs f ts us
 lex oc strict cs f (t:ts) (u:us) = union oc case1 case2
   where

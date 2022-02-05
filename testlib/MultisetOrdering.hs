@@ -51,10 +51,13 @@ zindex xs = zip xs [0 ..]
 indexMS :: (Eq a, Hashable a) => M.MultiSet a -> M.MultiSet (a, Int)
 indexMS ms = M.fromList $ zindex (M.toList ms)
 
+mkEdge :: NodeID -> NodeID -> Edge
 mkEdge t u = Edge t u " " "black" " " "solid"
 
+botNodeName :: Int -> Int -> String
 botNodeName tIndex mIndex = "bot_" ++ show tIndex ++ "_" ++ show mIndex
 
+botNode :: Int -> Int -> Node
 botNode tIndex mIndex =
   Node (botNodeName tIndex mIndex) "⊥" "solid" "black"
 
@@ -138,4 +141,5 @@ mkMSOGraphs :: (Ord a, Eq a, Hashable a, Show a) => String -> [[a]] -> IO ()
 mkMSOGraphs name mss0 = mapM_ go (drop 1 $ L.inits mss0) where
   go mss = mkGraph (name ++ show (length mss)) (toGraph mss)
 
+multisetGE' :: (Ord a, Hashable a) => [a] -> [a] -> Maybe (MultisetGE a)
 multisetGE' ts us = multisetGE (>=) (M.fromList ts) (M.fromList us)

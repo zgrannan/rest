@@ -30,6 +30,7 @@ import Language.REST.SMT (ToSMTVar)
 
 type WQO = WQO.WQO
 
+trace' :: String -> a -> a
 trace' _ x = x
 
 data WQOConstraints impl m = OC

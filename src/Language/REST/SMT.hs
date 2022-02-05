@@ -197,12 +197,15 @@ askCmds expr = varDecls ++ [SMTAssert expr, CheckSat] where
 
 type SolverHandle = (Handle, Handle)
 
+spawnZ3 :: IO (Handle, Handle)
 spawnZ3 = do
   (Just stdIn, Just stdOut, _, _) <- createProcess (proc "z3" ["-in"]) {std_in = CreatePipe, std_out = CreatePipe}
   return (stdIn, stdOut)
 
+killZ3 :: (Handle, b) -> IO ()
 killZ3 (stdIn, _) = hClose stdIn
 
+withZ3 :: MonadIO m => ((Handle, Handle) -> m b) -> m b
 withZ3 f =
   do
     z3     <- liftIO $ spawnZ3

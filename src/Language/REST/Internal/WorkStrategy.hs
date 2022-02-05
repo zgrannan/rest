@@ -13,6 +13,7 @@ type GetWork m rule term et oc = [Path rule term oc] -> (term -> et) -> Explored
 
 newtype WorkStrategy rule term et oc = WorkStrategy (forall m . GetWork m rule term et oc)
 
+bfs :: WorkStrategy rule term et oc
 bfs = WorkStrategy bfs'
 
 notVisitedFirst :: (Eq term, Eq rule, Eq oc, Eq et, Hashable et) => WorkStrategy rule term et oc

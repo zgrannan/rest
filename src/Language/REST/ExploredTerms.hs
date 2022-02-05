@@ -31,6 +31,7 @@ data ExploreFuncs c m = EF
 data ExploredTerms term c m =
   ET (M.HashMap term (c, (S.HashSet term))) (ExploreFuncs c m) ExploreStrategy
 
+trace' :: String -> b -> b
 -- trace' = trace
 trace' _ x = x
 

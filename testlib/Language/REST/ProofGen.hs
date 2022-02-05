@@ -12,10 +12,12 @@ import Language.REST.RuntimeTerm
 import Language.REST.Op
 
 -- Hardcoded
+opToLH :: Op -> String
 opToLH (Op "union") = "mp"
 opToLH (Op "toMS")  = "multiset_of"
 opToLH (Op op) = T.unpack op
 
+withParens :: Bool -> String -> String
 withParens True t = "(" ++ t ++ ")"
 withParens False t = t
 

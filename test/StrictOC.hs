@@ -7,6 +7,7 @@ import Language.REST.WQOConstraints.Strict
 import Language.REST.Internal.WQO
 import Language.REST.Internal.OpOrdering
 
+tests :: [(String, Bool)]
 tests =
   [
     ("permits", permits noConstraints wqo)

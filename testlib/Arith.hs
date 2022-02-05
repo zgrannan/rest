@@ -2,6 +2,7 @@
 module Arith where
 
 import DSL
+import Language.REST.Internal.Rewrite (Rewrite)
 import Language.REST.MetaTerm
 import Language.REST.Op
 
@@ -10,12 +11,16 @@ import qualified Data.HashSet as S
 neg :: MetaTerm -> MetaTerm
 neg x = RWApp (Op "neg") [x]
 
+double :: MetaTerm -> MetaTerm
 double x = RWApp (Op "double") [x]
+
+twicePlus :: MetaTerm -> MetaTerm -> MetaTerm
 twicePlus x y = RWApp (Op "twicePlus") [x, y]
 
 (<#) :: MetaTerm -> MetaTerm -> MetaTerm
 x <# y = RWApp (Op "<") [x, y]
 
+evalRWs :: S.HashSet Rewrite
 evalRWs =
     S.fromList
       [
@@ -33,6 +38,7 @@ evalRWs =
       , twicePlus x y          ~> (x #+ x) #+ y
       ]
 
+userRWs :: S.HashSet Rewrite
 userRWs =
     S.fromList $
       [ x #+ y        ~> y #+ x

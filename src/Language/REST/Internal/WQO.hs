@@ -65,8 +65,10 @@ instance {-# OVERLAPPING #-} ToSMTVar a Int => ToSMT (WQO a) Bool where
       return $ Greater (toSMT $ EC.head ec) (toSMT $ EC.head var)
 
 
-
+getPO :: WQO a -> PartialOrder (EquivalenceClass a)
 getPO (WQO _ po)  = po
+
+getECs :: WQO a -> S.Set (EquivalenceClass a)
 getECs (WQO ecs _) = ecs
 
 -- Invariant: the first set contains all ECs
@@ -108,6 +110,12 @@ getEquivalenceClasses (WQO classes _) source target = (t, u)
     classes' = S.toList classes
 
 {-# INLINE getEquivalenceClasses' #-}
+getEquivalenceClasses'
+  :: (Ord a, Hashable a)
+  => WQO a
+  -> a
+  -> a
+  -> Maybe (EC.EquivalenceClass a, EC.EquivalenceClass a)
 getEquivalenceClasses' (WQO classes _) source target =
   do
     t <- L.find (EC.isMember source) classes'
@@ -176,6 +184,7 @@ mergeAll (x : x' : xs) = do
   y <- merge x x'
   mergeAll (y : xs)
 
+trace' :: String -> a -> a
 trace' _ x = x
 
 {-# INLINE merge #-}

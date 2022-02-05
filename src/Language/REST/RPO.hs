@@ -102,8 +102,20 @@ rpo' oc r cs t@(App f ts) u@(App g us) = incDepth result
         , rpoMul oc GTE cs'                             ts               (MS.singleton u)
         ]
 
+rpoGTE
+  :: (?impl::WQOConstraints oc m, Hashable (oc Op), Eq (oc Op), Show (oc Op))
+  => RT.RuntimeTerm
+  -> RT.RuntimeTerm
+  -> oc Op
 rpoGTE t u = runIdentity $ rpoGTE' ?impl (noConstraints ?impl) t u
 
+rpoGTE'
+  :: (Show (oc Op), Eq (oc Op), Hashable (oc Op))
+  => WQOConstraints oc m'
+  -> oc Op
+  -> RT.RuntimeTerm
+  -> RT.RuntimeTerm
+  -> Identity (oc Op)
 rpoGTE' impl oc t u = rpo impl GTE oc t u
 
 

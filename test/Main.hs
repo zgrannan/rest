@@ -45,6 +45,14 @@ import           Language.REST.Internal.Rewrite
 
 data ConsType = Strict | Lazy | ADT
 
+mkArithRESTGraph,
+  mkCompilerRESTGraph,
+  mkGroupRESTGraph,
+  mkListsRESTGraph,
+  mkSetsRESTGraph,
+  mkNonTermRestGraph,
+  mkMSRESTGraph
+  :: SolverType -> String -> String -> GraphParams -> IO ()
 mkArithRESTGraph ct = mkRESTGraph ct A.evalRWs A.userRWs
 mkCompilerRESTGraph ct = mkRESTGraph ct C.evalRWs C.userRWs
 mkGroupRESTGraph ct = mkRESTGraph ct G.evalRWs G.userRWs
@@ -54,6 +62,7 @@ mkNonTermRestGraph ct = mkRESTGraph ct NT.evalRWs NT.userRWs
 mkMSRESTGraph ct = mkRESTGraph ct MS.evalRWs MS.userRWs
 
 
+explain :: (Show t2, Show t3, Show a) => (t2 -> t3 -> a) -> (t2, t3) -> IO ()
 explain f (t, u) = printf "%s ≥ %s requires:\n%s\n\n\n" (show t) (show u) (show $ f t u)
 
 explainOrient :: [String] -> IO ()
@@ -154,6 +163,7 @@ mkRESTGraph' impl evalRWs userRWs name term params =
           Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target)))
       Nothing -> return ()
 
+challengeRulesNoCommute :: S.HashSet Rewrite
 challengeRulesNoCommute = S.fromList
   [ x /\ x        ~> x
   , x \/ x        ~> x

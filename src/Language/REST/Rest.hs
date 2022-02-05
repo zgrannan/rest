@@ -33,7 +33,10 @@ newtype PathsResult rule term oc = PathsResult (S.HashSet (Path rule term oc))
 
 newtype TermsResult rule term oc = TermsResult (S.HashSet term)
 
+pathsResult :: PathsResult rule term oc
 pathsResult = PathsResult S.empty
+
+termsResult :: TermsResult rule term oc
 termsResult = TermsResult S.empty
 
 class RESTResult a where

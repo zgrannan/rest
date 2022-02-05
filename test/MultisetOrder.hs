@@ -14,10 +14,13 @@ import Language.REST.Types
 compareChar :: ConstraintGen impl Char Char Identity
 compareChar impl r oc c1 c2 = Identity $ intersectRelation impl oc (c1, c2, r)
 
+existingOC :: StrictOC Char
 existingOC = OC.intersectRelation strictOC' SC.noConstraints ('a', 'c', GTE)
 
+ms :: StrictOC Char -> MultiSet Char -> MultiSet Char -> Identity (StrictOC Char)
 ms = multisetOrder compareChar strictOC' GTE
 
+multisetNext :: Identity (StrictOC Char)
 multisetNext = ms existingOC (M.fromList "bac") (M.fromList "aaaa")
 
 unsat :: Identity (StrictOC Char)

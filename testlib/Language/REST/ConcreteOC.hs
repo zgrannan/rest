@@ -22,9 +22,11 @@ instance Show ConcreteOC where
   show (ConcreteOC _ (Just oo)) = show oo
   show _                        = "impossible"
 
+isSat :: ConcreteOC -> Bool
 isSat (ConcreteOC _ (Just _)) = True
 isSat _                       = False
 
+getOrdering :: [RuntimeTerm] -> Maybe OpOrdering
 getOrdering ts =
   let
     ops       = S.unions $ map termOps ts

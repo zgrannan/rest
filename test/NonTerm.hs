@@ -9,6 +9,7 @@ import Language.REST.MetaTerm
 import Language.REST.Internal.Rewrite
 import qualified Data.HashSet as S
 
+a', b', c', d' :: MetaTerm -> MetaTerm
 a' x = RWApp (Op "a") [x]
 b' x = RWApp (Op "b") [x]
 c' x = RWApp (Op "c") [x]
@@ -23,5 +24,5 @@ userRWs = S.fromList $
   , d' (b' x) ~> b' (b' (b' x))
   ]
 
-
+evalRWs :: S.HashSet Rewrite
 evalRWs = A.evalRWs

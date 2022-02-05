@@ -6,6 +6,7 @@ import Language.REST.Internal.OpOrdering
 import Language.REST.Internal.WQO
 import Data.Maybe as Mb
 
+tests :: [(String, Bool)]
 tests = [
   ("parse",
      fromJust (

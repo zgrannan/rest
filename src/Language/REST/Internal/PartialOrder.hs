@@ -34,9 +34,10 @@ instance (Show a) => Show (PartialOrder a) where
       [x] -> printf "%s > %s" (show key) (show x)
       xs  -> printf "%s > { %s }" (show key) (L.intercalate ", " (map show xs))
 
-
+empty :: PartialOrder a
 empty = PartialOrder M.empty
 
+isEmpty :: Eq a => PartialOrder a -> Bool
 isEmpty p = p == empty
 
 canInsert :: (Eq a, Ord a, Hashable a) => PartialOrder a -> a -> a -> Bool
@@ -45,12 +46,17 @@ canInsert o f g = f /= g && not (gt o f g) && not (gt o g f)
 gt :: (Eq a, Ord a, Hashable a) => PartialOrder a -> a -> a -> Bool
 gt po t u = S.member u $ descendents t po
 
+unionDisjointUnsafe :: Ord a => PartialOrder a -> PartialOrder a -> PartialOrder a
 unionDisjointUnsafe (PartialOrder m) (PartialOrder m') = PartialOrder (M.union m m')
 
+ascendants :: Ord k => k -> PartialOrder k -> S.Set k
 ascendants k (PartialOrder m)  = M.keysSet $ M.filter (S.member k) m
+
+descendents :: Ord a => a -> PartialOrder a -> S.Set a
 descendents k (PartialOrder m) = M.findWithDefault S.empty k m
 
 {-# INLINE insertUnsafe #-}
+insertUnsafe :: Ord a => PartialOrder a -> a -> a -> PartialOrder a
 insertUnsafe o@(PartialOrder m) f g = result
   where
     result = PartialOrder $ M.insertWith S.union f decs $ M.mapWithKey go m
@@ -65,6 +71,7 @@ insertUnsafe o@(PartialOrder m) f g = result
 insert :: (Eq a, Ord a, Hashable a) => PartialOrder a -> a -> a -> Maybe (PartialOrder a)
 insert o f g = if canInsert o f g then Just (insertUnsafe o f g) else Nothing
 
+toDescsList :: PartialOrder k -> [(k, S.Set k)]
 toDescsList (PartialOrder m) = M.toList m
 
 toList :: PartialOrder a -> [(a, a)]

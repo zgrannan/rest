@@ -7,6 +7,7 @@ module Nat (termToInt, intToTerm, parseTerm, pp, s, z) where
 
 
 import Data.Text
+import Text.Parsec (Parsec, ParsecT, Stream)
 import Text.ParserCombinators.Parsec.Char
 import Text.ParserCombinators.Parsec
 import Data.String
@@ -16,6 +17,7 @@ import           Language.REST.Op
 import           Language.REST.Types
 import           Language.REST.RuntimeTerm as RT
 
+z, s :: Op
 s      = Op "s"
 z      = Op "z"
 
@@ -48,12 +50,14 @@ pp = prettyPrint (PPArgs []
 op :: GenParser Char st Op
 op = fmap (Op . pack) (many (alphaNum <|> char '\''))
 
+parens :: Stream s m Char => ParsecT s u m b -> ParsecT s u m b
 parens p = do
   _ <- char '('
   r <- p
   _ <- char ')'
   return r
 
+term :: Parsec String u RuntimeTerm
 term = try infixTerm <|> nonInfixTerm
   where
 

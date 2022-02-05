@@ -7,16 +7,19 @@ import Data.Hashable
 import Data.Maybe
 import qualified Data.HashSet as S
 
+import Language.REST.OCAlgebra (OCAlgebra)
 import Language.REST.OCToAbstract
 import Language.REST.WQOConstraints
-import Language.REST.WQOConstraints.ADT (adtOC)
+import Language.REST.WQOConstraints.ADT (ConstraintsADT, adtOC)
 import Language.REST.RPO
 import Language.REST.RuntimeTerm
 import Language.REST.Op
 import Language.REST.Internal.OpOrdering
 import qualified Language.REST.Internal.WQO as WQO
+import System.IO (Handle)
 
 
+adtRPO :: (Handle, Handle) -> OCAlgebra (ConstraintsADT Op) RuntimeTerm IO
 adtRPO z3 = lift (adtOC z3) rpo
 -- lazyRPO = lift lazyOC rpo
 -- strictRPO = lift strictOC rpo

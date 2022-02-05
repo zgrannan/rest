@@ -55,11 +55,13 @@ getOrdering :: StrictOC a -> Maybe (WQO a)
 getOrdering (StrictOC o) =
   listToMaybe (S.toList o)
 
+elems :: Ord a => StrictOC a -> S.Set a
 elems (StrictOC sets) = S.unions $ map WQO.elems (S.toList sets)
 
 noConstraints :: forall a. (Eq a, Ord a, Hashable a) => StrictOC a
 noConstraints = StrictOC (S.singleton (WQO.empty))
 
+unsatisfiable :: StrictOC a
 unsatisfiable = StrictOC S.empty
 
 isUnsatisfiable :: Eq a => StrictOC a -> Bool

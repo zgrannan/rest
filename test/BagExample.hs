@@ -57,6 +57,7 @@ data Rewrite = Rewrite Bag (S.HashSet Bag)
   deriving (Eq, Ord, Generic, Hashable)
 
 infixr 1 ~>
+(~>) :: String -> [String] -> [String]
 (~>) = (:)
 
 instance RewriteRule IO Rewrite Bag where
@@ -75,6 +76,7 @@ fromPath xs = S.fromList $ map go (zip xs (tail xs))
 fromPaths :: [[String]] -> S.HashSet Rewrite
 fromPaths paths = S.unions $ map fromPath paths
 
+start :: String
 start = "AAB"
 
 rules :: S.HashSet Rewrite
@@ -96,6 +98,7 @@ compareChar impl EQ  _  c1 c2 | c1 /= c2 = return $ OC.unsatisfiable impl
 compareChar impl r   oc c1 c2            = return $ intersectRelation impl oc (c1, c2, r)
 
 
+mkBagGraph :: IO ()
 mkBagGraph =
   do
     (PathsResult paths, _) <- rest

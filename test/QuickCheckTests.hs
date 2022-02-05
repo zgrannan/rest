@@ -7,8 +7,10 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
 import Control.Monad.Identity
+import Data.Hashable (Hashable)
 import Data.Maybe as Mb
 import qualified Data.Text as T
+import           Language.REST.Internal.OpOrdering (OpOrdering)
 import qualified Language.REST.Internal.PartialOrder as PO
 import qualified Language.REST.Internal.WQO as WQO
 import qualified Language.REST.WQOConstraints        as OC
@@ -21,6 +23,7 @@ import Prelude hiding (EQ, GT)
 
 type WQO = WQO.WQO
 
+syms :: [(T.Text, Int)]
 syms = [
    ("f", 3)
  , ("g", 2)
@@ -98,18 +101,29 @@ instance Arbitrary (PO.PartialOrder Op) where
 instance Arbitrary (WQO Op) where
   arbitrary = gen_wqo
 
+prop_poTrans :: Op -> Op -> Op -> PO.PartialOrder Op -> Property
 prop_poTrans f g h po =
   PO.gt po f g && PO.gt po g h ==> PO.gt po f h
-  where
-    types = f::Op
 
+prop_wqoTrans :: Op -> Op -> Op -> WQO.WQO Op -> Property
 prop_wqoTrans f g h wqo = f `gte` g &&  g `gte` h ==> f `gte` h
   where
     gte f g = Mb.isJust $ WQO.getRelation wqo f g
-    types = f::Op
 
+prop_rpoTrans
+  :: RuntimeTerm
+  -> RuntimeTerm
+  -> RuntimeTerm
+  -> OpOrdering
+  -> Property
 prop_rpoTrans t u v wqo = synGTE wqo t u && synGTE wqo u v ==> synGTE wqo t v
 
+prop_rpoCons
+  :: (?impl::OC.WQOConstraints impl m, Hashable (impl Op), Eq (impl Op), Show (impl Op))
+  => OC.WQOConstraints impl IO
+  -> RuntimeTerm
+  -> RuntimeTerm
+  -> Property
 prop_rpoCons impl t u = monadicIO $ do
   isSat <- run $ OC.isSatisfiable impl constraints
   pre isSat
@@ -118,6 +132,7 @@ prop_rpoCons impl t u = monadicIO $ do
     constraints = rpoGTE t u
     ordering    = Mb.fromJust (OC.getOrdering impl constraints)
 
+prop_permits :: [(Op, Op, WQO.QORelation)] -> Bool
 prop_permits steps = SC.permits (SC.noConstraints) (toWQO steps)
 
 -- Should fail
@@ -132,6 +147,7 @@ prop_permits steps = SC.permits (SC.noConstraints) (toWQO steps)
 --   where
 --     types = t0::RuntimeTerm
 
+tests :: IO [()]
 tests = sequence
         [
         --  quickCheckWith stdArgs{maxDiscardRatio = 1000} prop_rpot2

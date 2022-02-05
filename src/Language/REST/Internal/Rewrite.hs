@@ -22,7 +22,10 @@ data Rewrite = Rewrite MetaTerm MetaTerm (Maybe String)
 
 type Subst = M.HashMap String RuntimeTerm
 
+getName :: Rewrite -> Maybe String
 getName (Rewrite t u n) = n
+
+named :: Rewrite -> String -> Rewrite
 named (Rewrite t u _) n = Rewrite t u (Just n)
 
 subst :: Subst -> MetaTerm -> RuntimeTerm

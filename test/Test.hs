@@ -211,6 +211,7 @@ completeTests impl =
     s1      = Op "s1"
     s2      = Op "s2"
 
+ocTests :: (Handle, Handle) -> IO ()
 ocTests z3 = do
   runTestSuite "LazyOC" LazyOC.tests
   runTestSuite "StrictOC" StrictOC.tests

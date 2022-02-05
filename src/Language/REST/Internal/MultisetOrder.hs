@@ -32,6 +32,7 @@ data Replace a =
   | Replace a (S.HashSet a)
   deriving (Eq, Hashable, Generic, Show)
 
+powerset :: [a] -> [[a]]
 powerset []      = [[]]
 powerset (x:xs) = [x:ps | ps <- powerset xs] ++ powerset xs
 

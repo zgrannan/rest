@@ -21,6 +21,7 @@ import Data.Maybe
 import qualified Data.Text as T
 import Text.ParserCombinators.Parsec.Char
 import Text.ParserCombinators.Parsec
+import Text.Parsec (Parsec)
 
 import           Language.REST.Op
 import           Language.REST.Internal.WQO as WQO
@@ -62,6 +63,7 @@ parseOO str =
     Left err -> error (show err)
     Right t  -> t
 
+parser :: Parsec String u (Maybe OpOrdering)
 parser = fmap mergeAll' (sepBy1 atom conj) where
 
   mergeAll' :: [Maybe OpOrdering] -> Maybe OpOrdering
