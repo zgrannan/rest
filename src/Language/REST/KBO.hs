@@ -10,8 +10,6 @@ import           Language.REST.Internal.Util
 
 import qualified Data.Map as M
 
-type MultiSet = MS.MultiSet
-
 termOps :: RuntimeTerm -> [Op]
 termOps (App f xs) = f:(concatMap termOps xs)
 
