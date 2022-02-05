@@ -13,6 +13,7 @@ module Language.REST.Internal.OpOrdering (
   , opEQ
   , (=.)
   , (>.)
+  , (<.)
   , parseOO
   ) where
 
