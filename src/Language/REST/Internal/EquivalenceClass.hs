@@ -23,7 +23,9 @@ import Prelude hiding (head)
 
 import Language.REST.Types () -- Hashable (S.Set a)
 
+-- | Equivalent classes of the @(==)@ relation of a type @a@.
 newtype EquivalenceClass a =
+  -- | The set contains all of the elements of the class
   EquivalenceClass (S.Set a) deriving (Ord, Eq, Generic, Hashable)
 
 instance Show a => Show (EquivalenceClass a) where
