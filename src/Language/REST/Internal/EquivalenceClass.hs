@@ -12,7 +12,6 @@ module Language.REST.Internal.EquivalenceClass
     , head
     , EquivalenceClass
     , elems
-    , toPairs
     , isSubsetOf
     ) where
 
@@ -61,15 +60,6 @@ fromList = EquivalenceClass . S.fromList
 
 toList :: EquivalenceClass a -> [a]
 toList (EquivalenceClass s) = S.toList s
-
-toPairs :: EquivalenceClass b -> [(b, b)]
-toPairs e =
-  let
-    list = toList e
-  in
-    if length list < 2
-    then []
-    else zip list (tail list)
 
 {-# INLINE elems #-}
 elems :: EquivalenceClass a -> S.Set a
