@@ -12,7 +12,6 @@ module Language.REST.Internal.EquivalenceClass
     , head
     , EquivalenceClass
     , elems
-    , toPairs
     , isSubsetOf
     ) where
 
@@ -24,7 +23,9 @@ import Prelude hiding (head)
 
 import Language.REST.Types () -- Hashable (S.Set a)
 
+-- | Equivalent classes of the @(==)@ relation of a type @a@.
 newtype EquivalenceClass a =
+  -- | The set contains all of the elements of the class
   EquivalenceClass (S.Set a) deriving (Ord, Eq, Generic, Hashable)
 
 instance Show a => Show (EquivalenceClass a) where
@@ -61,15 +62,6 @@ fromList = EquivalenceClass . S.fromList
 
 toList :: EquivalenceClass a -> [a]
 toList (EquivalenceClass s) = S.toList s
-
-toPairs :: EquivalenceClass b -> [(b, b)]
-toPairs e =
-  let
-    list = toList e
-  in
-    if length list < 2
-    then []
-    else zip list (tail list)
 
 {-# INLINE elems #-}
 elems :: EquivalenceClass a -> S.Set a

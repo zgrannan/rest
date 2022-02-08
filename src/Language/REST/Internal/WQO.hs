@@ -71,8 +71,13 @@ getPO (WQO _ po)  = po
 getECs :: WQO a -> S.Set (EquivalenceClass a)
 getECs (WQO ecs _) = ecs
 
--- Invariant: the first set contains all ECs
-data WQO a = WQO (S.Set (EquivalenceClass a)) (PartialOrder (EquivalenceClass a))
+-- | Well-founded reflexive partial orders
+data WQO a =
+  -- Invariant: the first set contains all equivalence classes
+  --
+  -- The strict partial order describes the ordering of the
+  -- equivalence classes in the first set.
+  WQO (S.Set (EquivalenceClass a)) (PartialOrder (EquivalenceClass a))
   deriving (Ord, Eq, Generic, Hashable)
 
 instance (Show a, Eq a, Hashable a) => Show (WQO a) where
@@ -100,6 +105,10 @@ singleton t = insertMaybe empty t
 elems :: (Ord a) => WQO a -> S.Set a
 elems (WQO ec _) = S.unions $ map EC.elems (S.toList ec)
 
+-- | @getEquivalenceClasses (>=) a b@ retrieves the equivanlence classes of
+-- @a@ and @b@.
+--
+-- TODO: Why are these looked up in pairs and not individually?
 {-# INLINE getEquivalenceClasses #-}
 getEquivalenceClasses :: (Ord a, Eq a, Hashable a) => WQO a -> a -> a
   -> (Maybe (EquivalenceClass a), Maybe (EquivalenceClass a))
@@ -109,6 +118,8 @@ getEquivalenceClasses (WQO classes _) source target = (t, u)
     u = L.find (EC.isMember target) classes'
     classes' = S.toList classes
 
+-- | Like @getEquivalenceClasses@ but only yields a result
+-- if classes of equivalence are found for both elements.
 {-# INLINE getEquivalenceClasses' #-}
 getEquivalenceClasses'
   :: (Ord a, Hashable a)
@@ -125,6 +136,8 @@ getEquivalenceClasses' (WQO classes _) source target =
   where
     classes' = S.toList classes
 
+-- | @getRelation (>=) a b == QEQ@ iff @a >= b@
+--   @getRelation (>=) a b == QGT@ iff @a > b@
 {-# INLINE getRelation #-}
 getRelation :: (Ord a, Eq a, Hashable a) => WQO a -> a -> a -> Maybe QORelation
 getRelation _ f g | f == g = Just QEQ
@@ -138,6 +151,8 @@ getRelation wqo@(WQO _ po) source target
                 else Nothing
     | otherwise = Nothing
 
+-- | @expandEC (>=) ec x@ adds an element @x@ to the equivalence class
+-- @ec@ of @(>=)@.
 expandEC :: (Ord a, Eq a, Hashable a) => WQO a -> EquivalenceClass a -> a -> WQO a
 expandEC (WQO ecs po) ec x = WQO ecs' po'
     where
@@ -145,6 +160,8 @@ expandEC (WQO ecs po) ec x = WQO ecs' po'
         ecs' = S.insert ec' $ S.delete ec ecs
         po'  = PO.replaceUnsafe [ec] ec' po
 
+-- | @mergeECs (>=) ec1 ec2@ combines the equivalence classes @ec1@ and @ec2@
+-- of @(>=)@.
 mergeECs :: (Ord a, Eq a, Hashable a) => WQO a -> EquivalenceClass a -> EquivalenceClass a -> WQO a
 mergeECs (WQO ecs po) ec1 ec2 = WQO ecs' po'
     where
@@ -311,7 +328,7 @@ insert wqo@(WQO ecs po) (f, g, QGT) = ValidExtension $
         (Just ec1, Just ec2) -> 
             WQO ecs (PO.insertUnsafe po ec1 ec2)
 
-
+-- | Generates all the possible orderings of the elements in the given set.
 orderings :: forall a. (Ord a, Eq a, Hashable a) => S.Set a -> S.Set (WQO a)
 orderings ops = go S.empty (S.singleton empty) where
 
