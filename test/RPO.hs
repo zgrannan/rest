@@ -3,43 +3,52 @@
 
 module RPO where
 
-import Debug.Trace
-import Control.Monad.Identity
 import Data.Hashable
-import DSL
 import Nat
 import Language.REST.Op
-import Language.REST.OpOrdering as OpOrdering
+import Language.REST.Internal.OpOrdering as OpOrdering
 import Language.REST.WQOConstraints as OC
 import Language.REST.RuntimeTerm
 import Language.REST.RPO
-import Language.REST.WQO
+import Language.REST.Internal.WQO
 
 import Data.Maybe as Mb
 
+bigLeft, bigRight :: RuntimeTerm
 bigLeft = "f(h(s(g(z,nil))),f(g(z,z),nil,h(z)),f(z,nil,z) + g(z,s(z)))"
 bigRight = "g(g(g(s(nil),z),s(z) + z),g(s(s(h(nil))),s(z)))"
 
+massiveLeft :: RuntimeTerm
 massiveLeft = "concat(ite(isLeaf(la1Bz), cons(LeaflqdcselectLeaf1(la1Bz), nil), concat(flatten(NodelqdcselectNode1(la1Bz)), flatten(NodelqdcselectNode2(la1Bz)))), concat(ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA)))), nsa1By))"
 
+massiveRight :: RuntimeTerm
 massiveRight = "concat(ite(isLeaf(la1Bz), cons(LeaflqdcselectLeaf1(la1Bz), nil), concat(flatten(NodelqdcselectNode1(la1Bz)), flatten(NodelqdcselectNode2(la1Bz)))), ite(isnil(ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA))))), nsa1By, cons(lqdcselectcons1(ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA))))), concat(lqdcselectcons2(ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA))))), nsa1By))))"
 
+listsLeft :: RuntimeTerm
 listsLeft = "concat(ite(isNil(ysaLe), Nil, concat(reverse(lqdcselectcons2(ysaLe)), cons(lqdcselectcons1(ysaLe), Nil))), concat(reverse(lqdcselectcons2(dsdOz)), cons(lqdcselectcons1(dsdOz), Nil)))"
 
+listsRight :: RuntimeTerm
 listsRight = "concat(concat(ite(isNil(ysaLe), Nil, concat(reverse(lqdcselectcons2(ysaLe)), cons(lqdcselectcons1(ysaLe), Nil))), reverse(lqdcselectcons2(dsdOz))), cons(lqdcselectcons1(dsdOz), Nil))"
 
+flattenLeft2 :: RuntimeTerm
 flattenLeft2 = "concat(ite(isLeaf(la1Bz), cons(LeaflqdcselectLeaf1(la1Bz), nil), concat(flatten(NodelqdcselectNode1(la1Bz)), flatten(NodelqdcselectNode2(la1Bz)))), concat(ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA)))), nsa1By))"
 
+flattenRight2 :: RuntimeTerm
 flattenRight2 = "concat(concat(ite(isLeaf(la1Bz), cons(LeaflqdcselectLeaf1(la1Bz), nil), concat(flatten(NodelqdcselectNode1(la1Bz)), flatten(NodelqdcselectNode2(la1Bz)))), ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA))))), nsa1By)"
 
+flattenSeq :: [RuntimeTerm]
 flattenSeq = [
         "concat(flatten(la1Bz), concat(flatten(ra1BA), nsa1By))",
         "concat(ite(isLeaf(la1Bz), cons(LeaflqdcselectLeaf1(la1Bz), nil), concat(flatten(NodelqdcselectNode1(la1Bz)), flatten(NodelqdcselectNode2(la1Bz)))), concat(ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA)))), nsa1By))",
         "concat(concat(ite(isLeaf(la1Bz), cons(LeaflqdcselectLeaf1(la1Bz), nil), concat(flatten(NodelqdcselectNode1(la1Bz)), flatten(NodelqdcselectNode2(la1Bz)))), ite(isLeaf(ra1BA), cons(LeaflqdcselectLeaf1(ra1BA), nil), concat(flatten(NodelqdcselectNode1(ra1BA)), flatten(NodelqdcselectNode2(ra1BA))))), nsa1By)"
   ]
 
+rpoSeq
+  :: (?impl::WQOConstraints impl m, Show (impl Op), Eq (impl Op), Hashable (impl Op))
+  => [RuntimeTerm]
+  -> impl Op
 rpoSeq xs = go (OC.noConstraints ?impl) xs where
-  go c (t:u:xs) = OC.intersect ?impl c (rpoGTE t u)
+  go c (t:u:_xss) = OC.intersect ?impl c (rpoGTE t u)
   go c _        = c
 
 

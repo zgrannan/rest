@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 
-module Language.REST.OpOrdering (
+module Language.REST.Internal.OpOrdering (
     empty
   , merge
   , OpOrdering
@@ -13,26 +13,21 @@ module Language.REST.OpOrdering (
   , opEQ
   , (=.)
   , (>.)
+  , (<.)
   , parseOO
   ) where
 
 import Prelude hiding (GT, EQ)
-import GHC.Generics (Generic)
-import Data.Hashable
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Data.HashSet as S
 import Text.ParserCombinators.Parsec.Char
 import Text.ParserCombinators.Parsec
-import Text.Parsec (parserTrace)
+import Text.Parsec (Parsec)
 
-import qualified Language.REST.PartialOrder as PO
 import           Language.REST.Op
-import           Language.REST.Types
-import           Language.REST.WQO as WQO
+import           Language.REST.Internal.WQO as WQO
 
 
-type PartialOrder = PO.PartialOrder
 type OpOrdering   = WQO Op
 
 
@@ -69,6 +64,7 @@ parseOO str =
     Left err -> error (show err)
     Right t  -> t
 
+parser :: Parsec String u (Maybe OpOrdering)
 parser = fmap mergeAll' (sepBy1 atom conj) where
 
   mergeAll' :: [Maybe OpOrdering] -> Maybe OpOrdering

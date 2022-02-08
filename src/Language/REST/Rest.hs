@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# OPTIONS_GHC -Wno-error=deprecations #-}
 
 module Language.REST.Rest (
     rest
@@ -22,21 +23,21 @@ import qualified Data.HashSet as S
 import qualified Data.List    as L
 import qualified Data.HashMap.Strict     as M
 import qualified Data.Maybe   as Mb
-import Debug.Trace
-import Text.Printf
 
 import Language.REST.OCAlgebra as AC
 import Language.REST.RewriteRule
 import Language.REST.Path
-import Language.REST.Types
 import Language.REST.ExploredTerms as ET
-import Language.REST.WorkStrategy
+import Language.REST.Internal.WorkStrategy
 
 newtype PathsResult rule term oc = PathsResult (S.HashSet (Path rule term oc))
 
 newtype TermsResult rule term oc = TermsResult (S.HashSet term)
 
+pathsResult :: PathsResult rule term oc
 pathsResult = PathsResult S.empty
+
+termsResult :: TermsResult rule term oc
 termsResult = TermsResult S.empty
 
 class RESTResult a where
@@ -100,7 +101,7 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
       , length steps >= length (fst targetPath)
       = rest' state{working = remaining}
     rest' state@(RESTState fin paths et targetPath) = do
-      se <- shouldExplore (toET t) lastOrdering et
+      se <- shouldExplore (toET ptTerm) lastOrdering et
       if se
         then do
           evalRWs <- candidates re
@@ -111,7 +112,7 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
           rest' (state{ working = remaining })
       where
 
-        (path@(ts, PathTerm t _), remaining) = ws paths toET et
+        (path@(ts, PathTerm ptTerm _), remaining) = ws paths toET et
 
         lastOrdering :: oc
         lastOrdering = if L.null ts then top ocImpl else ordering $ last ts
@@ -128,14 +129,14 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
             res :: m [(term, rule)]
             res = runListT $ do
               r   <- liftSet rules
-              t'  <- ListT $ S.toList <$> apply t r
+              t'  <- ListT $ S.toList <$> apply ptTerm r
               return (t', r)
 
         accepted :: (S.HashSet (term, rule)) -> m (M.HashMap term oc)
         accepted userRWs = M.fromList <$> (runListT $ do
           t' <- liftSet $ S.map fst userRWs
           guard $ L.notElem t' tsTerms
-          let ord = refine ocImpl lastOrdering t t'
+          let ord = refine ocImpl lastOrdering ptTerm t'
           ok <- lift $ isSat ocImpl ord
           guard ok
           return (t', ord))
@@ -154,9 +155,9 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
                   let
                     deps = S.map (toET . fst) (S.union evalRWs userRWs)
                   in
-                    ET.insert (toET t) lastOrdering deps et
+                    ET.insert (toET ptTerm) lastOrdering deps et
               , targetPath =
-                if Just t == target then
+                if Just ptTerm == target then
                   case targetPath of
                     Just (tp, _) | length tp <= length ts -> targetPath
                     _                                     -> Just (ts, pt)
@@ -165,7 +166,7 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
               }
 
 
-            pt = PathTerm t rejectedUserRewrites
+            pt = PathTerm ptTerm rejectedUserRewrites
 
             rejectedUserRewrites :: S.HashSet (term, rule)
             rejectedUserRewrites = S.fromList $ do
@@ -178,7 +179,7 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
             evalPaths = runListT $ do
               (t', r) <- ListT $ return (S.toList evalRWs)
               guard $ L.notElem t' tsTerms
-              let ord = refine ocImpl lastOrdering t t'
+              let ord = refine ocImpl lastOrdering ptTerm t'
               lift (shouldExplore (toET t') ord et) >>= guard
               return (ts ++ [Step pt r ord True], PathTerm t' S.empty)
 

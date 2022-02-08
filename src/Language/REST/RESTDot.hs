@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Language.REST.RESTDot where
@@ -9,7 +10,6 @@ import qualified Data.HashSet as HS
 
 import Language.REST.Dot
 import Language.REST.Path
-import Language.REST.Types
 
 data PrettyPrinter rule term ord = PrettyPrinter
   { printRule    :: rule -> String
@@ -24,10 +24,10 @@ rejNodeID gt p term = getNodeID gt p ++ show (abs $ hash term)
 rejectedNodes :: forall rule term a . (Hashable rule, Hashable term, Hashable a) =>
   GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Node
 rejectedNodes _ pp _ | not (showRejects pp) = S.empty
-rejectedNodes gt pp p@(steps, (PathTerm _ rejected)) = S.fromList $ map go (HS.toList rejected)
+rejectedNodes gt pp p@(_steps, (PathTerm {rejected})) = S.fromList $ map go (HS.toList rejected)
     where
         go :: (term, rule) -> Node
-        go (term, r) = Node (rejNodeID gt p term) (printTerm pp term) "dashed" "red"
+        go (rejTerm, _r) = Node (rejNodeID gt p rejTerm) (printTerm pp rejTerm) "dashed" "red"
 
 
 getNodeID :: (Hashable rule, Hashable term, Hashable a) => GraphType -> Path rule term a -> String
@@ -41,9 +41,9 @@ endNode :: (Hashable rule, Hashable term, Hashable a)
   => GraphType -> PrettyPrinter rule term a -> Path rule term a -> Node
 endNode gt pp p@(_, t) =
     let
-        nodeID = getNodeID gt p
+        thisNodeID = getNodeID gt p
     in
-        Node nodeID (printTerm pp (pathTerm t)) "solid" "black"
+        Node thisNodeID (printTerm pp (pathTerm t)) "solid" "black"
 
 toEdges :: forall rule term a . (Hashable rule, Hashable term, Hashable a) =>
   GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Edge
@@ -59,8 +59,8 @@ toEdges gt pp path = allRej `S.union` (S.fromList $ map toEdge (zip subs (tail s
           then S.fromList $ map go (HS.toList rej)
           else S.empty
             where
-                go (term, r) =
-                    Edge (nodeID (endNode gt pp p)) (rejNodeID gt p term) (printRule pp r) "red" " " "dotted"
+                go (rejTerm, r) =
+                    Edge (nodeID (endNode gt pp p)) (rejNodeID gt p rejTerm) (printRule pp r) "red" " " "dotted"
 
 
         toEdge :: (Path rule term a, Path rule term a) -> Edge
@@ -68,16 +68,16 @@ toEdges gt pp path = allRej `S.union` (S.fromList $ map toEdge (zip subs (tail s
             let
                 step        = last ts
                 color       = if (fromPLE step) then "brown" else "darkgreen"
-                subLabel    = printOrd pp (ordering step)
+                esubLabel    = printOrd pp (ordering step)
                 startNodeID = nodeID (endNode gt pp p0)
                 endNodeID   = nodeID (endNode gt pp p1)
             in
-                Edge startNodeID endNodeID (printRule pp (rule step)) color subLabel "solid"
+                Edge startNodeID endNodeID (printRule pp (rule step)) color esubLabel "solid"
 
 subPaths :: Path rule term a -> [Path rule term a]
-subPaths p@(xs, t) = map toPath (tail $ inits xs) ++ [p]
+subPaths p@(xs, _t) = map toPath (tail $ inits xs) ++ [p]
     where
-        toPath xs = (init xs, term (last xs))
+        toPath ys = (init ys, term (last ys))
 
 toNodes :: (Hashable rule, Hashable term, Hashable a) => GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Node
 toNodes gt pp path =

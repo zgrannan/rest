@@ -21,9 +21,8 @@ import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
-import Text.Parsec (ParsecT, endBy, sepBy)
+import Text.Parsec (endBy)
 import Text.Parsec.Prim
-import Text.ParserCombinators.Parsec (many)
 import Text.ParserCombinators.Parsec.Char
 import GHC.Generics (Generic)
 import GHC.IO.Handle
@@ -124,16 +123,16 @@ toFormula :: SMTExpr a -> T.Text
 toFormula = go False where
   go :: Bool -> SMTExpr a -> T.Text
   go _ (And [])         = "⊤"
-  go p (And ts)         = parens p $ T.intercalate " ∧ " $ map (go (not p)) ts
-  go p (Add ts)         = parens p $ T.intercalate " + " $ map (go (not p)) ts
-  go p (GTE t u)        = parens p $ T.intercalate " ≥ " $ map (go True) $ [t, u]
-  go p (Greater t u)    = parens p $ T.intercalate " > " $ map (go True) $ [t, u]
+  go p (And ts)         = eparens p $ T.intercalate " ∧ " $ map (go (not p)) ts
+  go p (Add ts)         = eparens p $ T.intercalate " + " $ map (go (not p)) ts
+  go p (GTE t u)        = eparens p $ T.intercalate " ≥ " $ map (go True) $ [t, u]
+  go p (Greater t u)    = eparens p $ T.intercalate " > " $ map (go True) $ [t, u]
   go _ (Var (SMTVar v)) = v
   go _ (Const c)        = T.pack (show c)
-  go _ e                = undefined
+  go _ _e               = undefined
 
-  parens True t = T.concat ["(", t, ")"]
-  parens False t = t
+  eparens True t = T.concat ["(", t, ")"]
+  eparens False t = t
 
 vars :: SMTExpr a -> S.Set T.Text
 vars (And ts)        = S.unions (map vars ts)
@@ -198,12 +197,15 @@ askCmds expr = varDecls ++ [SMTAssert expr, CheckSat] where
 
 type SolverHandle = (Handle, Handle)
 
+spawnZ3 :: IO (Handle, Handle)
 spawnZ3 = do
   (Just stdIn, Just stdOut, _, _) <- createProcess (proc "z3" ["-in"]) {std_in = CreatePipe, std_out = CreatePipe}
   return (stdIn, stdOut)
 
+killZ3 :: (Handle, b) -> IO ()
 killZ3 (stdIn, _) = hClose stdIn
 
+withZ3 :: MonadIO m => ((Handle, Handle) -> m b) -> m b
 withZ3 f =
   do
     z3     <- liftIO $ spawnZ3

@@ -20,17 +20,17 @@ import Control.Monad.Identity
 import Control.Monad.State.Strict
 import qualified Data.List as L
 import Data.Hashable
-import Debug.Trace
 import qualified Data.Set as S
 
 import Prelude hiding (GT, EQ)
 
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 import Language.REST.Types
 import Language.REST.SMT (ToSMTVar)
 
 type WQO = WQO.WQO
 
+trace' :: String -> a -> a
 trace' _ x = x
 
 data WQOConstraints impl m = OC

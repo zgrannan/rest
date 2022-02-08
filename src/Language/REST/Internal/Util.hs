@@ -1,4 +1,4 @@
-module Language.REST.Util where
+module Language.REST.Internal.Util where
 
 import qualified Data.List as L
 

@@ -3,11 +3,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Language.REST.Rewrite where
+module Language.REST.Internal.Rewrite where
 
 import GHC.Generics (Generic)
 
-import           Control.Monad.Identity
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
@@ -23,7 +22,10 @@ data Rewrite = Rewrite MetaTerm MetaTerm (Maybe String)
 
 type Subst = M.HashMap String RuntimeTerm
 
-getName (Rewrite t u n) = n
+getName :: Rewrite -> Maybe String
+getName (Rewrite _t _u n) = n
+
+named :: Rewrite -> String -> Rewrite
 named (Rewrite t u _) n = Rewrite t u (Just n)
 
 subst :: Subst -> MetaTerm -> RuntimeTerm

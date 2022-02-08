@@ -7,7 +7,6 @@
 module Language.REST.OCToAbstract where
 
 import Data.Hashable
-import Debug.Trace
 
 import Control.Monad.Identity
 

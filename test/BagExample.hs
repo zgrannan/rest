@@ -16,12 +16,12 @@ import Language.REST.ExploredTerms
 import Language.REST.RESTDot
 import Language.REST.OCToAbstract
 import Language.REST.RewriteRule
-import qualified Language.REST.MultiSet as M
-import Language.REST.MultisetOrder
+import qualified Language.REST.Internal.MultiSet as M
+import Language.REST.Internal.MultisetOrder
 import Language.REST.Rest
 import Language.REST.WQOConstraints as OC
 import Language.REST.WQOConstraints.Strict as SC
-import Language.REST.WorkStrategy
+import Language.REST.Internal.WorkStrategy
 import Language.REST.Types
 import Language.REST.SMT hiding (GTE)
 
@@ -57,11 +57,12 @@ data Rewrite = Rewrite Bag (S.HashSet Bag)
   deriving (Eq, Ord, Generic, Hashable)
 
 infixr 1 ~>
+(~>) :: String -> [String] -> [String]
 (~>) = (:)
 
 instance RewriteRule IO Rewrite Bag where
-  apply bag (Rewrite bag' result) | bag == bag' = return result
-  apply _ _ | otherwise                         = return S.empty
+  apply bag1 (Rewrite bag' result) | bag1 == bag' = return result
+  apply _ _ | otherwise                           = return S.empty
 
 
 fromPath :: [String] -> S.HashSet Rewrite
@@ -75,6 +76,7 @@ fromPath xs = S.fromList $ map go (zip xs (tail xs))
 fromPaths :: [[String]] -> S.HashSet Rewrite
 fromPaths paths = S.unions $ map fromPath paths
 
+start :: String
 start = "AAB"
 
 rules :: S.HashSet Rewrite
@@ -84,7 +86,7 @@ rules = fromPaths $
   ]
 
 showBag :: Bag -> String
-showBag (Bag bag) = "{ " ++ (L.intercalate ", " $ map return bag) ++ " }"
+showBag (Bag bag1) = "{ " ++ (L.intercalate ", " $ map return bag1) ++ " }"
 
 showRule :: Rewrite -> String
 showRule _ = ""
@@ -96,6 +98,7 @@ compareChar impl EQ  _  c1 c2 | c1 /= c2 = return $ OC.unsatisfiable impl
 compareChar impl r   oc c1 c2            = return $ intersectRelation impl oc (c1, c2, r)
 
 
+mkBagGraph :: IO ()
 mkBagGraph =
   do
     (PathsResult paths, _) <- rest

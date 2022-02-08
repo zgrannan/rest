@@ -8,19 +8,13 @@ module Language.REST.Core where
 import Prelude hiding (GT, EQ)
 
 import           Debug.Trace                    ( trace )
-import           Data.Functor.Identity
 import qualified Data.List                     as L
 import qualified Data.HashSet                      as S
 
 import           Language.REST.OCAlgebra
-import           Language.REST.Op
-import           Language.REST.WQOConstraints
-import           Language.REST.RPO
-import           Language.REST.OpOrdering as OO
 import           Language.REST.Types
 import qualified Language.REST.MetaTerm as MT
-import           Language.REST.WQO
-import           Language.REST.Rewrite
+import           Language.REST.Internal.Rewrite
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.RewriteRule
 
@@ -57,9 +51,9 @@ termPathStr terms = L.intercalate " --> \n" (map pp terms)
     pp = prettyPrint (PPArgs [] [] (const Nothing))
 
 eval :: S.HashSet Rewrite -> RuntimeTerm -> IO RuntimeTerm
-eval rws t =
+eval rws t0 =
   do
-    result <- mapM (apply t) (S.toList rws)
+    result <- mapM (apply t0) (S.toList rws)
     case S.toList $ S.unions result of
-      []      -> return t
+      []      -> return t0
       (t : _) -> eval rws t

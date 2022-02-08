@@ -34,17 +34,14 @@ import Language.REST.KBO (kbo)
 import Language.REST.WQOConstraints as OC
 import Language.REST.Op
 import Language.REST.RPO
-import Language.REST.OpOrdering
+import Language.REST.Internal.OpOrdering
 import Language.REST.RuntimeTerm
 import Language.REST.MetaTerm as MT
-import Language.REST.Rewrite
+import Language.REST.Internal.Rewrite
 import Language.REST.Rest
-import Language.REST.Path
 import Language.REST.SMT
-import qualified Language.REST.WQOConstraints.Lazy as LC
-import qualified Language.REST.WQOConstraints.Strict as SC
 import qualified Language.REST.WQOConstraints.ADT as AC
-import Language.REST.WorkStrategy
+import Language.REST.Internal.WorkStrategy
 import qualified Data.Maybe as Mb
 import qualified Data.HashSet as S
 
@@ -88,11 +85,11 @@ instance Testable (IO Bool) where
   toTest = id
 
 runTestSuite :: Testable a => String -> [(String, a)] -> IO ()
-runTestSuite name tests = do
+runTestSuite name tests1 = do
   putStrLn $ "Running test suite: " ++ name
-  mapM_ (runTest . go) tests
+  mapM_ (runTest . go) tests1
   where
-    go (name, test) = (name, toTest test)
+    go (name1, test) = (name1, toTest test)
 
 
 orderingTests :: (Hashable (oc Op), Show (oc Op), Ord (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
@@ -156,29 +153,29 @@ arithTests impl =
       return $ termToInt t' == Just n
 
 
-    termTest = proveEQ impl evalRWs userRWs (App f [t1]) zero
+    termTest = proveEQ impl evalRWs userRWs (App f1 [t1]) zero
       where
         evalRWs = S.union termEvalRWs  A.evalRWs
-        userRWs = S.insert (MT.RWApp g [x] ~> MT.RWApp f [x]) A.userRWs
+        userRWs = S.insert (MT.RWApp g1 [x] ~> MT.RWApp f1 [x]) A.userRWs
         termEvalRWs = S.fromList
-          [  MT.RWApp f [x] ~> MT.RWApp g [suc' x]
-          ,  MT.RWApp g [x] ~> zero'
+          [  MT.RWApp f1 [x] ~> MT.RWApp g1 [suc' x]
+          ,  MT.RWApp g1 [x] ~> zero'
           ]
-        f = Op "f"
-        g = Op "g"
+        f1 = Op "f"
+        g1 = Op "g"
 
-    termTest2 = proveEQ impl evalRWs userRWs (App f [zero]) (App g [zero])
+    termTest2 = proveEQ impl evalRWs userRWs (App f1 [zero]) (App g1 [zero])
       where
         evalRWs = S.union termEvalRWs A.evalRWs
-        userRWs = S.insert (MT.RWApp f [x] ~> MT.RWApp g [(suc' (suc' x))]) A.userRWs
+        userRWs = S.insert (MT.RWApp f1 [x] ~> MT.RWApp g1 [(suc' (suc' x))]) A.userRWs
         termEvalRWs = S.fromList
-          [  MT.RWApp f [suc' x] ~> MT.RWApp g [suc' x]
-          ,  MT.RWApp f [zero']  ~> zero'
-          ,  MT.RWApp g [suc' x] ~> MT.RWApp f [x]
-          ,  MT.RWApp g [zero']  ~> zero'
+          [  MT.RWApp f1 [suc' x] ~> MT.RWApp g1 [suc' x]
+          ,  MT.RWApp f1 [zero']  ~> zero'
+          ,  MT.RWApp g1 [suc' x] ~> MT.RWApp f1 [x]
+          ,  MT.RWApp g1 [zero']  ~> zero'
           ]
-        f = Op "f"
-        g = Op "g"
+        f1 = Op "f"
+        g1 = Op "g"
 
 
     eq = proveEQ impl A.evalRWs A.userRWs
@@ -214,6 +211,7 @@ completeTests impl =
     s1      = Op "s1"
     s2      = Op "s2"
 
+ocTests :: (Handle, Handle) -> IO ()
 ocTests z3 = do
   runTestSuite "LazyOC" LazyOC.tests
   runTestSuite "StrictOC" StrictOC.tests
@@ -229,8 +227,8 @@ main = spawnZ3 >>= go where
     runTestSuite ("Arith" ++ implName) (withSkips $ arithTests impl)
     runTestSuite ("Complete" ++ implName) (withSkips $ completeTests impl)
     where
-      withSkips tests = do
-        (name, test) <- tests
+      withSkips tests1 = do
+        (name, test) <- tests1
         guard $ L.notElem name toSkip
         return (name, test)
 
@@ -241,7 +239,7 @@ main = spawnZ3 >>= go where
       putStrLn "Running REST Test Suite"
       runTestSuite "SMT" SMT.tests
       runTestSuite "KBO" (KBO.tests z3)
-      QuickCheckTests.tests
+      _ <- QuickCheckTests.tests
       runTestSuite "OpOrdering" OpOrdering.tests
       ocTests z3
       runTestSuite "MultisetOrder" MultisetOrder.tests

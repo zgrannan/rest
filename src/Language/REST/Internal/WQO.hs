@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Language.REST.WQO (
+module Language.REST.Internal.WQO (
       empty
     , insert
     , insertMaybe
@@ -30,14 +30,12 @@ import qualified Data.Map as M
 import Control.Monad
 import Data.Hashable
 import Data.Maybe
-import Debug.Trace
 import qualified Data.List as L
 import qualified Data.Set as S
 
-import qualified Language.REST.EquivalenceClass as EC
-import qualified Language.REST.PartialOrder as PO
+import qualified Language.REST.Internal.EquivalenceClass as EC
+import qualified Language.REST.Internal.PartialOrder as PO
 import Language.REST.Op
-import Language.REST.Types
 import Language.REST.SMT
 
 type PartialOrder     = PO.PartialOrder
@@ -62,13 +60,15 @@ instance {-# OVERLAPPING #-} ToSMTVar a Int => ToSMT (WQO a) Bool where
       return $ Equal (map toSMT' ecl)
 
     posSMT = do
-      (ec, vars) <- PO.toDescsList po
-      var        <- S.toList vars
+      (ec, vs) <- PO.toDescsList po
+      var        <- S.toList vs
       return $ Greater (toSMT $ EC.head ec) (toSMT $ EC.head var)
 
 
-
+getPO :: WQO a -> PartialOrder (EquivalenceClass a)
 getPO (WQO _ po)  = po
+
+getECs :: WQO a -> S.Set (EquivalenceClass a)
 getECs (WQO ecs _) = ecs
 
 -- Invariant: the first set contains all ECs
@@ -110,6 +110,12 @@ getEquivalenceClasses (WQO classes _) source target = (t, u)
     classes' = S.toList classes
 
 {-# INLINE getEquivalenceClasses' #-}
+getEquivalenceClasses'
+  :: (Ord a, Hashable a)
+  => WQO a
+  -> a
+  -> a
+  -> Maybe (EC.EquivalenceClass a, EC.EquivalenceClass a)
 getEquivalenceClasses' (WQO classes _) source target =
   do
     t <- L.find (EC.isMember source) classes'
@@ -178,6 +184,7 @@ mergeAll (x : x' : xs) = do
   y <- merge x x'
   mergeAll (y : xs)
 
+trace' :: String -> a -> a
 trace' _ x = x
 
 {-# INLINE merge #-}

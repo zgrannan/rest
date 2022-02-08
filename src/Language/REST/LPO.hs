@@ -12,14 +12,22 @@ import Prelude hiding (EQ, GT, lex)
 
 import Control.Monad.Identity
 import Data.Hashable
-import Debug.Trace
 
 import           Language.REST.Op
-import           Language.REST.OpOrdering as OpOrdering
+import           Language.REST.Internal.OpOrdering as OpOrdering
 import           Language.REST.WQOConstraints as OC
 import           Language.REST.Types
 import           Language.REST.RuntimeTerm
 
+lex
+  :: (Eq a, Ord b, Hashable b)
+  => WQOConstraints impl m
+  -> Bool
+  -> impl b
+  -> (WQOConstraints impl m -> Relation -> impl b -> a -> a -> impl b)
+  -> [a]
+  -> [a]
+  -> impl b
 lex oc strict cs f (t:ts) (u:us) | t == u = lex oc strict cs f ts us
 lex oc strict cs f (t:ts) (u:us) = union oc case1 case2
   where
@@ -38,7 +46,7 @@ lex oc strict cs _ []    []    = if strict then unsatisfiable oc else cs
 lpo' :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) =>
   Bool -> WQOConstraints oc m -> Relation -> oc Op -> RuntimeTerm -> RuntimeTerm -> oc Op
 -- lpo' False oc EQ cs t u = intersect oc (lpo' False oc GTE cs t u) (lpo' False oc GTE cs u t)
-lpo' False oc EQ cs (App f ts) (App g us) | length ts /= length us = unsatisfiable oc
+lpo' False oc EQ _cs (App _f ts) (App _g us) | length ts /= length us = unsatisfiable oc
 lpo' False oc EQ cs (App f ts) (App g us) =
   let
     cs'  = intersect oc cs (singleton oc $ f =. g)

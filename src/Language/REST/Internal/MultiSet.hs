@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.MultiSet
+module Language.REST.Internal.MultiSet
   ( MultiSet
   , delete
   , deleteMany
@@ -18,7 +18,7 @@ module Language.REST.MultiSet
   , toSet
   ) where
 
-import Prelude hiding (null, filter, delete)
+import Prelude hiding (null, filter)
 
 import GHC.Generics
 import Data.Hashable

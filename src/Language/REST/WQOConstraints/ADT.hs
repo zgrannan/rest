@@ -17,11 +17,11 @@ import Control.Monad.State.Lazy
 import qualified Data.Set as S
 import qualified Data.Maybe as Mb
 import qualified Data.Map.Strict as M
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 import qualified Language.REST.WQOConstraints as OC
 import Language.REST.SMT
 import Language.REST.Op
-import System.IO.Unsafe
+import System.IO (Handle)
 import Text.Printf
 
 type WQO = WQO.WQO
@@ -92,6 +92,7 @@ intersect (Intersect (Sat w1) t1) (Sat w2) =
 #endif
 intersect t1 t2            = Intersect t1 t2
 
+union :: Eq a => ConstraintsADT a -> ConstraintsADT a -> ConstraintsADT a
 union (Sat w) _            | w == WQO.empty = Sat w
 union _            (Sat w) | w == WQO.empty = Sat w
 union (Intersect a b)  c | a == c || b == c = c
@@ -102,17 +103,30 @@ union s Unsat     = s
 union c1 c2 | c1 == c2 = c1
 union c1 c2            = Union c1 c2
 
+addConstraint
+ :: (Ord a, Hashable a) => WQO a -> ConstraintsADT a -> ConstraintsADT a
 addConstraint o c = intersect (Sat o) c
 
+relevantConstraints
+  :: (Eq a, Ord a, Hashable a) => ConstraintsADT a -> S.Set a -> S.Set a -> ConstraintsADT a
 relevantConstraints c _ _ = c
 
+notStrongerThan
+  :: (Eq a, ToSMTVar a Int)
+  => ConstraintsADT a
+  -> ConstraintsADT a
+  -> SMTExpr Bool
 notStrongerThan t1 t2 | t1 == t2            = smtTrue
 notStrongerThan t1 _  | t1 == noConstraints = smtTrue
 notStrongerThan t1 t2 | otherwise           = Implies (toSMT t2) (toSMT t1)
 
+noConstraints :: ConstraintsADT a
 noConstraints = Sat (WQO.empty)
+
+unsatisfiable :: ConstraintsADT a
 unsatisfiable = Unsat
 
+trace' :: String -> a -> a
 trace' = trace
 
 {-# SPECIALIZE getConstraints :: ConstraintsADT Op -> [WQO Op] #-}
@@ -133,25 +147,25 @@ cached :: (Ord a) => ConstraintsADT a -> GCMonad a -> GCMonad a
 cached key thunk = do
   cache <- gets cs
   case M.lookup key cache of
-    Just result -> trace' ("ADT Cache hit") $ return result
-    Nothing     -> trace' ("ADT Cache miss") $ do
-      result <- trace' "Do thunk" thunk
-      trace' "Done" $ modify (\st -> st{cs = M.insert key result (cs st)})
+    Just result -> trace'' ("ADT Cache hit") $ return result
+    Nothing     -> trace'' ("ADT Cache miss") $ do
+      result <- trace'' "Do thunk" thunk
+      trace'' "Done" $ modify (\st -> st{cs = M.insert key result (cs st)})
       return result
  where
-   trace' _  x = x
+   trace'' _  x = x
    -- trace' = trace
 
 cached' :: (Hashable a, Show a, Ord a) => (WQO a, WQO a) -> Maybe (WQO a) -> State (GCState a) (Maybe (WQO a))
 cached' (lhs, rhs) thunk = do
   cache <- gets ms
   case M.lookup (lhs, rhs) cache of
-    Just result -> trace' ("WQO Cache hit") $ return result
-    Nothing     -> trace' ("WQO Cache miss" ++ show (lhs, rhs)) $ do
-      trace' "Done" $ modify (\st -> st{ms = M.insert (rhs, lhs) thunk $ M.insert (lhs, rhs) thunk (ms st)})
+    Just result -> trace'' ("WQO Cache hit") $ return result
+    Nothing     -> trace'' ("WQO Cache miss" ++ show (lhs, rhs)) $ do
+      trace'' "Done" $ modify (\st -> st{ms = M.insert (rhs, lhs) thunk $ M.insert (lhs, rhs) thunk (ms st)})
       return thunk
  where
-   trace' _  x = x
+   trace'' _  x = x
    -- trace' = trace
 
 getConstraints' :: forall a. (Show a, Ord a, Hashable a) => ConstraintsADT a -> State (GCState a) [WQO a]
@@ -186,7 +200,7 @@ getConstraints' c@(Intersect lhs rhs) = cached c $ do
         else (rhs, lhs)
 
 dnfSize :: ConstraintsADT a -> Int
-dnfSize (Sat w)       = 1
+dnfSize (Sat _w)       = 1
 dnfSize Unsat         = 0
 dnfSize (Union w1 w2) = dnfSize w1 + dnfSize w2
 dnfSize (Intersect w1 w2) = dnfSize w1 * dnfSize w2
@@ -199,13 +213,19 @@ dnfSize (Intersect w1 w2) = dnfSize w1 * dnfSize w2
 --   in
 --     S.unions
 
-simplify adt = undefined
+simplify :: (Eq a, Ord a, Hashable a) => ConstraintsADT a -> ConstraintsADT a
+simplify _adt = undefined
 -- simplify adt = case getConstraints adt of
 --   []     -> Unsat
 --   (x:xs) -> foldl go (Sat x) xs
 --   where
 --     go a x = Union (Sat x) a
 
+permits
+  :: (Ord a, Hashable a, Show a)
+  => ConstraintsADT a
+  -> WQO.WQO a
+  -> Bool
 permits adt wqo = any (`WQO.notStrongerThan` wqo) (getConstraints adt)
 
 isSatisfiable :: (ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) => ConstraintsADT a -> SMTExpr Bool
@@ -227,8 +247,10 @@ instance (Eq a, Hashable a,  Show a) => Show (ConstraintsADT a) where
   show (Union w t )    = printf "(%s ∨\n %s)" (show w) (show t)
   show (Intersect w t) = printf "(%s ∧ %s)" (show w) (show t)
 
+adtOC :: (Handle, Handle) -> OC.WQOConstraints ConstraintsADT IO
 adtOC z3 = OC.liftC (checkSat' z3) adtOC'
 
+adtOC' :: OC.WQOConstraints ConstraintsADT SMTExpr
 adtOC' = OC.OC
   addConstraint
   intersect

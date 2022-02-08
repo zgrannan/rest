@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Language.REST.Types (
     prettyPrint
@@ -27,7 +28,6 @@ import           Text.Printf
 
 import           Language.REST.Op
 import           Language.REST.MetaTerm as MT
-import           Language.REST.RuntimeTerm as MT
 
 data PPArgs = PPArgs
   { ppReplace  :: [(T.Text, T.Text)]
@@ -50,14 +50,14 @@ prettyPrint (PPArgs substs infixOps custom) t = T.unpack $ go $ replaceAll $ toM
 
   go :: MT.MetaTerm -> T.Text
   go (MT.Var x) = T.pack x
-  go t | Just s <- custom t      = s
+  go mt | Just s <- custom mt    = s
   go (MT.RWApp (Op op) [t1, t2]) | Just op' <- L.lookup op infixOps
     = T.pack $ printf "%s %s %s" (goParens t1) op' (goParens t2)
   go (MT.RWApp (Op op) [])       = op
   go (MT.RWApp (Op op) xs)       = T.concat [op, "(" , T.intercalate ", " (map go xs) , ")"]
 
-  goParens t | needsParens t = T.pack $ printf "(%s)" (go t)
-  goParens t | otherwise     = go t
+  goParens mt | needsParens mt = T.pack $ printf "(%s)" (go mt)
+  goParens mt | otherwise      = go mt
 
   needsParens (MT.RWApp (Op op) _) = op `elem` (map fst infixOps)
   needsParens _                    = False

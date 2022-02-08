@@ -4,8 +4,8 @@ import Data.Hashable
 import qualified Data.Set as S
 
 import Language.REST.Dot
-import Language.REST.PartialOrder
-import Language.REST.WQO
+import Language.REST.Internal.PartialOrder
+import Language.REST.Internal.WQO
 
 toDigraph :: (Ord a, Hashable a, Show a) => WQO a -> DiGraph
 toDigraph wqo = digraph where

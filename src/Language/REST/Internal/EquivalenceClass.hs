@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.EquivalenceClass
+module Language.REST.Internal.EquivalenceClass
     ( isMember
     , isSingleton
     , insert
@@ -22,8 +22,7 @@ import qualified Data.Set as S
 import qualified Data.List as L
 import Prelude hiding (head)
 
-import Language.REST.Types
-import Language.REST.SMT
+import Language.REST.Types () -- Hashable (S.Set a)
 
 newtype EquivalenceClass a =
   EquivalenceClass (S.Set a) deriving (Ord, Eq, Generic, Hashable)
@@ -34,11 +33,13 @@ instance Show a => Show (EquivalenceClass a) where
 
 
 {-# INLINE isSubsetOf #-}
+isSubsetOf :: Ord a => EquivalenceClass a -> EquivalenceClass a -> Bool
 isSubsetOf (EquivalenceClass xs) (EquivalenceClass ys) = xs `S.isSubsetOf` ys
 
 head :: EquivalenceClass a -> a
 head (EquivalenceClass xs) = L.head $ S.toList xs
 
+isSingleton :: EquivalenceClass a -> Bool
 isSingleton (EquivalenceClass xs) = S.size xs == 1
 
 {-# INLINE isMember #-}
@@ -61,6 +62,7 @@ fromList = EquivalenceClass . S.fromList
 toList :: EquivalenceClass a -> [a]
 toList (EquivalenceClass s) = S.toList s
 
+toPairs :: EquivalenceClass b -> [(b, b)]
 toPairs e =
   let
     list = toList e
@@ -70,4 +72,5 @@ toPairs e =
     else zip list (tail list)
 
 {-# INLINE elems #-}
+elems :: EquivalenceClass a -> S.Set a
 elems (EquivalenceClass ec) = ec

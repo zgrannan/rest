@@ -24,8 +24,6 @@ module Language.REST.WQOConstraints.Strict (
     ) where
 
 import Control.Monad.Identity
-import Debug.Trace
-import Text.Printf
 import GHC.Generics (Generic)
 import Data.Hashable
 import Data.Maybe
@@ -33,7 +31,7 @@ import qualified Data.List as L
 import qualified Data.Set as S
 
 import qualified Language.REST.WQOConstraints as OC
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 
 type WQO = WQO.WQO
 
@@ -57,11 +55,13 @@ getOrdering :: StrictOC a -> Maybe (WQO a)
 getOrdering (StrictOC o) =
   listToMaybe (S.toList o)
 
+elems :: Ord a => StrictOC a -> S.Set a
 elems (StrictOC sets) = S.unions $ map WQO.elems (S.toList sets)
 
 noConstraints :: forall a. (Eq a, Ord a, Hashable a) => StrictOC a
 noConstraints = StrictOC (S.singleton (WQO.empty))
 
+unsatisfiable :: StrictOC a
 unsatisfiable = StrictOC S.empty
 
 isUnsatisfiable :: Eq a => StrictOC a -> Bool
@@ -71,7 +71,7 @@ isSatisfiable :: Eq a => StrictOC a -> Bool
 isSatisfiable c = c /= unsatisfiable
 
 notStrongerThan :: forall m a. (Monad m, Eq a, Ord a, Hashable a) => StrictOC a -> StrictOC a -> m Bool
-notStrongerThan (StrictOC lhs) (StrictOC rhs) = return False
+notStrongerThan (StrictOC _lhs) (StrictOC _rhs) = return False
 
 -- The difference of two constraints `a` and `b` is new constraints such that
 -- intersect (diff a b) b = a

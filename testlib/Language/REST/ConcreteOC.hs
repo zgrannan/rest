@@ -4,10 +4,10 @@
 module Language.REST.ConcreteOC where
 
 import qualified Language.REST.OCAlgebra as AOC
-import qualified Language.REST.WQO as WQO
+import qualified Language.REST.Internal.WQO as WQO
 import           Language.REST.RuntimeTerm
 import           Language.REST.RPO
-import           Language.REST.OpOrdering
+import           Language.REST.Internal.OpOrdering
 import           Language.REST.MetaTerm
 
 import Data.List as L
@@ -22,9 +22,11 @@ instance Show ConcreteOC where
   show (ConcreteOC _ (Just oo)) = show oo
   show _                        = "impossible"
 
+isSat :: ConcreteOC -> Bool
 isSat (ConcreteOC _ (Just _)) = True
 isSat _                       = False
 
+getOrdering :: [RuntimeTerm] -> Maybe OpOrdering
 getOrdering ts =
   let
     ops       = S.unions $ map termOps ts
@@ -41,9 +43,9 @@ orients ordering terms =
     all (uncurry $ synGTE ordering) pairs
 
 concreteOC :: Monad m => AOC.OCAlgebra ConcreteOC RuntimeTerm m
-concreteOC = AOC.OCAlgebra (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) union notStrongerThan
+concreteOC = AOC.OCAlgebra (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) constUnion notStrongerThan
   where
-    union t1 _ = t1
+    constUnion t1 _ = t1
     notStrongerThan _ _ = return False
     refine :: ConcreteOC -> RuntimeTerm -> RuntimeTerm -> ConcreteOC
     refine (ConcreteOC ts (Just o)) _ u =

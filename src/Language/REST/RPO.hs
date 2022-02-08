@@ -14,18 +14,17 @@ import Control.Monad.Identity
 import Control.Monad.State.Strict
 import GHC.Generics
 import Data.Hashable
-import qualified Data.List as L
 import qualified Data.HashMap.Strict as M
 
-import qualified Language.REST.MultiSet as MS
+import qualified Language.REST.Internal.MultiSet as MS
 import           Language.REST.Op
-import           Language.REST.OpOrdering as OpOrdering
+import           Language.REST.Internal.OpOrdering as OpOrdering
 import           Language.REST.WQOConstraints as OC
 import qualified Language.REST.MetaTerm as MT
 import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT
-import           Language.REST.MultisetOrder
-import           Language.REST.Util
+import           Language.REST.Internal.MultisetOrder
+import           Language.REST.Internal.Util
 
 instance Show RuntimeTerm where
   show (App op trms) =
@@ -103,8 +102,20 @@ rpo' oc r cs t@(App f ts) u@(App g us) = incDepth result
         , rpoMul oc GTE cs'                             ts               (MS.singleton u)
         ]
 
+rpoGTE
+  :: (?impl::WQOConstraints oc m, Hashable (oc Op), Eq (oc Op), Show (oc Op))
+  => RT.RuntimeTerm
+  -> RT.RuntimeTerm
+  -> oc Op
 rpoGTE t u = runIdentity $ rpoGTE' ?impl (noConstraints ?impl) t u
 
+rpoGTE'
+  :: (Show (oc Op), Eq (oc Op), Hashable (oc Op))
+  => WQOConstraints oc m'
+  -> oc Op
+  -> RT.RuntimeTerm
+  -> RT.RuntimeTerm
+  -> Identity (oc Op)
 rpoGTE' impl oc t u = rpo impl GTE oc t u
 
 
@@ -117,7 +128,7 @@ synGTE :: OpOrdering -> RT.RuntimeTerm -> RT.RuntimeTerm -> Bool
 synGTE o t u = synGTE' o (rpoTerm t) (rpoTerm u)
 
 synGTE' :: OpOrdering -> RuntimeTerm -> RuntimeTerm -> Bool
-synGTE' ordering t@(App f ts) u@(App g us)
+synGTE' ordering t@(App f _ts) (App g us)
   | opGT ordering f g
   = synGTM ordering (MS.singleton t) us
 synGTE' ordering (App f ts) (App g us)

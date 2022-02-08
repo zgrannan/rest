@@ -1,22 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Language.REST.KBO (kbo, kboGTE) where
 
-import Control.Monad.Identity
-
-import qualified Data.List as L
-
 import           Language.REST.OCAlgebra
-import qualified Language.REST.MultiSet as MS
 import           Language.REST.Op
-import           Language.REST.Types hiding (GTE)
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.SMT
-import           Language.REST.Util
+import           Language.REST.Internal.Util
 
 import qualified Data.Map as M
-
-type MultiSet = MS.MultiSet
 
 termOps :: RuntimeTerm -> [Op]
 termOps (App f xs) = f:(concatMap termOps xs)
@@ -25,7 +18,7 @@ arityConstraints :: RuntimeTerm -> SMTExpr Bool
 arityConstraints t = toExpr $ go M.empty t where
   go :: M.Map Op Int -> RuntimeTerm -> M.Map Op Int
   go m (App f [])  = M.insert f 1 m
-  go m (App f [t]) = go (M.insert f 1 m) t
+  go m (App f [targ]) = go (M.insert f 1 m) targ
   go m (App f ts)  = foldl go (M.insert f 0 m) ts
 
   toExpr m = And $ map toConstraint (M.toList m)
@@ -42,10 +35,10 @@ kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps 
 kbo :: SolverHandle -> OCAlgebra (SMTExpr Bool) RuntimeTerm IO
 kbo solver = OCAlgebra
   {  isSat           = checkSat' solver
-  ,  refine          = refine
+  ,  refine
   ,  top             = smtTrue
-  ,  union           = union
-  ,  notStrongerThan = notStrongerThan
+  ,  union
+  ,  notStrongerThan
   }
   where
     union  e1 e2          = Or [e1, e2]

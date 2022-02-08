@@ -31,9 +31,9 @@ subTerms t@(App f ts) = (t, id) : concatMap st [0..length ts - 1]
     st :: Int -> [(RuntimeTerm, (RuntimeTerm -> RuntimeTerm))]
     st i =
       let
-        t = ts !! i
+        ti = ts !! i
         go t' =
           App f $ take i ts ++ [t'] ++ drop (i + 1) ts
-        go2 (st, toFull) = (st, go . toFull)
+        go2 (srt, toFull) = (srt, go . toFull)
       in
-        map go2 (subTerms t)
+        map go2 (subTerms ti)

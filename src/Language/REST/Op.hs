@@ -9,7 +9,6 @@ import Data.Text as T
 import Data.Hashable
 import Data.String
 import GHC.Generics (Generic)
-import Data.Text
 import Language.REST.SMT
 
 newtype Op = Op Text deriving (Eq, Ord, Hashable, Generic)
