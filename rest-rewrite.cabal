@@ -6,8 +6,8 @@ category:           Rewriting
 maintainer:         Zack Grannan <zgrannan@cs.ubc.ca>
 author:             Zack Grannan <zgrannan@cs.ubc.ca>
 license:            BSD3
-description:        Rewriting library with online termination checking.
-synopsis:           Rewriting library with online termination checking
+description:        Rewriting library with online termination checking
+synopsis:           https://s3.us-west-1.wasabisys.com/zg-public/paper.pdf
 license-file:       LICENSE
 
 source-repository head
