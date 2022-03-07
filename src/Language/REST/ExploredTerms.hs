@@ -72,8 +72,8 @@ isFullyExplored t0 oc0 et@(ET _ (EF{subsumes}) _) = result where
   go _ []       = return True
   go seen (h:t) | Just (oc, trms) <- lookup h et
                 = do
-                    ns <- oc `subsumes` oc0
-                    if ns
+                    haveExploredAllCurrentlyPermitedOrderings <- oc `subsumes` oc0
+                    if haveExploredAllCurrentlyPermitedOrderings
                       then go seen' t
                       else
                         let ts = (S.union trms (S.fromList t)) `S.difference` seen'
