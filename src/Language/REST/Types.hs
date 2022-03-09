@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+
 
 module Language.REST.Types (
     prettyPrint
@@ -22,7 +22,6 @@ import           Data.Hashable
 import qualified Data.List as L
 import qualified Data.HashSet as S
 import qualified Data.Set as OS
-import qualified Data.Map as M
 import qualified Data.Text as T
 import           Text.Printf
 
@@ -69,11 +68,6 @@ instance Show Relation where
   show GTE = "≥"
   show EQ  = "≅"
 
-instance Hashable a => Hashable (OS.Set a) where
-  hashWithSalt i s = hashWithSalt i (OS.toList s)
-
-instance (Hashable a, Hashable b) => Hashable (M.Map a b) where
-  hashWithSalt i s = hashWithSalt i (M.toList s)
 
 toOrderedSet :: (Eq a, Hashable a, Ord a) => S.HashSet a -> OS.Set a
 toOrderedSet = OS.fromList . S.toList
