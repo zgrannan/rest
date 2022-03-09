@@ -22,7 +22,6 @@ import           Data.Hashable
 import qualified Data.List as L
 import qualified Data.HashSet as S
 import qualified Data.Set as OS
-import qualified Data.Map as M
 import qualified Data.Text as T
 import           Text.Printf
 
