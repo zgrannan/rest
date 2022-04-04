@@ -37,4 +37,6 @@ instance ToSMTVar Op Int where
         go ' '  = "_space_"
         go '∪'  = "_cup_"
         go '\\' = "_bslash_"
+        go '(' = "_lp_"
+        go ')' = "_rp_"
         go c    = singleton c
