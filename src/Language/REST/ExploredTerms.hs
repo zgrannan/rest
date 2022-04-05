@@ -1,5 +1,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+-- | This module implements the optimizations to prune the
+-- exploration of rewrites of terms that have been already considered
+-- (section 6.4 of the REST paper).
 module Language.REST.ExploredTerms
    (
      ExploredTerms
@@ -23,6 +26,7 @@ data ExploreStrategy =
 
 data ExploreFuncs c m = EF
   { union           :: c -> c -> c
+    -- | @c0 `subsumes` c1@ if @c0@ permits all orderings permited by @c1@
   , subsumes        :: c -> c -> m Bool
   }
 
@@ -53,6 +57,8 @@ insert t oc s (ET etMap ef@(EF union _ ) strategy) = ET (M.insertWith go t (oc, 
 lookup :: (Eq term, Hashable term) => term -> ExploredTerms term c m -> Maybe (c, (S.HashSet term))
 lookup t (ET etMap _ _) = M.lookup t etMap
 
+-- | @isFullyExplored t c M = not explorable(t, c)@ where @explorable@ is
+-- defined as in the REST paper.
 isFullyExplored :: forall term c m . (Monad m, Show term, Eq term, Hashable term, Eq c) =>
   term -> c -> ExploredTerms term c m -> m Bool
 isFullyExplored t0 oc0 et@(ET _ (EF{subsumes}) _) = result where
@@ -66,8 +72,8 @@ isFullyExplored t0 oc0 et@(ET _ (EF{subsumes}) _) = result where
   go _ []       = return True
   go seen (h:t) | Just (oc, trms) <- lookup h et
                 = do
-                    ns <- oc `subsumes` oc0
-                    if ns
+                    haveExploredAllCurrentlyPermitedOrderings <- oc `subsumes` oc0
+                    if haveExploredAllCurrentlyPermitedOrderings
                       then go seen' t
                       else
                         let ts = (S.union trms (S.fromList t)) `S.difference` seen'
