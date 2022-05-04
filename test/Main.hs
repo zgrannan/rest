@@ -84,12 +84,12 @@ data GraphParams = GraphParams
   {  gShowConstraints :: Bool
   ,  gTarget          :: Maybe String
   ,  gGraphType       :: GraphType
-  ,  gShowRejects     :: Bool
+  ,  gShowRejects     :: ShowRejectsOpt
   ,  gUseETOpt        :: Bool
   }
 
 defaultParams :: GraphParams
-defaultParams = GraphParams False Nothing Tree True True
+defaultParams = GraphParams False Nothing Tree ShowRejectsWithoutRule True
 
 withTarget :: String -> GraphParams -> GraphParams
 withTarget target0 gp = gp{gTarget = Just target0}
@@ -101,7 +101,7 @@ withNoETOpt :: GraphParams -> GraphParams
 withNoETOpt gp = gp{gUseETOpt = False}
 
 withHideRejects :: GraphParams -> GraphParams
-withHideRejects gp = gp{gShowRejects = False}
+withHideRejects gp = gp{gShowRejects = HideRejects}
 
 data SolverType = LPOStrict | LPO | RPO | KBO | Fuel Int
 
@@ -178,6 +178,7 @@ challengeRulesNoCommute = S.fromList
 
 main :: IO ()
 main = do
+  mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "pres1" "intersect(union(s₀,s₁), s₀)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams

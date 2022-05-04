@@ -11,11 +11,15 @@ import qualified Data.HashSet as HS
 import Language.REST.Dot
 import Language.REST.Path
 
+data ShowRejectsOpt =
+  ShowRejectsWithRule | ShowRejectsWithoutRule | HideRejects
+  deriving Eq
+
 data PrettyPrinter rule term ord = PrettyPrinter
   { printRule    :: rule -> String
   , printTerm    :: term -> String
   , printOrd     :: ord  -> String
-  , showRejects  :: Bool
+  , showRejects  :: ShowRejectsOpt
   }
 
 rejNodeID :: (Hashable rule, Hashable term, Hashable a) => GraphType -> Path rule term a -> term -> String
@@ -23,7 +27,7 @@ rejNodeID gt p term = getNodeID gt p ++ show (abs $ hash term)
 
 rejectedNodes :: forall rule term a . (Hashable rule, Hashable term, Hashable a) =>
   GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Node
-rejectedNodes _ pp _ | not (showRejects pp) = S.empty
+rejectedNodes _ pp _ | showRejects pp == HideRejects = S.empty
 rejectedNodes gt pp p@(_steps, (PathTerm {rejected})) = S.fromList $ map go (HS.toList rejected)
     where
         go :: (term, rule) -> Node
@@ -55,12 +59,16 @@ toEdges gt pp path = allRej `S.union` (S.fromList $ map toEdge (zip subs (tail s
 
         rejEdges :: Path rule term a -> S.Set Edge
         rejEdges p@(_, PathTerm _ rej) =
-          if showRejects pp
+          if showRejects pp /= HideRejects
           then S.fromList $ map go (HS.toList rej)
           else S.empty
             where
+                ruleText r =
+                  if showRejects pp == ShowRejectsWithRule
+                  then printRule pp r
+                  else ""
                 go (rejTerm, r) =
-                    Edge (nodeID (endNode gt pp p)) (rejNodeID gt p rejTerm) (printRule pp r) "red" " " "dotted"
+                    Edge (nodeID (endNode gt pp p)) (rejNodeID gt p rejTerm) (ruleText r) "red" " " "dotted"
 
 
         toEdge :: (Path rule term a, Path rule term a) -> Edge
