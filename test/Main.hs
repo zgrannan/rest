@@ -178,7 +178,7 @@ challengeRulesNoCommute = S.fromList
 
 main :: IO ()
 main = do
-  mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "pres1" "intersect(union(s₀,s₁), s₀)" (withNoETOpt defaultParams)
+  mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "pres1" "intersect(union(s₀,s₁), s₀)" (withHideRejects $ withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams
