@@ -103,6 +103,9 @@ withNoETOpt gp = gp{gUseETOpt = False}
 withHideRejects :: GraphParams -> GraphParams
 withHideRejects gp = gp{gShowRejects = HideRejects}
 
+withShowRejectsRule :: GraphParams -> GraphParams
+withShowRejectsRule gp = gp{gShowRejects = ShowRejectsWithRule}
+
 data SolverType = LPOStrict | LPO | RPO | KBO | Fuel Int
 
 mkRESTGraph ::
@@ -162,23 +165,34 @@ mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
           Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target1)))
       Nothing -> return ()
 
+setDistribRules :: S.HashSet Rewrite
+setDistribRules = S.fromList
+  [ distribL (/\) (\/)
+  , distribR (/\) (\/)
+  , distribL (\/) (/\)
+  , distribR (\/) (/\)
+  ]
+
 challengeRulesNoCommute :: S.HashSet Rewrite
-challengeRulesNoCommute = S.fromList
+challengeRulesNoCommute = S.union setDistribRules $ S.fromList
   [ x /\ x        ~> x
   , x \/ x        ~> x
   , x \/ emptyset ~> x
   , x /\ emptyset ~> emptyset
-  , distribL (/\) (\/)
-  , distribR (/\) (\/)
-  , distribL (\/) (/\)
-  , distribR (\/) (/\)
   , assocL (\/)
   , assocR (\/)
   ]
 
+pres1Rules :: S.HashSet Rewrite
+pres1Rules = S.insert (s1 /\ s0 ~> emptyset) $
+  S.delete
+    (distribR (/\) (\/))
+    challengeRulesNoCommute
+
 main :: IO ()
 main = do
-  mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "pres1" "intersect(union(s₀,s₁), s₀)" (withHideRejects $ withNoETOpt defaultParams)
+  mkRESTGraph RPO S.empty pres1Rules "pres1" "intersect(union(s₀,s₁), s₀)" (withNoETOpt defaultParams)
+  mkRESTGraph (Fuel 2) S.empty setDistribRules "pres2" "intersect(union(s₀,s₁), s₀)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams
