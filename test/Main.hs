@@ -8,6 +8,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Identity
 import Data.Time.Clock
 import Data.Hashable
+import qualified Data.Set as DS
 import qualified Data.HashSet as S
 import Text.Printf
 
@@ -107,7 +108,7 @@ withHideRejects gp = gp{gShowRejects = HideRejects}
 withShowRejectsRule :: GraphParams -> GraphParams
 withShowRejectsRule gp = gp{gShowRejects = ShowRejectsWithRule}
 
-data SolverType = LPOStrict | LPO | RPO | RPOConcrete | KBO | Fuel Int
+data SolverType = LPOStrict | LPO | RPO | RPOConcrete [Op] | KBO | Fuel Int
 
 mkRESTGraph ::
      SolverType
@@ -123,8 +124,8 @@ mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs0 userRWs0 name term0 params
 mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs0 userRWs0 name term0 params
-mkRESTGraph RPOConcrete evalRWs0 userRWs0 name term0 params =
-  mkRESTGraph' concreteOC evalRWs0 userRWs0 name term0 params
+mkRESTGraph (RPOConcrete ops) evalRWs0 userRWs0 name term0 params =
+  mkRESTGraph' (concreteOC $ DS.fromList ops) evalRWs0 userRWs0 name term0 params
 mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs0 userRWs0 name term0 params
 mkRESTGraph (Fuel n) evalRWs0 userRWs0 name term0 params =
@@ -192,10 +193,13 @@ pres1Rules = S.insert (s1 /\ s0 ~> emptyset) $
     (distribR (/\) (\/))
     challengeRulesNoCommute
 
+pres2Ops :: [Op]
+pres2Ops = ["s₀", "s₁", "∅", "intersect", "union"]
+
 main :: IO ()
 main = do
   mkRESTGraph RPO S.empty pres1Rules "pres1" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
-  mkRESTGraph RPOConcrete S.empty pres1Rules "pres2" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
+  mkRESTGraph (RPOConcrete pres2Ops) S.empty pres1Rules "pres2" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams

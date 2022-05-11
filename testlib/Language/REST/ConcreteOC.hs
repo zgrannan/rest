@@ -29,7 +29,7 @@ concreteOC ops = AOC.OCAlgebra (return . isSat) refine (ConcreteOC (WQO.ordering
     notStrongerThan (ConcreteOC ord1) (ConcreteOC ord2) = return $ ord1 == ord2 || ord2 `S.isSubsetOf` ord1
 
     isSat :: ConcreteOC -> Bool
-    isSat (ConcreteOC ords) = not $ S.empty ords
+    isSat (ConcreteOC ords) = not $ S.null ords
 
     refine :: ConcreteOC -> RuntimeTerm -> RuntimeTerm -> ConcreteOC
     refine (ConcreteOC ords) t u = ConcreteOC (S.filter (\ord -> synGTE ord t u) ords)
