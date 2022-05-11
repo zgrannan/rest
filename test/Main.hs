@@ -25,6 +25,7 @@ import NonTerm as NT
 import qualified Lists as Li
 
 import Language.REST.Core
+import Language.REST.ConcreteOC
 import Language.REST.ExploredTerms
 import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
@@ -106,7 +107,7 @@ withHideRejects gp = gp{gShowRejects = HideRejects}
 withShowRejectsRule :: GraphParams -> GraphParams
 withShowRejectsRule gp = gp{gShowRejects = ShowRejectsWithRule}
 
-data SolverType = LPOStrict | LPO | RPO | KBO | Fuel Int
+data SolverType = LPOStrict | LPO | RPO | RPOConcrete | KBO | Fuel Int
 
 mkRESTGraph ::
      SolverType
@@ -122,6 +123,8 @@ mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs0 userRWs0 name term0 params
 mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs0 userRWs0 name term0 params
+mkRESTGraph RPOConcrete evalRWs0 userRWs0 name term0 params =
+  mkRESTGraph' concreteOC evalRWs0 userRWs0 name term0 params
 mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs0 userRWs0 name term0 params
 mkRESTGraph (Fuel n) evalRWs0 userRWs0 name term0 params =
@@ -191,8 +194,8 @@ pres1Rules = S.insert (s1 /\ s0 ~> emptyset) $
 
 main :: IO ()
 main = do
-  mkRESTGraph RPO S.empty pres1Rules "pres1" "intersect(union(s₀,s₁), s₀)" (withNoETOpt defaultParams)
-  mkRESTGraph (Fuel 2) S.empty setDistribRules "pres2" "intersect(union(s₀,s₁), s₀)" (withNoETOpt defaultParams)
+  mkRESTGraph RPO S.empty pres1Rules "pres1" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
+  mkRESTGraph RPOConcrete S.empty pres1Rules "pres2" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams

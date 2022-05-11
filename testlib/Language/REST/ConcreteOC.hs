@@ -9,51 +9,27 @@ import           Language.REST.RuntimeTerm
 import           Language.REST.RPO
 import           Language.REST.Internal.OpOrdering
 import           Language.REST.MetaTerm
+import           Language.REST.Op
 
 import Data.List as L
 import Data.Hashable
 import GHC.Generics (Generic)
 import qualified Data.Set as S
 
-data ConcreteOC = ConcreteOC [RuntimeTerm] (Maybe OpOrdering)
+data ConcreteOC = ConcreteOC (S.Set (WQO.WQO Op))
   deriving (Eq, Ord, Generic, Hashable)
 
 instance Show ConcreteOC where
-  show (ConcreteOC _ (Just oo)) = show oo
-  show _                        = "impossible"
+  show (ConcreteOC ords) = show (S.size ords) ++ " orderings"
 
-isSat :: ConcreteOC -> Bool
-isSat (ConcreteOC _ (Just _)) = True
-isSat _                       = False
-
-getOrdering :: [RuntimeTerm] -> Maybe OpOrdering
-getOrdering ts =
-  let
-    ops       = S.unions $ map termOps ts
-    orderings = S.toList $ WQO.orderings ops
-  in
-    L.find (`orients` ts) orderings
-
-
-orients :: OpOrdering -> [RuntimeTerm] -> Bool
-orients ordering terms =
-  let
-    pairs = zip terms (tail terms)
-  in
-    all (uncurry $ synGTE ordering) pairs
-
-concreteOC :: Monad m => AOC.OCAlgebra ConcreteOC RuntimeTerm m
-concreteOC = AOC.OCAlgebra (return . isSat) refine (ConcreteOC [] (Just (WQO.empty))) constUnion notStrongerThan
+concreteOC :: Monad m => S.Set Op -> AOC.OCAlgebra ConcreteOC RuntimeTerm m
+concreteOC ops = AOC.OCAlgebra (return . isSat) refine (ConcreteOC (WQO.orderings ops)) union notStrongerThan
   where
-    constUnion t1 _ = t1
-    notStrongerThan _ _ = return False
+    union (ConcreteOC ord1) (ConcreteOC ord2) = ConcreteOC $ S.union ord1 ord2
+    notStrongerThan (ConcreteOC ord1) (ConcreteOC ord2) = return $ ord1 == ord2 || ord2 `S.isSubsetOf` ord1
+
+    isSat :: ConcreteOC -> Bool
+    isSat (ConcreteOC ords) = not $ S.empty ords
+
     refine :: ConcreteOC -> RuntimeTerm -> RuntimeTerm -> ConcreteOC
-    refine (ConcreteOC ts (Just o)) _ u =
-      let
-        ts' = ts ++ [u]
-      in
-        ConcreteOC ts' $
-          if o `orients` ts'
-          then Just o
-          else getOrdering ts'
-    refine (ConcreteOC ts Nothing) _ u = ConcreteOC (ts ++ [u]) Nothing
+    refine (ConcreteOC ords) t u = ConcreteOC (S.filter (\ord -> synGTE ord t u) ords)
