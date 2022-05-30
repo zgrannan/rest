@@ -7,11 +7,8 @@ import qualified Language.REST.OCAlgebra as AOC
 import qualified Language.REST.Internal.WQO as WQO
 import           Language.REST.RuntimeTerm
 import           Language.REST.RPO
-import           Language.REST.Internal.OpOrdering
-import           Language.REST.MetaTerm
 import           Language.REST.Op
 
-import Data.List as L
 import Data.Hashable
 import GHC.Generics (Generic)
 import qualified Data.Set as S
