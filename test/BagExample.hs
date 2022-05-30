@@ -112,7 +112,7 @@ mkBagGraph =
         , initRes      = pathsResult
         , etStrategy   = ExploreWhenNeeded
         } (bag start)
-    let prettyPrinter = PrettyPrinter showRule showBag show True
+    let prettyPrinter = PrettyPrinter showRule showBag show ShowRejectsWithRule
     writeDot "example" Tree prettyPrinter (toOrderedSet paths)
   where
     impl = lift SC.strictOC $ cmapConstraints toMultiset (multisetOrder compareChar)

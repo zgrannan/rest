@@ -2,13 +2,14 @@ Haskell implementation for [REST: REwriting and Selecting Termination orderings]
 
 [rest-paper]: https://s3.us-west-1.wasabisys.com/zg-public/paper.pdf
 
+
+## Graph Generation
+
 To run the REPL:
 
 ``` sh
-stack ghci
+stack ghci test/Main.hs
 ```
-
-## Graph Generation
 
 ### General
 
@@ -17,10 +18,9 @@ Graphs are output in the `graphs` folder.
 
 The `dot` command-line tool is required.
 
-Example commands (from repl):
+Example command (from repl):
 
 ``` sh
-mkSetsRESTGraph RPO "example" "union(union(a,b), intersect(c,d)))" defaultParams
 mkArithRESTGraph (Fuel 5) "example" "s(i) < s(j + s(i))" (withShowConstraints  defaultParams)
 ```
 

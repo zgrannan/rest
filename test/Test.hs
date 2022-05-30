@@ -131,7 +131,7 @@ arithTests impl =
                     ))
   , ("Eval1", arithEQ (intToTerm 2 .+ intToTerm 3) 5)
   , ("Eval2", arithEQ (ack (intToTerm 3) (intToTerm 2)) 29)
-  , ("Subst1", return $ subst (M.fromList [("x", intToTerm 1), ("y", intToTerm 2)]) (x #+ y) == (intToTerm 1 .+ intToTerm 2))
+  , ("Subst1", return $ subst (M.fromList [("X", intToTerm 1), ("Y", intToTerm 2)]) (x #+ y) == (intToTerm 1 .+ intToTerm 2))
   , ("ArithTerm", termTest)
   , ("ArithTerm2", termTest2)
   , ("Arith0", eq (t1 .+ t2 .+ intToTerm 1) (t1 .+ (intToTerm 1 .+ t2)))

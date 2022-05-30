@@ -33,11 +33,11 @@ c = App (Op "c") []
 d = App (Op "d") []
 
 x, y, v, w, z' :: MT.MetaTerm
-x = MT.Var "x"
-y = MT.Var "y"
-v = MT.Var "v"
-w = MT.Var "w"
-z' = MT.Var "z"
+x = MT.Var "X"
+y = MT.Var "Y"
+v = MT.Var "V"
+w = MT.Var "W"
+z' = MT.Var "Z"
 
 f, g, h :: Op
 f = Op "f"

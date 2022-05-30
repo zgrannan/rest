@@ -8,6 +8,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Identity
 import Data.Time.Clock
 import Data.Hashable
+import qualified Data.Set as DS
 import qualified Data.HashSet as S
 import Text.Printf
 
@@ -25,6 +26,7 @@ import NonTerm as NT
 import qualified Lists as Li
 
 import Language.REST.Core
+import Language.REST.ConcreteOC
 import Language.REST.ExploredTerms
 import Language.REST.OCAlgebra
 import Language.REST.OCToAbstract
@@ -84,12 +86,12 @@ data GraphParams = GraphParams
   {  gShowConstraints :: Bool
   ,  gTarget          :: Maybe String
   ,  gGraphType       :: GraphType
-  ,  gShowRejects     :: Bool
+  ,  gShowRejects     :: ShowRejectsOpt
   ,  gUseETOpt        :: Bool
   }
 
 defaultParams :: GraphParams
-defaultParams = GraphParams False Nothing Tree True True
+defaultParams = GraphParams False Nothing Tree ShowRejectsWithoutRule True
 
 withTarget :: String -> GraphParams -> GraphParams
 withTarget target0 gp = gp{gTarget = Just target0}
@@ -101,9 +103,12 @@ withNoETOpt :: GraphParams -> GraphParams
 withNoETOpt gp = gp{gUseETOpt = False}
 
 withHideRejects :: GraphParams -> GraphParams
-withHideRejects gp = gp{gShowRejects = False}
+withHideRejects gp = gp{gShowRejects = HideRejects}
 
-data SolverType = LPOStrict | LPO | RPO | KBO | Fuel Int
+withShowRejectsRule :: GraphParams -> GraphParams
+withShowRejectsRule gp = gp{gShowRejects = ShowRejectsWithRule}
+
+data SolverType = LPOStrict | LPO | RPO | RPOConcrete [Op] | KBO | Fuel Int
 
 mkRESTGraph ::
      SolverType
@@ -119,6 +124,8 @@ mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs0 userRWs0 name term0 params
 mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs0 userRWs0 name term0 params
+mkRESTGraph (RPOConcrete ops) evalRWs0 userRWs0 name term0 params =
+  mkRESTGraph' (concreteOC $ DS.fromList ops) evalRWs0 userRWs0 name term0 params
 mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =
   withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs0 userRWs0 name term0 params
 mkRESTGraph (Fuel n) evalRWs0 userRWs0 name term0 params =
@@ -162,16 +169,20 @@ mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
           Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target1)))
       Nothing -> return ()
 
+setDistribRules :: S.HashSet Rewrite
+setDistribRules = S.fromList
+  [ distribL (/\) (\/)
+  , distribR (/\) (\/)
+  , distribL (\/) (/\)
+  , distribR (\/) (/\)
+  ]
+
 challengeRulesNoCommute :: S.HashSet Rewrite
-challengeRulesNoCommute = S.fromList
+challengeRulesNoCommute = S.union setDistribRules $ S.fromList
   [ x /\ x        ~> x
   , x \/ x        ~> x
   , x \/ emptyset ~> x
   , x /\ emptyset ~> emptyset
-  , distribL (/\) (\/)
-  , distribR (/\) (\/)
-  , distribL (\/) (/\)
-  , distribR (\/) (/\)
   , assocL (\/)
   , assocR (\/)
   ]
