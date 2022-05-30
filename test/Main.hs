@@ -34,6 +34,7 @@ import Language.REST.Op
 import Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
 import qualified Language.REST.WQOConstraints.ADT    as AC
+import qualified Language.REST.Internal.WQO as WQO
 import Language.REST.KBO (kbo)
 import Language.REST.LPO (lpo, lpoStrict)
 import Language.REST.RPO
@@ -187,19 +188,8 @@ challengeRulesNoCommute = S.union setDistribRules $ S.fromList
   , assocR (\/)
   ]
 
-pres1Rules :: S.HashSet Rewrite
-pres1Rules = S.insert (s1 /\ s0 ~> emptyset) $
-  S.delete
-    (distribR (/\) (\/))
-    challengeRulesNoCommute
-
-pres2Ops :: [Op]
-pres2Ops = ["s₀", "s₁", "∅", "intersect", "union"]
-
 main :: IO ()
 main = do
-  mkRESTGraph RPO S.empty pres1Rules "pres1" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
-  mkRESTGraph (RPOConcrete pres2Ops) S.empty pres1Rules "pres2" "intersect(union(s₀,s₁), s₀)" (withShowConstraints $ withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
   mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams
