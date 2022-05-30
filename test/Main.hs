@@ -34,7 +34,6 @@ import Language.REST.Op
 import Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
 import qualified Language.REST.WQOConstraints.ADT    as AC
-import qualified Language.REST.Internal.WQO as WQO
 import Language.REST.KBO (kbo)
 import Language.REST.LPO (lpo, lpoStrict)
 import Language.REST.RPO
