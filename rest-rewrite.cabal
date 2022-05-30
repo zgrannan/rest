@@ -1,6 +1,6 @@
 name:               rest-rewrite
 build-type:         Simple
-version:            0.2.1-DEV
+version:            0.2.1
 cabal-version:      2.0
 category:           Rewriting
 maintainer:         Zack Grannan <zgrannan@cs.ubc.ca>
