@@ -57,51 +57,47 @@ instance RESTResult TermsResult where
 data RESTState m rule term oc et rtype = RESTState
   { finished   :: rtype rule term oc
   , working    :: [Path rule term oc]
-  , explored   :: ExploredTerms et oc m
+  , explored   :: ExploredTerms term oc m
   , targetPath :: Maybe (Path rule term oc)
   }
 
-data RESTParams m rule term oc et rtype = RESTParams
+data RESTParams m rule term oc rtype = RESTParams
   { re           :: S.HashSet rule
   , ru           :: S.HashSet rule
-  , toET         :: term -> et
   , target       :: Maybe term
-  , workStrategy :: WorkStrategy rule term et oc
+  , workStrategy :: WorkStrategy rule term oc
   , ocImpl       :: OCAlgebra oc term m
   , initRes      :: rtype rule term oc
   , etStrategy   :: ExploreStrategy
   }
 
-rest :: forall m rule term oc et rtype .
+rest :: forall m rule term oc rtype .
   ( MonadIO m
   , RewriteRule m rule term
-  , Show et
   , Hashable term
   , Eq term
   , Hashable rule
-  , Hashable et
   , Hashable oc
   , Eq rule
-  , Eq et
   , Eq oc
   , Show oc
   , RESTResult rtype)
-  => RESTParams m rule term oc et rtype
+  => RESTParams m rule term oc rtype
   -> term
   -> m ((rtype rule term oc), Maybe (Path rule term oc))
-rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
+rest RESTParams{re,ru,ocImpl,workStrategy,initRes,target,etStrategy} t =
   rest' (RESTState initRes [([], PathTerm t S.empty)] initET Nothing)
   where
     (WorkStrategy ws) = workStrategy
-    initET = ET.empty (EF (AC.union ocImpl) (AC.notStrongerThan ocImpl)) etStrategy
+    initET = ET.empty (EF (AC.union ocImpl) (AC.notStrongerThan ocImpl) (refine ocImpl)) etStrategy
 
     rest' (RESTState fin [] _ targetPath)            = return (fin, targetPath)
     rest' state@(RESTState _   paths et (Just targetPath))
-      | ((steps, _), remaining) <- ws paths toET et
+      | ((steps, _), remaining) <- ws paths et
       , length steps >= length (fst targetPath)
       = rest' state{working = remaining}
     rest' state@(RESTState fin paths et targetPath) = do
-      se <- shouldExplore (toET ptTerm) lastOrdering et
+      se <- shouldExplore ptTerm lastOrdering et
       if se
         then do
           evalRWs <- candidates re
@@ -112,7 +108,7 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
           rest' (state{ working = remaining })
       where
 
-        (path@(ts, PathTerm ptTerm _), remaining) = ws paths toET et
+        (path@(ts, PathTerm ptTerm _), remaining) = ws paths et
 
         lastOrdering :: oc
         lastOrdering = if L.null ts then top ocImpl else ordering $ last ts
@@ -153,9 +149,9 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
               , finished = if null p' then includeInResult (ts, pt) fin else fin
               , explored =
                   let
-                    deps = S.map (toET . fst) (S.union evalRWs userRWs)
+                    deps = S.map fst (S.union evalRWs userRWs)
                   in
-                    ET.insert (toET ptTerm) lastOrdering deps et
+                    ET.insert ptTerm lastOrdering deps et
               , targetPath =
                 if Just ptTerm == target then
                   case targetPath of
@@ -180,11 +176,11 @@ rest RESTParams{re,ru,toET,ocImpl,workStrategy,initRes,target,etStrategy} t =
               (t', r) <- ListT $ return (S.toList evalRWs)
               guard $ L.notElem t' tsTerms
               let ord = refine ocImpl lastOrdering ptTerm t'
-              lift (shouldExplore (toET t') ord et) >>= guard
+              lift (shouldExplore t' ord et) >>= guard
               return (ts ++ [Step pt r ord True], PathTerm t' S.empty)
 
             userPaths = runListT $ do
               (t', r) <- liftSet userRWs
               ord <- ListT $ return $ Mb.maybeToList $ M.lookup t' acceptedUserRewrites
-              lift (shouldExplore (toET t') ord et) >>= guard
+              lift (shouldExplore t' ord et) >>= guard
               return (ts ++ [Step pt r ord False], PathTerm t' S.empty)

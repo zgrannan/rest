@@ -149,7 +149,6 @@ mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
       RESTParams
         { re           = evalRWs0
         , ru           = userRWs0
-        , toET         = id
         , target       = fmap parseTerm (gTarget params)
         , workStrategy = bfs
         , ocImpl       = impl

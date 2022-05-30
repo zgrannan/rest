@@ -56,7 +56,6 @@ rewrites impl evalRWs userRWs t0 =
     RESTParams
       { re           = evalRWs
       , ru           = userRWs
-      , toET         = id
       , target       = Nothing
       , workStrategy = notVisitedFirst
       , ocImpl       = ?impl
