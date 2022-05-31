@@ -5,7 +5,6 @@ module ExploredTerms where
 
 import Control.Monad.Identity
 import Data.Hashable
-import Debug.Trace
 import qualified Data.HashSet as S
 import GHC.Generics (Generic)
 
@@ -13,7 +12,7 @@ import Language.REST.ExploredTerms as ET
 
 type Constraints = Int
 
--- Intuitively, cost to explore
+-- 2nd argument is cost to explore
 data Term = Term String Int
   deriving (Eq, Generic, Hashable, Show)
 
@@ -22,8 +21,13 @@ exploreFuncs = EF undefined subsume refine where
   subsume c0 c1               = return $ c0 >= c1
   refine  c  _  (Term _ dest) = c - dest
 
+t0 :: Term
 t0 = Term "t0" 5
+
+t1 :: Term
 t1 = Term "t1" 0
+
+t2 :: Term
 t2 = Term "t2" 0
 
 et0 :: ExploredTerms Term Constraints Identity

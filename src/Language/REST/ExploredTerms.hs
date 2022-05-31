@@ -15,8 +15,6 @@ module Language.REST.ExploredTerms
    , ExploreStrategy(..)
    )  where
 
-import Debug.Trace (trace)
-import Text.Printf
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Hashable
