@@ -105,7 +105,6 @@ mkBagGraph =
       RESTParams
         { re           = S.empty
         , ru           = rules
-        , toET         = id
         , target       = Nothing
         , workStrategy = bfs
         , ocImpl       = impl

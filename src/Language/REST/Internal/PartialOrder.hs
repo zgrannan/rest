@@ -23,6 +23,7 @@ import qualified Data.Map as M
 import qualified Data.List as L
 
 import Language.REST.Types () -- Hashable (M.Map a b)
+import Language.REST.Internal.Orphans ()
 import Text.Printf
 
 -- | Irreflexive (strict) partial orders

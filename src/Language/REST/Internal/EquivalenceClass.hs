@@ -1,5 +1,9 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Language.REST.Internal.EquivalenceClass
     ( isMember
@@ -26,7 +30,16 @@ import Language.REST.Types () -- Hashable (S.Set a)
 -- | Equivalent classes of the @(==)@ relation of a type @a@.
 newtype EquivalenceClass a =
   -- | The set contains all of the elements of the class
-  EquivalenceClass (S.Set a) deriving (Ord, Eq, Generic, Hashable)
+  EquivalenceClass (S.Set a)
+#if MIN_VERSION_hashable(1,3,5)
+  deriving (Ord, Eq, Generic, Hashable)
+#else
+  deriving (Ord, Eq, Generic)
+#endif
+
+#if !MIN_VERSION_hashable(1,3,5)
+deriving instance Hashable (S.Set a) => Hashable (EquivalenceClass a)
+#endif
 
 instance Show a => Show (EquivalenceClass a) where
     show (EquivalenceClass xs) = L.intercalate " = " (map show (S.toList xs)) 
