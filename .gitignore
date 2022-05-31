@@ -2,3 +2,4 @@ graphs/*
 .stack-work
 dist-newstyle
 .DS_Store
+*.tar.gz

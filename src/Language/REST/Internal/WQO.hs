@@ -35,6 +35,7 @@ import qualified Data.Set as S
 
 import qualified Language.REST.Internal.EquivalenceClass as EC
 import qualified Language.REST.Internal.PartialOrder as PO
+import Language.REST.Internal.Orphans ()
 import Language.REST.Op
 import Language.REST.SMT
 

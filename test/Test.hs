@@ -12,6 +12,7 @@ import Control.Monad.Identity
 import qualified Arith as A
 
 import qualified Data.HashMap.Strict as M
+import qualified ExploredTerms as ExploredTerms
 import OpOrdering
 import DSL
 import WQO as WQO
@@ -236,6 +237,7 @@ main = spawnZ3 >>= go where
   go z3 =
     do
       putStrLn "Running REST Test Suite"
+      runTestSuite "ExploredTerms" ExploredTerms.tests
       runTestSuite "SMT" SMT.tests
       runTestSuite "KBO" (KBO.tests z3)
       _ <- QuickCheckTests.tests
