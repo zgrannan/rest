@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Language.REST.Internal.Orphans where
+module Language.REST.Internal.Orphans() where
 
-#if !MIN_VERSION_hashable(1,3,5)
+#if !MIN_VERSION_hashable(1,3,4)
 import Data.Hashable
 import Data.Hashable.Lifted
 import Data.Set as Set
