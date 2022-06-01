@@ -6,8 +6,8 @@ category:           Rewriting
 maintainer:         Zack Grannan <zgrannan@cs.ubc.ca>
 author:             Zack Grannan <zgrannan@cs.ubc.ca>
 license:            BSD3
-description:        Rewriting library with online termination checking
-synopsis:           https://s3.us-west-1.wasabisys.com/zg-public/paper.pdf
+description:        REST is a Rewriting library with online termination checking. For more details see the paper at https://arxiv.org/abs/2202.05872.
+synopsis:           Rewriting library with online termination checking
 license-file:       LICENSE
 
 source-repository head
