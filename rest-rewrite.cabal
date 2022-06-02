@@ -1,6 +1,6 @@
 name:               rest-rewrite
 build-type:         Simple
-version:            0.3.0
+version:            0.3.1
 cabal-version:      2.0
 category:           Rewriting
 maintainer:         Zack Grannan <zgrannan@cs.ubc.ca>
@@ -22,6 +22,7 @@ library
     Language.REST.Dot
     Language.REST.ExploredTerms
     Language.REST.Internal.EquivalenceClass
+    Language.REST.Internal.ListT
     Language.REST.Internal.MultiSet
     Language.REST.Internal.MultisetOrder
     Language.REST.Internal.OpOrdering

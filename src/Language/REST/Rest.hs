@@ -17,7 +17,7 @@ module Language.REST.Rest (
   ) where
 
 import           Control.Monad
-import           Control.Monad.List
+import           Control.Monad.Trans
 import Data.Hashable
 import qualified Data.HashSet as S
 import qualified Data.List    as L
@@ -28,6 +28,7 @@ import Language.REST.OCAlgebra as AC
 import Language.REST.RewriteRule
 import Language.REST.Path
 import Language.REST.ExploredTerms as ET
+import Language.REST.Internal.ListT
 import Language.REST.Internal.WorkStrategy
 
 newtype PathsResult rule term oc = PathsResult (S.HashSet (Path rule term oc))
