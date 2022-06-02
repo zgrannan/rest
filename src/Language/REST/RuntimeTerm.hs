@@ -37,3 +37,7 @@ subTerms t@(App f ts) = (t, id) : concatMap st [0..length ts - 1]
         go2 (srt, toFull) = (srt, go . toFull)
       in
         map go2 (subTerms ti)
+
+contains :: RuntimeTerm -> RuntimeTerm -> Bool
+contains t1 t2 | t1 == t2 = True
+contains (App _ ts) t     = any (contains t) ts

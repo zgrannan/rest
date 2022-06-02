@@ -3,12 +3,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-
+-- | This module defines an interface for 'WQO's on 'Op'erators,
+--   for example, that are used as the precedence for an [RPQO]("Language.REST.RPO").
 module Language.REST.Internal.OpOrdering (
     empty
-  , merge
   , OpOrdering
-  , opInsert
   , opGT
   , opEQ
   , (=.)
@@ -31,33 +30,31 @@ import           Language.REST.Internal.WQO as WQO
 type OpOrdering   = WQO Op
 
 
+-- | @opGT o f g@ returns @true@ if @f > g@ in @o@
 opGT :: OpOrdering -> Op -> Op -> Bool
 opGT s f g = getRelation s f g == Just QGT
 
+-- | @opEQ o f g@ returns @true@ if @f = g@ in @o@
 opEQ :: OpOrdering -> Op -> Op -> Bool
 opEQ s f g = getRelation s f g == Just QEQ
 
-
-opInsert :: OpOrdering -> Op -> Op -> QORelation -> Maybe OpOrdering
-opInsert o f g r =
-  case WQO.insert o (f, g, r) of
-    ValidExtension o' -> Just o'
-    _                 -> Nothing
-
--- The following only are valid if f /= g.
-
--- precondition : f /= g
+-- |  @f >. g@ generates a new ordering with @f@ greater than @g@.
+--   This function is undefined if f == g.
 (>.) :: Op -> Op -> OpOrdering
 (>.) f g = fromJust $ WQO.singleton (f, g, QGT)
 
--- precondition : f /= g
+-- |  @f =. g@ generates a new ordering with @f@ equal to @g@.
+--   This function is undefined if f == g.
 (=.) :: Op -> Op -> OpOrdering
 (=.) f g = fromJust $ WQO.singleton (f, g, QEQ)
 
--- precondition : f /= g
+-- |  @f <. g@ generates a new ordering with @f@ less than @g@.
+--   This function is undefined if f == g.
 (<.) :: Op -> Op -> OpOrdering
 (<.) f g = g >. f
 
+-- | @parseOO str@ returns the ordering defined by @str@. If the input describes
+--   /any/ ordering, (i.e "f = f"), then this function returns 'Nothing'.
 parseOO :: String -> Maybe OpOrdering
 parseOO str =
   case parse parser "" str of

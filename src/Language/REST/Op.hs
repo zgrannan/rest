@@ -11,6 +11,7 @@ import Data.String
 import GHC.Generics (Generic)
 import Language.REST.SMT
 
+-- | The operators used in 'RuntimeTerm' and 'MetaTerm'
 newtype Op = Op Text deriving (Eq, Ord, Hashable, Generic)
 
 instance Show Op where

@@ -21,18 +21,34 @@ import Data.Hashable
 
 import Prelude hiding (lookup)
 
+-- | 'ExploreStrategy' defines how 'shouldExplore' should decide whether or not
+-- | to consider rewrites from a given term
 data ExploreStrategy =
-  ExploreAlways | ExploreLessConstrained | ExploreWhenNeeded | ExploreOnce
+    ExploreAlways -- ^ Always explore, even when it's not necessary.
+  | ExploreLessConstrained -- ^ Explore terms unless the constraints are stricter.
+                           -- This may stil explore unnecessary paths, the terms
+                           -- were already fully explored with the different constraints.
+  | ExploreWhenNeeded -- ^ Explore terms unless the constraints are stricter OR if all
+                      --   terms reachable via transitive rewrites were already explored.
+  | ExploreOnce -- ^ Explore each term only once. This may cause some terms not to be
+                --   explored if the terms leading to them were initially visited at
+                --   strict constraints.
+
 
 data ExploreFuncs term c m = EF
-  { union           :: c -> c -> c
+  { -- | When a term @t@ is visited at constraints @c0@, and then at constraints
+    --   @c1@, the constraints for term @t@ is set to @c0 `union` c1@
+    union           :: c -> c -> c
     -- | @c0 `subsumes` c1@ if @c0@ permits all orderings permited by @c1@
   , subsumes        :: c -> c -> m Bool
+    -- | @'exRefine' c t u@ strengthens constraints @c@ to permit the rewrite step
+    --   from @t@ to @u@. This is used to determine if considering term @u@ by rewriting
+    --   from @t@ would permit more rewrite applications.
   , exRefine        :: c -> term -> term -> c
   }
 
--- A mapping of terms, to the rewritten terms that need to be fully explored
--- in order for this term to be fully explored
+-- | A mapping of terms, to the rewritten terms that need to be fully explored
+-- | in order for this term to be fully explored
 data ExploredTerms term c m =
   ET (M.HashMap term (c, (S.HashSet term))) (ExploreFuncs term c m) ExploreStrategy
 
@@ -54,7 +70,8 @@ lookup :: (Eq term, Hashable term) => term -> ExploredTerms term c m -> Maybe (c
 lookup t (ET etMap _ _) = M.lookup t etMap
 
 -- | @isFullyExplored t c M = not explorable(t, c)@ where @explorable@ is
--- defined as in the REST paper.
+-- defined as in the REST paper. Also incorporates an optimization described
+-- here: https://github.com/zgrannan/rest/issues/9
 isFullyExplored :: forall term c m . (Monad m, Eq term, Hashable term, Hashable c, Eq c, Show c) =>
   term -> c -> ExploredTerms term c m -> m Bool
 isFullyExplored t0 oc0 et@(ET _ (EF{subsumes,exRefine}) _) = result where
@@ -89,6 +106,9 @@ isFullyExplored t0 oc0 et@(ET _ (EF{subsumes,exRefine}) _) = result where
   -- There exists a reachable term that has never previously been seen; not fully explored
   go _ _        | otherwise = return False
 
+-- | @'shouldExplore' t c et@ determines if rewrites originating from term @t@ at
+--   constraints @c@ should be considered, given the already explored terms of @et@
+--   and the associated 'ExploreStrategy'
 shouldExplore :: forall term c m . (Monad m, Eq term, Hashable term, Eq c, Show c, Hashable c) =>
   term -> c -> ExploredTerms term c m -> m Bool
 shouldExplore t oc et@(ET _ EF{subsumes} strategy) =

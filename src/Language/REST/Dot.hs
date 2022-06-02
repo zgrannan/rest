@@ -2,7 +2,14 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Language.REST.Dot where
+module Language.REST.Dot
+  ( mkGraph
+  , DiGraph(..)
+  , Edge(..)
+  , GraphType(..)
+  , Node(..)
+  , NodeID
+  ) where
 
 import GHC.Generics
 import Data.Hashable
@@ -11,11 +18,22 @@ import qualified Data.Set as S
 import Text.Printf
 import System.Process
 
-data DiGraph = DiGraph String (S.Set Node) (S.Set Edge);
+-- | A GraphViz directed graph
+data DiGraph = DiGraph
+  String -- ^ Filename
+  (S.Set Node)
+  (S.Set Edge);
 
 type NodeID =  String
 
-data GraphType = Tree | Dag | Min deriving (Read)
+-- | The way the graph will be rendered
+data GraphType =
+    Tree -- ^ Standard representation
+  | Dag  -- ^ In 'Dag', If two equal terms `n` steps from the root are the same, they are
+         --   represented by the same node, even if they were reached via different
+         --   paths
+  | Min  -- ^ Each unique term is represented by the same node
+  deriving (Read)
 
 data Node = Node 
     { nodeID     :: NodeID
@@ -32,8 +50,6 @@ data Edge = Edge
     , subLabel  :: String
     , edgeStyle :: String
     } deriving (Eq, Ord, Show, Generic, Hashable)
-
-type DotPath = [Node]
 
 nodeString :: Node -> String
 nodeString (Node nid elabel style color) =

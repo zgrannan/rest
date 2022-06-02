@@ -10,7 +10,7 @@ module Language.REST.Rest (
     rest
   , pathsResult
   , termsResult
-  , terms
+  , resultTerms
   , PathsResult(..)
   , WorkStrategy(..)
   , RESTParams(..)
@@ -43,16 +43,16 @@ termsResult = TermsResult S.empty
 
 class RESTResult a where
   includeInResult :: (Hashable oc, Eq oc, Hashable rule, Eq rule, Hashable term, Eq term) => Path rule term oc -> a rule term oc -> a rule term oc
-  terms :: (Eq term, Hashable term) => a rule term oc -> S.HashSet term
+  resultTerms :: (Eq term, Hashable term) => a rule term oc -> S.HashSet term
 
 instance RESTResult PathsResult where
   includeInResult p (PathsResult s) = PathsResult (S.insert p s)
-  terms (PathsResult s) = S.fromList (concatMap pathTerms $ S.toList s)
+  resultTerms (PathsResult s) = S.fromList (concatMap pathTerms $ S.toList s)
 
 
 instance RESTResult TermsResult where
   includeInResult p (TermsResult s) = TermsResult (S.union s (S.fromList $ pathTerms p))
-  terms (TermsResult s)             = s
+  resultTerms (TermsResult s)       = s
 
 
 data RESTState m rule term oc et rtype = RESTState

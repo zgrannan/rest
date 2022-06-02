@@ -3,7 +3,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.REST.Internal.MultisetOrder (multisetOrder, possibilities) where
+-- | This module defines a constraint generator for a multiset
+--   quasi-ordering. For more details, please see the definition
+--   of @mul@ in section 4.2.1 of the paper.
+module Language.REST.Internal.MultisetOrder (multisetOrder) where
 
 import GHC.Generics
 import qualified Data.List as L
@@ -49,6 +52,10 @@ possibilities r (x:xs) ys    = if r == EQ then eqs else S.union eqs doms where
       (possibilities GTE xs (filter (not . flip elem ys') ys))
 
 
+-- | Given a [constraint generator]("Language.REST.WQOConstraints#t:ConstraintGen") @cgen@ that generates constraints a WQO on
+--   @base@ implied by a relation between elements of @lifted@, @'multisetOrder' cgen@
+--   yields a constraint generator on elements of base implied by a relation between
+--   multisets of @lifted@.
 multisetOrder :: forall oc base lifted m . (Ord lifted, Ord base, Show base, Eq base, Hashable base, Hashable lifted, Eq lifted, Show (oc base), Eq (oc base),  Monad m) =>
      ConstraintGen oc base lifted m
   -> ConstraintGen oc base (MultiSet lifted) m

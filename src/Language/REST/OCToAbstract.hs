@@ -15,9 +15,9 @@ import qualified Language.REST.WQOConstraints as OC
 import Language.REST.Types
 import Language.REST.SMT (ToSMTVar)
 
-showHash :: Show a => a -> String
-showHash = show . hash . show
-
+-- | @lift@ takes a representation of constraints on a WQO over @base@,
+--   alongside a function used to generate constraints to permit a relation on terms @lifted@,
+--   and returns the corresponding Ordering Constraints Algebra
 lift :: forall impl base lifted m . (ToSMTVar base Int, Ord base, Eq base, Hashable base, Show lifted, Show base, Show (impl base)) =>
      OC.WQOConstraints impl m
   -> OC.ConstraintGen impl base lifted Identity

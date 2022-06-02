@@ -1,7 +1,11 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Language.REST.RESTDot where
+module Language.REST.RESTDot (
+    PrettyPrinter(..)
+  , ShowRejectsOpt(..)
+  , writeDot
+  ) where
 
 import Data.List
 import Data.Hashable
@@ -11,10 +15,14 @@ import qualified Data.HashSet as HS
 import Language.REST.Dot
 import Language.REST.Path
 
+-- | Controls how rejected paths should be visualized
 data ShowRejectsOpt =
-  ShowRejectsWithRule | ShowRejectsWithoutRule | HideRejects
+    ShowRejectsWithRule     -- ^ Display rejected paths, and the rule that generated them
+  | ShowRejectsWithoutRule  -- ^ Display rejected paths, but don't display the rule that generated them
+  | HideRejects             -- ^ Do not show rejected paths
   deriving Eq
 
+-- | Controls how rules, terms, orderings, and rejected paths should be displayed
 data PrettyPrinter rule term ord = PrettyPrinter
   { printRule    :: rule -> String
   , printTerm    :: term -> String
@@ -102,6 +110,7 @@ toGraph gt pp paths =
       unions :: (Ord a, Eq a, Hashable a) => S.Set (S.Set a) -> S.Set a
       unions = S.unions . S.toList
 
+-- | @writeDot name gt printer paths@ generates a graphViz graph from @paths@ with name @name@.
 writeDot :: (Hashable rule, Hashable term, Ord a, Hashable a) =>
   String -> GraphType -> PrettyPrinter rule term a -> S.Set (Path rule term a) -> IO ()
 writeDot name gt printer paths = mkGraph name (toGraph gt printer paths)
