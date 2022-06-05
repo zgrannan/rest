@@ -107,10 +107,6 @@ addConstraint
  :: (Ord a, Hashable a) => WQO a -> ConstraintsADT a -> ConstraintsADT a
 addConstraint o c = intersect (Sat o) c
 
-relevantConstraints
-  :: (Eq a, Ord a, Hashable a) => ConstraintsADT a -> S.Set a -> S.Set a -> ConstraintsADT a
-relevantConstraints c _ _ = c
-
 notStrongerThan
   :: (Eq a, ToSMTVar a Int)
   => ConstraintsADT a
@@ -205,22 +201,6 @@ dnfSize Unsat         = 0
 dnfSize (Union w1 w2) = dnfSize w1 + dnfSize w2
 dnfSize (Intersect w1 w2) = dnfSize w1 * dnfSize w2
 
--- toDNF (Union lhs rhs) = S.union (toDNF lhs) (toDNF rhs)
--- toDNF (Intersect lhs rhs) =
---   let
---     ldnf = toDNF lhs
---     rdnf = toDNF rhs
---   in
---     S.unions
-
-simplify :: (Eq a, Ord a, Hashable a) => ConstraintsADT a -> ConstraintsADT a
-simplify _adt = undefined
--- simplify adt = case getConstraints adt of
---   []     -> Unsat
---   (x:xs) -> foldl go (Sat x) xs
---   where
---     go a x = Union (Sat x) a
-
 permits
   :: (Ord a, Hashable a, Show a)
   => ConstraintsADT a
@@ -230,18 +210,8 @@ permits adt wqo = any (`WQO.notStrongerThan` wqo) (getConstraints adt)
 
 isSatisfiable :: (ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) => ConstraintsADT a -> SMTExpr Bool
 isSatisfiable s = toSMT s
-  -- trace (show (minDepth s) ++ " " ++ show (maxDepth s)) $ not $ null $ getConstraints s
 
 instance (Eq a, Hashable a,  Show a) => Show (ConstraintsADT a) where
-  -- show s = go 0 s where
-  --   go n (Sat w)         = indent n $ show w
-  --   go n Unsat           = indent n $ "⊥"
-  --   go n (Union w t )    = indent n $ printf "∪\n%s\n%s" (go (n+1) w) (go (n+1) t)
-  --   go n (Intersect w t) = indent n $ printf "∩\n%s\n%s" (go (n+1) w) (go (n+1) t)
-
-  --   indent 0 s = s
-  --   indent n s = take (n - 1) (repeat '|') ++ '+':s
-
   show (Sat w)         = show w
   show Unsat           = "⊥"
   show (Union w t )    = printf "(%s ∨\n %s)" (show w) (show t)
@@ -258,9 +228,6 @@ adtOC' = OC.OC
   notStrongerThan
   noConstraints
   permits
-  relevantConstraints
   union
   unsatisfiable
   undefined
-  undefined
-  simplify

@@ -1,6 +1,9 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
+-- | This module is responsible for rendering GraphViz graphs corresponding to an
+--   execution of the REST algorithm.
 module Language.REST.RESTDot (
     PrettyPrinter(..)
   , ShowRejectsOpt(..)

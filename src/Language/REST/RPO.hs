@@ -6,7 +6,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ImplicitParams #-}
 
-module Language.REST.RPO (rpo, rpoTerm, rpoGTE, rpoGTE', synGTE) where
+-- | This module contains the implementation of the Recursive Path Quasi-Ordering,
+--   defined in section 4.2.1 of the REST paper
+module Language.REST.RPO (rpo, rpoGTE, synGTE) where
 
 import Prelude hiding (EQ, GT)
 
@@ -75,6 +77,8 @@ cached key thunk = do
       modify (\st -> st{ rpoCache = M.insert key result (rpoCache st)})
       return result
 
+-- | The constraint generator for RPQO. That is, given terms @t@, @u@, @rpo@ generates
+--   the constraints on n RPQO ≥ᵣ such that t ≥ᵣ u.
 rpo :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) => ConstraintGen oc Op RT.RuntimeTerm Identity
 rpo = runStateConstraints (cmapConstraints rpoTerm rpo') (RPOState M.empty 0)
 
@@ -102,6 +106,8 @@ rpo' oc r cs t@(App f ts) u@(App g us) = incDepth result
         , rpoMul oc GTE cs'                             ts               (MS.singleton u)
         ]
 
+-- | @rpoGTE impl t u@ generates the constraints a WQO over 'Op' (via @impl@) that ensures
+--   that t ≥ᵣ u in the result RPQO ≥ᵣ.
 rpoGTE
   :: (?impl::WQOConstraints oc m, Hashable (oc Op), Eq (oc Op), Show (oc Op))
   => RT.RuntimeTerm
@@ -124,6 +130,8 @@ rpoGTE' impl oc t u = rpo impl GTE oc t u
 synEQ :: OpOrdering -> RuntimeTerm -> RuntimeTerm -> Bool
 synEQ o l r = synGTE' o l r && synGTE' o r l
 
+-- | Performs the (concrete) RPQO calculation. @synGTE o t u@ returns
+--   true iff t ≥ᵣ u using an RPQO with precedence @o@.
 synGTE :: OpOrdering -> RT.RuntimeTerm -> RT.RuntimeTerm -> Bool
 synGTE o t u = synGTE' o (rpoTerm t) (rpoTerm u)
 

@@ -99,10 +99,6 @@ isSatisfiable Unsat     = False
 singleton :: WQO a -> LazyOC a
 singleton c = Sat c ADT.Unsat
 
-relevantConstraints
-  :: (Eq a, Ord a, Hashable a) => LazyOC a -> S.Set a -> S.Set a -> LazyOC a
-relevantConstraints c _ _ = c
-
 notStrongerThan :: (Monad m, Eq a) => LazyOC a -> LazyOC a -> m Bool
 notStrongerThan _     Unsat = return True
 notStrongerThan t1    t2    = return $ t1 == t2
@@ -122,9 +118,6 @@ lazyOC = OC.OC
   notStrongerThan
   noConstraints
   permits
-  relevantConstraints
   union
   unsatisfiable
-  undefined
   getOrdering
-  id

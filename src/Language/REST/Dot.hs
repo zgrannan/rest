@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | This module contains functionality for generating GraphViz graphs
 module Language.REST.Dot
   ( mkGraph
   , DiGraph(..)
@@ -35,6 +36,7 @@ data GraphType =
   | Min  -- ^ Each unique term is represented by the same node
   deriving (Read)
 
+-- | A GraphViz node
 data Node = Node 
     { nodeID     :: NodeID
     , label      :: String
@@ -42,6 +44,7 @@ data Node = Node
     , labelColor :: String
     } deriving (Eq, Ord, Show, Generic, Hashable)
 
+-- A GraphViz edge
 data Edge = Edge
     { from      :: NodeID
     , to        :: NodeID
@@ -84,6 +87,8 @@ graphString (DiGraph name nodes edges) =
         edgesString = intercalate "\n" (map edgeString (S.toList edges))
 
 
+-- | @mkGraph name graph@ generates the @.dot@ file for @graph@, and renders
+--   the resulting graph to a @png@ file using the @dot@ utility
 mkGraph :: String -> DiGraph -> IO ()
 mkGraph name graph = do
   let dotfile = printf "graphs/%s.dot" name

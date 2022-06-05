@@ -3,24 +3,17 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | This module defines an implemenation for representing constraints on a 'WQO';
+--   in this case represented by a set of "extendable" WQOs each satisfying the constraints.
+--   For more details see 'StrictOC'
 module Language.REST.WQOConstraints.Strict (
       strictOC
     , strictOC'
-    , addConstraint
     , difference
-    , getOrdering
-    , intersect
-    , isSatisfiable
     , isUnsatisfiable
     , noConstraints
-    , notStrongerThan
     , permits
-    , relevantConstraints
-    , union
-    , unsatisfiable
-    , singleton
     , StrictOC
-    , elems
     ) where
 
 import Control.Monad.Identity
@@ -40,7 +33,19 @@ type WQO = WQO.WQO
 -- The constraints are represented as a set ws of WQOs
 -- The constraints permit any WQO w that is a valid extension of some (w' in wqos)
 
-
+-- | @StrictOC ws@ represents constraints on a WQO. Each element of @ws@ is a WQO
+--   that satisfies the constraints. @StrictOC ws@ permits a WQO @w@ if there exists
+--   a @w'@ in @ws@ such that @w'@ can be extended to yield @w@.
+--
+--   This implementation is similar to disjunctive normal form representation of
+--   logical formulas; except in this case each "conjunction" is a valid WQO, and thus
+--   "satisfiable". Therefore @StrictOC ws@ satisfies /some/ WQO iff @ws@ is not empty.
+--
+--   Two potential downsides to this implementation are:
+--   1. The size of @ws@ can grow quickly; an inherent issue of DNF
+--   2. Related, calculating the entire set @ws@ is computationally expensive,
+--      and often unnecessary for RESTs use-case, where continuing the path only
+--      requires knowing if /any/ WQO is permitted.
 data StrictOC a = StrictOC (S.Set (WQO a))
   deriving (Eq, Ord, Generic, Hashable)
 
@@ -48,8 +53,6 @@ instance (Show a, Eq a, Ord a, Hashable a) => Show (StrictOC a) where
   show (StrictOC cs) | S.null cs             = "unsatisfiable"
   show (StrictOC cs) | S.member WQO.empty cs = "no constraints"
   show (StrictOC cs) = L.intercalate " ∨ \n" (map show (S.toList cs))
-    -- where
-      -- show' o@(OpOrdering s) = if S.size s > 1 then printf "(%s)" (show o) else show o
 
 getOrdering :: StrictOC a -> Maybe (WQO a)
 getOrdering (StrictOC o) =
@@ -58,12 +61,15 @@ getOrdering (StrictOC o) =
 elems :: Ord a => StrictOC a -> S.Set a
 elems (StrictOC sets) = S.unions $ map WQO.elems (S.toList sets)
 
+-- | Constraints that permit any 'WQO'. In this case implemented by
+--   a singleton set containing an empty WQO.
 noConstraints :: forall a. (Eq a, Ord a, Hashable a) => StrictOC a
 noConstraints = StrictOC (S.singleton (WQO.empty))
 
 unsatisfiable :: StrictOC a
 unsatisfiable = StrictOC S.empty
 
+-- | Returns @true@ iff @strictOC ws@ does not permit any WQOs; i.e., if @ws@ is empty.
 isUnsatisfiable :: Eq a => StrictOC a -> Bool
 isUnsatisfiable c = c == unsatisfiable
 
@@ -96,8 +102,8 @@ fromSet oc = -- StrictOC oc
             else go (x : include) xs
 
 
--- The intersection of two constraints `a` and `b` is new constraints that only
--- permits the orderings permitted by both `a` and `b`
+-- | The intersection of two constraints `a` and `b` is new constraints that only
+--   permits the orderings permitted by both `a` and `b`
 intersect :: (Show a, Eq a, Ord a, Hashable a) => StrictOC a -> StrictOC a -> StrictOC a
 intersect (StrictOC lhs) (StrictOC rhs) = result
   -- trace (printf "%s intersect %s yields %s" (show lhs) (show rhs) (show result)) result
@@ -116,23 +122,13 @@ addConstraint c (StrictOC oc) = StrictOC $ S.fromList $ do
 singleton :: (Eq a, Ord a, Hashable a) => WQO a -> StrictOC a
 singleton c = addConstraint c noConstraints
 
-relevantConstraints :: forall a. (Eq a, Ord a, Hashable a) => StrictOC a -> S.Set a -> S.Set a -> StrictOC a
-relevantConstraints (StrictOC oc0) as bs = go (S.toList oc0) unsatisfiable
-  where
-    go :: [WQO a] -> StrictOC a -> StrictOC a
-    go []          oc   = oc
-    go (o : rest) exist =
-      let
-        o' = WQO.relevantTo o as bs
-      in
-        if WQO.null o'
-        then noConstraints
-        else go rest (union (singleton o) exist)
-
+-- | @StrictOC ws@ permits a 'WQO' @w@ if there exists a @w'@ in @ws@
+--   that can be extended to equal @w@
 permits :: (Eq a, Ord a, Hashable a) => StrictOC a -> WQO a -> Bool
 permits (StrictOC permitted) desired =
   any (`WQO.notStrongerThan` desired) (S.toList permitted)
 
+-- | An implementation of 'StrictOC'; for any computational context
 strictOC :: Monad m => OC.WQOConstraints StrictOC m
 strictOC = OC.OC
   addConstraint
@@ -141,12 +137,11 @@ strictOC = OC.OC
   notStrongerThan
   noConstraints
   permits
-  relevantConstraints
   union
   unsatisfiable
-  elems
   getOrdering
-  id
 
+-- | An implementation of 'StrictOC' in the 'Identity' monad; usable in pure
+--   computations.
 strictOC' :: OC.WQOConstraints StrictOC Identity
 strictOC' = strictOC
