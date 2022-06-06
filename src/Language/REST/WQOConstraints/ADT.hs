@@ -7,7 +7,14 @@
 
 #define OPTIMIZE_WQO
 
-module Language.REST.WQOConstraints.ADT where
+module Language.REST.WQOConstraints.ADT
+  (  ConstraintsADT(..)
+  , addConstraint
+  , adtOC
+  , intersect
+  , union
+  )
+where
 
 import GHC.Generics (Generic)
 
@@ -26,10 +33,14 @@ import Text.Printf
 
 type WQO = WQO.WQO
 
+-- | Represents constraints over a WQO on @a@
 data ConstraintsADT a =
+ -- | @Sat wqo@ represents satisfiable constraints: those that permit each relation in @wqo@.
     Sat (WQO a)
   | Unsat
+    -- | @Union c1 c2@ permits orderings of P1 and orderings of P2
   | Union (ConstraintsADT a) (ConstraintsADT a)
+    -- | @Intersect c1 c2@ permits orderings iff permitted by P1 and permitted by P2
   | Intersect (ConstraintsADT a) (ConstraintsADT a)
   deriving (Eq, Ord, Generic, Hashable)
 
@@ -46,16 +57,7 @@ cost (Intersect lhs rhs) = cost lhs + cost rhs
 cost (Sat wqo)           = S.size $ WQO.elems wqo
 cost Unsat               = 100
 
-minDepth :: ConstraintsADT a -> Int
-minDepth (Union lhs rhs)     = 1 + min (minDepth lhs) (minDepth rhs)
-minDepth (Intersect lhs rhs) = 1 + min (minDepth lhs) (minDepth rhs)
-minDepth _                   = 1
-
-maxDepth :: ConstraintsADT a -> Int
-maxDepth (Union lhs rhs)     = 1 + max (maxDepth lhs) (maxDepth rhs)
-maxDepth (Intersect lhs rhs) = 1 + max (maxDepth lhs) (maxDepth rhs)
-maxDepth _                   = 1
-
+-- | @intersect c1 c2@ permits orderings iff permitted by P1 and permitted by P2
 intersect :: (Eq a, Ord a, Hashable a) => ConstraintsADT a -> ConstraintsADT a -> ConstraintsADT a
 
 #ifdef OPTIMIZE_WQO
@@ -92,6 +94,7 @@ intersect (Intersect (Sat w1) t1) (Sat w2) =
 #endif
 intersect t1 t2            = Intersect t1 t2
 
+-- | @union c1 c2@ permits orderings of P1 and orderings of P2
 union :: Eq a => ConstraintsADT a -> ConstraintsADT a -> ConstraintsADT a
 union (Sat w) _            | w == WQO.empty = Sat w
 union _            (Sat w) | w == WQO.empty = Sat w
@@ -103,6 +106,7 @@ union s Unsat     = s
 union c1 c2 | c1 == c2 = c1
 union c1 c2            = Union c1 c2
 
+-- | @addConstraint o c@ strengthes @c@ to also contain every relation in @o@
 addConstraint
  :: (Ord a, Hashable a) => WQO a -> ConstraintsADT a -> ConstraintsADT a
 addConstraint o c = intersect (Sat o) c
@@ -217,6 +221,7 @@ instance (Eq a, Hashable a,  Show a) => Show (ConstraintsADT a) where
   show (Union w t )    = printf "(%s ∨\n %s)" (show w) (show t)
   show (Intersect w t) = printf "(%s ∧ %s)" (show w) (show t)
 
+-- | See 'ConstraintsADT'
 adtOC :: (Handle, Handle) -> OC.WQOConstraints ConstraintsADT IO
 adtOC z3 = OC.liftC (checkSat' z3) adtOC'
 

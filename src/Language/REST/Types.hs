@@ -28,9 +28,20 @@ import           Text.Printf
 import           Language.REST.Op
 import           Language.REST.MetaTerm as MT
 
+-- | Arguments used for pretty-printing terms
 data PPArgs = PPArgs
-  { ppReplace  :: [(T.Text, T.Text)]
+  {
+    -- | A list of pairs @(search, rep)@. If any operator starts with @search@
+    --   for some element in the list, during the printing the operator is
+    --   printed with the corresponding @rep@ in place of @search@.
+    ppReplace  :: [(T.Text, T.Text)]
+
+    -- | A list of pairs @(search, rep)@. If any operator matches @search@, then it's
+    --   corresponding term is printed in infix style with operator @rep@.
   , ppInfixOps :: [(T.Text, T.Text)]
+
+    -- | Used to override printing for some terms. When @ppCustom m = Just s@, then @m@
+    --   be printed as @s@.
   , ppCustom   :: MetaTerm -> Maybe T.Text
   }
 

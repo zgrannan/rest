@@ -11,12 +11,11 @@ module Language.REST.Rest (
     rest
   , pathsResult
   , termsResult
-  , resultTerms
   , PathsResult(..)
   , TermsResult
   , WorkStrategy(..)
   , RESTParams(..)
-  , RESTResult
+  , RESTResult(..)
   ) where
 
 import           Control.Monad
