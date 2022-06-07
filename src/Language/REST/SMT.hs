@@ -16,7 +16,8 @@
 --   with an SMT solver.
 module Language.REST.SMT
   (
-    checkSat'
+    checkSat
+  , checkSat'
   , getModel
   , parseModel
   , killZ3

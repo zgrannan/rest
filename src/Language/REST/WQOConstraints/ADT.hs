@@ -18,7 +18,6 @@ where
 
 import GHC.Generics (Generic)
 
-import Debug.Trace
 import Data.Hashable
 import Control.Monad.State.Lazy
 import qualified Data.Set as S
@@ -126,9 +125,6 @@ noConstraints = Sat (WQO.empty)
 unsatisfiable :: ConstraintsADT a
 unsatisfiable = Unsat
 
-trace' :: String -> a -> a
-trace' = trace
-
 {-# SPECIALIZE getConstraints :: ConstraintsADT Op -> [WQO Op] #-}
 getConstraints :: forall a. (Show a, Ord a, Hashable a) => ConstraintsADT a -> [WQO a]
 getConstraints adt = -- trace' ("Get constraints, size : " ++ (show $ dnfSize adt)) $
@@ -198,12 +194,6 @@ getConstraints' c@(Intersect lhs rhs) = cached c $ do
         if cost lhs > cost rhs
         then (lhs, rhs)
         else (rhs, lhs)
-
-dnfSize :: ConstraintsADT a -> Int
-dnfSize (Sat _w)       = 1
-dnfSize Unsat         = 0
-dnfSize (Union w1 w2) = dnfSize w1 + dnfSize w2
-dnfSize (Intersect w1 w2) = dnfSize w1 * dnfSize w2
 
 permits
   :: (Ord a, Hashable a, Show a)

@@ -58,9 +58,6 @@ getOrdering :: StrictOC a -> Maybe (WQO a)
 getOrdering (StrictOC o) =
   listToMaybe (S.toList o)
 
-elems :: Ord a => StrictOC a -> S.Set a
-elems (StrictOC sets) = S.unions $ map WQO.elems (S.toList sets)
-
 -- | Constraints that permit any 'WQO'. In this case implemented by
 --   a singleton set containing an empty WQO.
 noConstraints :: forall a. (Eq a, Ord a, Hashable a) => StrictOC a
@@ -118,9 +115,6 @@ addConstraint :: (Eq a, Ord a, Hashable a) => WQO a -> StrictOC a -> StrictOC a
 addConstraint c (StrictOC oc) = StrictOC $ S.fromList $ do
   c'  <-  S.toList oc
   maybeToList $ WQO.merge c c'
-
-singleton :: (Eq a, Ord a, Hashable a) => WQO a -> StrictOC a
-singleton c = addConstraint c noConstraints
 
 -- | @StrictOC ws@ permits a 'WQO' @w@ if there exists a @w'@ in @ws@
 --   that can be extended to equal @w@
