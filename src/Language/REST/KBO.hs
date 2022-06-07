@@ -25,6 +25,9 @@ arityConstraints t = toExpr $ go M.empty t where
   toConstraint (sym, n) = toSMT sym `smtGTE` (Const n)
 
 
+-- | @kboGTE t u@ returns the SMT expression describing constraints
+-- on the weights of function symbols such that @t@ is greater than @u@
+-- in the KBO ordering.
 kboGTE :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
 kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps `smtGTE` size uOps)
   where
@@ -32,6 +35,7 @@ kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps 
     size ops     = smtAdd (map toSMT ops)
 
 
+-- | OCA for a quasi-order extension to the Knuth-Bendix ordering
 kbo :: SolverHandle -> OCAlgebra (SMTExpr Bool) RuntimeTerm IO
 kbo solver = OCAlgebra
   {  isSat           = checkSat' solver

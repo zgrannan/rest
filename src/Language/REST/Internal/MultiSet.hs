@@ -31,9 +31,14 @@ data MultiSet a = MultiSet (M.HashMap a Int) deriving (Eq, Generic, Hashable, Or
 instance Show a => Show (MultiSet a) where
   show ms = "{" ++ L.intercalate ", " (map show $ toList ms) ++ "}"
 
+-- | @delete k m@ removes a single instance of @k@ from the multiset @m.
+--   If @k is not in the multiset, the original multiset is returned
 delete :: (Hashable a, Eq a) => a -> MultiSet a -> MultiSet a
 delete k = deleteMany k 1
 
+-- | @delete k n m@ removes @n@ instances of @k@ from the multiset @m@.
+--   If there are less than @n@ instances of @k@ in the multiset, all
+--   instances are removed.
 deleteMany :: (Hashable a, Eq a) => a -> Int -> MultiSet a -> MultiSet a
 deleteMany k v (MultiSet ms) | Just c <- M.lookup k ms
                              , c > v = MultiSet $ M.insert k (c - v) ms
@@ -56,6 +61,8 @@ filter f (MultiSet ms) = MultiSet $ M.filterWithKey f' ms
 null :: MultiSet a -> Bool
 null (MultiSet ms) = M.null ms
 
+-- | @member k m@ returns @true@ iff there is at least one instance of @k@
+--   in @m@
 member :: (Eq a, Hashable a) => a -> MultiSet a -> Bool
 member k (MultiSet ms) = M.member k ms
 

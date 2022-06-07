@@ -12,7 +12,29 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.REST.SMT where
+-- | This module contains functionality for creating SMTLIB expressions and interacting
+--   with an SMT solver.
+module Language.REST.SMT
+  (
+    checkSat
+  , checkSat'
+  , getModel
+  , parseModel
+  , killZ3
+  , spawnZ3
+  , smtAdd
+  , smtAnd
+  , smtFalse
+  , smtGTE
+  , smtTrue
+  , withZ3
+  , SolverHandle
+  , SMTExpr(..)
+  , SMTVar(..)
+  , ToSMT(..)
+  , ToSMTVar(..)
+  , Z3Model
+) where
 
 import Control.Monad.IO.Class
 import Data.Hashable
@@ -27,6 +49,8 @@ import Text.ParserCombinators.Parsec.Char
 import GHC.Generics (Generic)
 import GHC.IO.Handle
 
+-- | A model returned by Z3 corresponding to a satisfiable
+--   set of constraints. Untyped.
 type Z3Model = M.Map String String
 
 parens :: Text.Parsec.Prim.Stream s m Char => ParsecT s u m a -> ParsecT s u m a
@@ -54,23 +78,16 @@ modelParser = parens $ do
   defs <- endBy parseFunDef spaces
   return $ M.fromList defs
 
-readModel :: Handle -> IO String
-readModel handle = go "" where
-  closedTerm t = length (filter (== '(') t) == length (filter (== ')') t)
-  go buf = do
-    line <- hGetLine handle
-    let buf' = buf ++ line ++ "\n"
-    if closedTerm buf'
-    then return buf'
-    else go buf'
-
+-- | Parses Z3's model string into a 'Z3Model'.
 parseModel :: String -> Z3Model
 parseModel str = case parse modelParser "" str of
   Left err -> error (show err)
   Right t  -> t
 
+-- | An SMT variable
 newtype SMTVar a = SMTVar T.Text deriving (Eq, Ord)
 
+-- | SMTLib expressions
 data SMTExpr a where
     And     :: [SMTExpr Bool] -> SMTExpr Bool
     Add     :: [SMTExpr Int]  -> SMTExpr Int
@@ -153,16 +170,20 @@ smtFalse = Or []
 smtTrue :: SMTExpr Bool
 smtTrue  = And []
 
+-- | Returns an SMT expression that adds all elements in the list. If the list is empty,
+--   returns @Const 0@.
 smtAdd :: [SMTExpr Int] -> SMTExpr Int
 smtAdd [] = Const 0
 smtAdd ts = Add ts
 
+-- | `smtAnd t u` returns an smt expression representing \( t \land u \).
 smtAnd :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
 smtAnd (And xs) (And ys) = And $ L.nub (xs ++ ys)
 smtAnd (And xs) e        = And $ L.nub (xs ++ [e])
 smtAnd e        (And ys) = And $ L.nub (e:ys)
 smtAnd t        u        = And [t, u]
 
+-- | `smtGTE t u` returns an SMT expression \( t \geqslant u \). If @t == u@, returns 'smtTrue'.
 smtGTE :: SMTExpr Int -> SMTExpr Int -> SMTExpr Bool
 smtGTE t u | t == u    = smtTrue
 smtGTE t u | otherwise = GTE t u
@@ -195,17 +216,22 @@ askCmds :: SMTExpr Bool -> [SMTCommand]
 askCmds expr = varDecls ++ [SMTAssert expr, CheckSat] where
   varDecls = map DeclareVar $ S.toList (vars expr)
 
+-- | The handle (stdIn, stdOut) used for interacting with Z3
 type SolverHandle = (Handle, Handle)
 
-spawnZ3 :: IO (Handle, Handle)
+-- | Instantiates a Z3 instance, returning the solver handle for interaction
+spawnZ3 :: IO SolverHandle
 spawnZ3 = do
   (Just stdIn, Just stdOut, _, _) <- createProcess (proc "z3" ["-in"]) {std_in = CreatePipe, std_out = CreatePipe}
   return (stdIn, stdOut)
 
-killZ3 :: (Handle, b) -> IO ()
+-- | Kills the Z3 instance by closing the standard input stream
+killZ3 :: SolverHandle -> IO ()
 killZ3 (stdIn, _) = hClose stdIn
 
-withZ3 :: MonadIO m => ((Handle, Handle) -> m b) -> m b
+-- | @withZ3 f@ instantiates a Z3 instance, runs @f@ with that instance,
+--   and then closes the instance and returns the result
+withZ3 :: MonadIO m => (SolverHandle -> m b) -> m b
 withZ3 f =
   do
     z3     <- liftIO $ spawnZ3
@@ -213,11 +239,14 @@ withZ3 f =
     liftIO $ killZ3 z3
     return result
 
+-- | @getModel@ instructs an instantiated SMT solver to produce its model.
 getModel :: Handle -> IO ()
 getModel stdIn = do
   hPutStr stdIn "(get-model)\n"
   hFlush stdIn
 
+-- | @checkSat' handles expr@ checks satisfiability of @expr@ in an instantiated SMT solver.
+--   This is wrapped in a @push@ / @pop@, so it does not change the SMT environment
 checkSat' :: (Handle,  Handle) -> SMTExpr Bool -> IO Bool
 checkSat' (stdIn, stdOut) expr = do
   sendCommands $ Push:askCmds expr
@@ -237,6 +266,8 @@ checkSat' (stdIn, stdOut) expr = do
       hPutStr stdIn $ (T.unpack (T.intercalate "\n" (map commandString cmds))) ++ "\n"
       hFlush stdIn
 
+-- | @checkSat expr@ launches Z3, to checks satisfiability of @expr@, terminating Z3
+--   afterwards. Just a utility wrapper for `checkSat'`
 checkSat :: SMTExpr Bool -> IO Bool
 checkSat expr = do
   z3     <- spawnZ3
@@ -244,9 +275,14 @@ checkSat expr = do
   killZ3 z3
   return result
 
+-- | This class allows elements of type @a@ to be used as SMT /vaiables/ of type @b@.
+--   For example, the instance @ToSMTVar Op Int@ allows 'RuntimeTerm' operators to be
+--   represented as 'Int' variables.
 class ToSMTVar a b | a -> b where
   toSMTVar :: a -> SMTVar b
 
+-- | This class allows elements of type @a@ to be used as SMT expressions of type
+--   @b@
 class ToSMT a b where
   toSMT :: a -> SMTExpr b
 

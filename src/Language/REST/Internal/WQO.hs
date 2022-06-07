@@ -173,6 +173,8 @@ mergeECs (WQO ecs po) ec1 ec2 = WQO ecs' po'
 type ECMap a = M.Map (EquivalenceClass a) (EquivalenceClass a)
 
 {-# SPECIALISE notStrongerThan :: WQO Op -> WQO Op -> Bool #-}
+-- |  @w1 `notStrongerThan` w2@ if it is possible to extend @w1@ with additional
+--    relations to obtain @w2@
 notStrongerThan :: forall a . (Ord a, Eq a, Hashable a) => WQO a -> WQO a -> Bool
 notStrongerThan w1 w2 | w1 == w2 = True
 notStrongerThan (WQO ecs po) (WQO ecs' po') = result where
@@ -251,6 +253,9 @@ data ExtendOrderingResult a =
   | AlreadyImplied
   | Contradicts
 
+-- | @relevantTo wqo as bs@ returns a new WQO that contains only the necessary
+--   relations to relate elements from @as@ with elements in @bs@ as they are
+--   related in @wqo@.
 relevantTo :: (Ord a, Eq a, Hashable a) => WQO a -> S.Set a -> S.Set a -> WQO a
 relevantTo wqo0 as bs = go empty cartesianProduct where
 

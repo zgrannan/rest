@@ -82,8 +82,11 @@ lpo' strict oc r cs t@(App f ts) u@(App g us) = result
       go ui = lpo' strict oc GT cs t ui
 
 
+-- | Constraint generator for a quasi-order extension to the Lexicographic path ordering
 lpo :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) => ConstraintGen oc Op RuntimeTerm Identity
 lpo oc r cs t u = return $ lpo' False oc r cs t u
 
+-- | Constraint generator for a strict version of the quasi-order extension to
+--   the Lexicographic path ordering.
 lpoStrict :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) => ConstraintGen oc Op RuntimeTerm Identity
 lpoStrict oc r cs t u = return $ lpo' True oc r cs t u

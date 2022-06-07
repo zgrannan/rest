@@ -6,14 +6,16 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -Wno-error=deprecations #-}
 
+-- | This module contains the core REST algorithm
 module Language.REST.Rest (
     rest
   , pathsResult
   , termsResult
-  , terms
   , PathsResult(..)
+  , TermsResult
   , WorkStrategy(..)
   , RESTParams(..)
+  , RESTResult(..)
   ) where
 
 import           Control.Monad
@@ -31,28 +33,37 @@ import Language.REST.ExploredTerms as ET
 import Language.REST.Internal.ListT
 import Language.REST.Internal.WorkStrategy
 
+-- | The set of all 'Path's explored by REST.
 newtype PathsResult rule term oc = PathsResult (S.HashSet (Path rule term oc))
 
+-- | The set of all terms explored by REST.
 newtype TermsResult rule term oc = TermsResult (S.HashSet term)
 
+-- | An initial (empty) instance of 'PathsResult'
 pathsResult :: PathsResult rule term oc
 pathsResult = PathsResult S.empty
 
+-- | An initial (empty) instance of 'TermsResult'
 termsResult :: TermsResult rule term oc
 termsResult = TermsResult S.empty
 
+--  | This class encapsulates the mechanism for REST to store the result of its computation.
+-- For example, we include two instances: 'PathsResult', which stores each 'Path' generated
+-- by REST (useful for debugging and visualization); and 'TermsResult', which only stores the
+-- resulting terms (which uses less memory and is likely more performant).
 class RESTResult a where
+  -- | Includes a term in the result
   includeInResult :: (Hashable oc, Eq oc, Hashable rule, Eq rule, Hashable term, Eq term) => Path rule term oc -> a rule term oc -> a rule term oc
-  terms :: (Eq term, Hashable term) => a rule term oc -> S.HashSet term
+  -- | Obtains the terms explored by REST
+  resultTerms :: (Eq term, Hashable term) => a rule term oc -> S.HashSet term
 
 instance RESTResult PathsResult where
   includeInResult p (PathsResult s) = PathsResult (S.insert p s)
-  terms (PathsResult s) = S.fromList (concatMap pathTerms $ S.toList s)
-
+  resultTerms (PathsResult s) = S.fromList (concatMap pathTerms $ S.toList s)
 
 instance RESTResult TermsResult where
   includeInResult p (TermsResult s) = TermsResult (S.union s (S.fromList $ pathTerms p))
-  terms (TermsResult s)             = s
+  resultTerms (TermsResult s)       = s
 
 
 data RESTState m rule term oc et rtype = RESTState
@@ -72,6 +83,7 @@ data RESTParams m rule term oc rtype = RESTParams
   , etStrategy   :: ExploreStrategy
   }
 
+-- @rest params terms@ performs the REST search from initial term @term@ with parameters@params@.
 rest :: forall m rule term oc rtype .
   ( MonadIO m
   , RewriteRule m rule term
