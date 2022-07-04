@@ -16,7 +16,7 @@ import qualified Arith as A
 import qualified Compiler as C
 import qualified Group as G
 import Language.REST.RESTDot
-import Language.REST.Dot
+import Language.REST.Dot (GraphType(..))
 import Language.REST.Internal.WorkStrategy
 import DSL
 import Nat
@@ -142,8 +142,8 @@ mkRESTGraph' :: (MonadIO m, Show c, Hashable c, Ord c) =>
 mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
   do
     let pr (Rewrite t u _) = printf "%s → %s" (pp t) (pp u)
-    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList userRWs0
-    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList evalRWs0
+    -- liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList userRWs0
+    -- liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList evalRWs0
     start <- liftIO $ getCurrentTime
     (PathsResult paths, targetPath) <- rest
       RESTParams
@@ -168,26 +168,32 @@ mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
           Nothing -> printf "TARGET %s NOT FOUND\n" (pp (parseTerm target1)))
       Nothing -> return ()
 
-setDistribRules :: S.HashSet Rewrite
-setDistribRules = S.fromList
-  [ distribL (/\) (\/)
+main :: IO ()
+main = return ()
+
+setRules :: S.HashSet Rewrite
+setRules = S.fromList
+  [
+    commutes (/\)
+  , distribL (/\) (\/)
   , distribR (/\) (\/)
   , distribL (\/) (/\)
   , distribR (\/) (/\)
-  ]
-
-challengeRulesNoCommute :: S.HashSet Rewrite
-challengeRulesNoCommute = S.union setDistribRules $ S.fromList
-  [ x /\ x        ~> x
+  , x /\ x        ~> x
   , x \/ x        ~> x
   , x \/ emptyset ~> x
   , x /\ emptyset ~> emptyset
   , assocL (\/)
   , assocR (\/)
+  , s0 /\ s1 ~> emptyset
   ]
 
-main :: IO ()
-main = do
-  mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
-  mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
-  mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams
+mkGraph oca =
+  mkRESTGraph
+    oca       -- Ordering Constraint Algebra Implementation
+    S.empty   -- "Oracle" rewrite rules (unused)
+    setRules  -- Rewrite rules
+    "example" -- Output filename
+    "intersect(union(s₀,s₁), s₀)" -- Initial term to rewrite
+    (withShowConstraints $ defaultParams) -- Pretty-printing options
+
