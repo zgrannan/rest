@@ -26,16 +26,17 @@ a /\ b = undefined
 emptySet :: Set
 emptySet = Empty
 
+{-@ predicate IsDisjoint M1 M2 = M1 /\ M2 = emptySet @-}
+
 
 {-======================================================
-    Definitions
+    Proven Equalities
 =======================================================-}
 
-{-@ predicate IsDisjoint M1 M2 = M1 /\ M2 = emptySet @-}
 
 {-@ disjoint :: s0 : Set -> { s1 : Set | IsDisjoint s0 s1} -> { s0 /\ s1 = emptySet } @-}
 disjoint :: Set -> Set -> ()
-disjoint _ _ = ()
+disjoint _ _ = trivial
 
 {-======================================================
     Axioms
