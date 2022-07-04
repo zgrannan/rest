@@ -3,3 +3,4 @@ graphs/*
 dist-newstyle
 .DS_Store
 *.tar.gz
+.liquid
