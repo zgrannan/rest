@@ -50,11 +50,11 @@ unionIntersect _ _ _ = ()
 intersectSelf :: Set -> Proof
 intersectSelf _ = ()
 
-{-@ assume intersectComm :: ma : Set -> mb : Set -> {v : () | ma /\ mb = mb /\ ma } @-}
+{-@ assume intersectComm :: ma : Set -> mb : Set -> { ma /\ mb = mb /\ ma } @-}
 intersectComm :: Set  -> Set -> Proof
 intersectComm _ _ = ()
 
-{-@ assume unionEmpty :: ma : Set -> {v : () | ma \/ emptySet = ma } @-}
+{-@ assume unionEmpty :: ma : Set -> { ma \/ emptySet = ma } @-}
 unionEmpty :: Set -> Proof
 unionEmpty _ = ()
 

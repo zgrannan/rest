@@ -18,9 +18,9 @@ import qualified Group as G
 import Language.REST.RESTDot
 import Language.REST.Dot (GraphType(..))
 import Language.REST.Internal.WorkStrategy
-import DSL
+import Language.REST.MetaTerm
+import DSL hiding (x)
 import Nat
-import Set as Set
 import qualified Multiset as MS
 import NonTerm as NT
 import qualified Lists as Li
@@ -40,7 +40,7 @@ import Language.REST.RPO
 import Language.REST.ProofGen
 import Language.REST.Rest
 import Language.REST.Types
-import Language.REST.SMT
+import Language.REST.SMT hiding (Var)
 import           Language.REST.RuntimeTerm as RT
 import           Language.REST.Internal.Rewrite
 
@@ -51,7 +51,6 @@ mkArithRESTGraph,
   mkCompilerRESTGraph,
   mkGroupRESTGraph,
   mkListsRESTGraph,
-  mkSetsRESTGraph,
   mkNonTermRestGraph,
   mkMSRESTGraph
   :: SolverType -> String -> String -> GraphParams -> IO ()
@@ -59,7 +58,7 @@ mkArithRESTGraph ct = mkRESTGraph ct A.evalRWs A.userRWs
 mkCompilerRESTGraph ct = mkRESTGraph ct C.evalRWs C.userRWs
 mkGroupRESTGraph ct = mkRESTGraph ct G.evalRWs G.userRWs
 mkListsRESTGraph ct = mkRESTGraph ct Li.evalRWs Li.userRWs
-mkSetsRESTGraph ct = mkRESTGraph ct Set.evalRWs Set.userRWs
+-- mkSetsRESTGraph ct = mkRESTGraph ct Set.evalRWs Set.userRWs
 mkNonTermRestGraph ct = mkRESTGraph ct NT.evalRWs NT.userRWs
 mkMSRESTGraph ct = mkRESTGraph ct MS.evalRWs MS.userRWs
 
@@ -171,10 +170,25 @@ mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
 main :: IO ()
 main = return ()
 
+
+emptyset, s0, s1 :: MetaTerm
+emptyset  = RWApp "∅" []
+s0        = RWApp "s₀" []
+s1        = RWApp "s₁" []
+
+(/\), (\/) :: MetaTerm -> MetaTerm -> MetaTerm
+x1 /\ y1 = RWApp "intersect" [x1, y1]
+x1 \/ y1  = RWApp "union" [x1, y1]
+
+x :: MetaTerm
+x = Var "X"
+
 setRules :: S.HashSet Rewrite
 setRules = S.fromList
   [
-    commutes (/\)
+    assocL (\/)
+  , assocR (\/)
+  , commutes (/\)
   , distribL (/\) (\/)
   , distribR (/\) (\/)
   , distribL (\/) (/\)
@@ -183,9 +197,7 @@ setRules = S.fromList
   , x \/ x        ~> x
   , x \/ emptyset ~> x
   , x /\ emptyset ~> emptyset
-  , assocL (\/)
-  , assocR (\/)
-  , s0 /\ s1 ~> emptyset
+  , s0 /\ s1      ~> emptyset
   ]
 
 mkGraph oca =
