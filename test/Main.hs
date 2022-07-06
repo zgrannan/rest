@@ -177,7 +177,7 @@ s0        = RWApp "s₀" []
 s1        = RWApp "s₁" []
 
 (/\), (\/) :: MetaTerm -> MetaTerm -> MetaTerm
-x1 /\ y1 = RWApp "intersect" [x1, y1]
+x1 /\ y1  = RWApp "intersect" [x1, y1]
 x1 \/ y1  = RWApp "union" [x1, y1]
 
 x :: MetaTerm
