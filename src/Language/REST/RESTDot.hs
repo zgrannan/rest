@@ -39,7 +39,7 @@ rejNodeID gt p term = getNodeID gt p ++ show (abs $ hash term)
 rejectedNodes :: forall rule term a . (Hashable rule, Hashable term, Hashable a) =>
   GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Node
 rejectedNodes _ pp _ | showRejects pp == HideRejects = S.empty
-rejectedNodes gt pp p@(_steps, (PathTerm {rejected})) = S.fromList $ map go (HS.toList rejected)
+rejectedNodes gt pp p@(_steps, PathTerm {rejected}) = S.fromList $ map go (HS.toList rejected)
     where
         go :: (term, rule) -> Node
         go (rejTerm, _r) = Node (rejNodeID gt p rejTerm) (printTerm pp rejTerm) "dashed" "red"
@@ -62,7 +62,7 @@ endNode gt pp p@(_, t) =
 
 toEdges :: forall rule term a . (Hashable rule, Hashable term, Hashable a) =>
   GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Edge
-toEdges gt pp path = allRej `S.union` (S.fromList $ map toEdge (zip subs (tail subs)))
+toEdges gt pp path = allRej `S.union` S.fromList (zipWith (curry toEdge) subs (tail subs))
     where
         subs = subPaths path
 
@@ -86,7 +86,7 @@ toEdges gt pp path = allRej `S.union` (S.fromList $ map toEdge (zip subs (tail s
         toEdge (p0, p1@(ts, _)) =
             let
                 step        = last ts
-                color       = if (fromPLE step) then "brown" else "darkgreen"
+                color       = if fromPLE step then "brown" else "darkgreen"
                 esubLabel    = printOrd pp (ordering step)
                 startNodeID = nodeID (endNode gt pp p0)
                 endNodeID   = nodeID (endNode gt pp p1)

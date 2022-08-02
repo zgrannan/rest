@@ -54,9 +54,9 @@ eval (ADT.Intersect t1 t2)       =
     (Sat c1 t1', Sat c2 t2') ->
       let
         rest =
-          (ADT.intersect (ADT.Sat c1) t2') `ADT.union`
-          (ADT.intersect (ADT.Sat c2) t1') `ADT.union`
-          (ADT.intersect t1' t2')
+          ADT.intersect (ADT.Sat c1) t2' `ADT.union`
+          ADT.intersect (ADT.Sat c2) t1' `ADT.union`
+          ADT.intersect t1' t2'
       in
         case WQO.merge c1 c2 of
           Just c' -> Sat c' rest
@@ -74,7 +74,7 @@ instance (Show a, Eq a, Ord a, Hashable a) => Show (LazyOC a) where
 
 -- | Returns a new instance of 'LazyOC' permitting all WQOs
 noConstraints :: LazyOC a
-noConstraints = Sat (WQO.empty) ADT.Unsat
+noConstraints = Sat WQO.empty ADT.Unsat
 
 unsatisfiable :: LazyOC a
 unsatisfiable = Unsat

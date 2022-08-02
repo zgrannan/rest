@@ -13,6 +13,7 @@ module Language.REST.Internal.Rewrite
 
 import GHC.Generics (Generic)
 
+import           Data.Maybe (isNothing)
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
@@ -61,7 +62,7 @@ unifyAll su ((x, y) : ts)
 unify :: MetaTerm -> RuntimeTerm -> Subst -> Maybe Subst
 unify (MT.Var s) term su | M.lookup s su == Just term
   = Just su
-unify (MT.Var s) term su | M.lookup s su == Nothing
+unify (MT.Var s) term su | isNothing (M.lookup s su)
   = Just $ M.insert s term su
 unify (MT.RWApp o1 xs) (App o2 ys) su | o1 == o2 && length xs == length ys =
   unifyAll su (zip xs ys)
@@ -71,4 +72,4 @@ instance Monad m => RewriteRule m Rewrite RuntimeTerm where
   apply t (Rewrite left right _) = return $ S.unions $ map go (subTerms t)
     where
       go (t', tf) | Just su <- unify left t' M.empty = S.singleton (tf $ subst su right)
-      go _        | otherwise                        = S.empty
+      go _                                = S.empty

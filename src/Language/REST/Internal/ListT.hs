@@ -5,14 +5,13 @@ module Language.REST.Internal.ListT where
 import           Control.Applicative
 import           Control.Monad.Trans
 
-data ListT m a = ListT {
+newtype ListT m a = ListT {
   runListT :: m [a]
 }
 
 instance (Monad m) => Functor (ListT m) where
   fmap f (ListT mxs) = ListT $ do
-    xs <- mxs
-    return $ map f xs
+    map f <$> mxs
 
 instance (Monad m) => Applicative (ListT m) where
   pure x                    = ListT (return [x])

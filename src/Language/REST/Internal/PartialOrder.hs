@@ -82,7 +82,7 @@ insertUnsafe o@(PartialOrder m) f g = result
     result = PartialOrder $ M.insertWith S.union f decs $ M.mapWithKey go m
 
     go k old | S.member k ascs = S.union old decs
-    go _ v   | otherwise       = v
+    go _ v          = v
 
     ascs = ascendants f o
     decs = S.insert g $ descendents g o
@@ -125,7 +125,7 @@ replaceUnsafe froms to po@(PartialOrder m) = result where
 
   descs = S.unions (map (`descendents` po) froms)
 
-  filtered = M.filterWithKey (\k _ -> not $ k `elem` froms) m
+  filtered = M.filterWithKey (\k _ -> k `notElem` froms) m
   m' =
     if S.null descs
     then filtered
@@ -134,6 +134,6 @@ replaceUnsafe froms to po@(PartialOrder m) = result where
   result = PartialOrder $ M.map go m'
 
   go s | hasFrom s = S.insert to $ S.union descs $ S.difference s from'
-  go s | otherwise = s
+  go s  = s
 
   hasFrom set = any (`S.member` set) froms

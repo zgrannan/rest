@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -32,7 +31,7 @@ lift oc cgen =
   }
   where
     isSat' :: impl base -> m Bool
-    isSat' aoc = OC.isSatisfiable oc aoc
+    isSat' = OC.isSatisfiable oc
 
     top' :: impl base
     top' = OC.noConstraints oc

@@ -23,7 +23,7 @@ fuelOC initFuel = OCAlgebra isSat' refine' initFuel union' notStrongerThan'
   where
     isSat'  c             = return $ c >= 0
     refine' c _ _         = c - 1
-    union'  c c'          = max c c'
+    union'                = max
     notStrongerThan' c c' = return $ c >= c'
 
 -- | @contramap f oca@ transforms an OCA of terms of type @a@ terms of type @b@,

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
@@ -50,7 +50,7 @@ prettyPrint (PPArgs substs infixOps custom) t = T.unpack $ go $ replaceAll $ toM
 
   replace s | Just (from, to) <- L.find ((`T.isPrefixOf` s) . fst) substs
             = T.append to $ T.drop (T.length from) s
-  replace s | otherwise = s
+  replace s  = s
 
   replaceAll :: MT.MetaTerm -> MT.MetaTerm
   replaceAll (MT.Var x)            = MT.Var x
@@ -67,9 +67,9 @@ prettyPrint (PPArgs substs infixOps custom) t = T.unpack $ go $ replaceAll $ toM
   go (MT.RWApp (Op op) xs)       = T.concat [op, "(" , T.intercalate ", " (map go xs) , ")"]
 
   goParens mt | needsParens mt = T.pack $ printf "(%s)" (go mt)
-  goParens mt | otherwise      = go mt
+  goParens mt       = go mt
 
-  needsParens (MT.RWApp (Op op) _) = op `elem` (map fst infixOps)
+  needsParens (MT.RWApp (Op op) _) = op `elem` map fst infixOps
   needsParens _                    = False
 
 data Relation = GT | GTE | EQ deriving (Eq, Generic, Hashable)

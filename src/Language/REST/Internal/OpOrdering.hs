@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
+
+
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 
 -- | This module defines an interface for 'WQO's on 'Op'erators,
 --   for example, that are used as the precedence for an [RPQO]("Language.REST.RPO").
