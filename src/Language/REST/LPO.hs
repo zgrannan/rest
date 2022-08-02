@@ -50,7 +50,7 @@ lpo' False oc EQ _cs (App _f ts) (App _g us) | length ts /= length us = unsatisf
 lpo' False oc EQ cs (App f ts) (App g us) =
   let
     cs'  = intersect oc cs (singleton oc $ f =. g)
-    subs = zipWith (curry (uncurry $ lpo' False oc EQ cs')) ts us
+    subs = zipWith (lpo' False oc EQ cs') ts us
   in
     intersectAll oc (cs' : subs)
 
@@ -75,7 +75,7 @@ lpo' strict oc r cs t@(App f ts) u@(App g us) = result
       if strict && f /= g
       then unsatisfiable oc
       else intersectAll oc ([tDominatesUs, lex oc (r == GT) cs (lpo' strict) ts us] ++ symEQ) where
-        symEQ = [singleton oc (f =. g) | not (f == g)]
+        symEQ = [singleton oc (f =. g) | f /= g]
 
 
     tDominatesUs = intersectAll oc (map go us) where

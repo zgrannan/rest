@@ -62,7 +62,7 @@ endNode gt pp p@(_, t) =
 
 toEdges :: forall rule term a . (Hashable rule, Hashable term, Hashable a) =>
   GraphType -> PrettyPrinter rule term a -> Path rule term a -> S.Set Edge
-toEdges gt pp path = allRej `S.union` S.fromList (map toEdge (zip subs (tail subs)))
+toEdges gt pp path = allRej `S.union` S.fromList (zipWith (curry toEdge) subs (tail subs))
     where
         subs = subPaths path
 

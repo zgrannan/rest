@@ -74,7 +74,7 @@ toList ms = concatMap go (toOccurList ms)
 insert :: (Eq a, Hashable a) => a -> MultiSet a -> MultiSet a
 insert k (MultiSet ms) | Just c <- M.lookup k ms
                        = MultiSet $ M.insert k (c + 1) ms
-insert k (MultiSet ms) 
+insert k (MultiSet ms)
                        = MultiSet $ M.insert k 1 ms
 
 singleton :: (Eq a, Hashable a) => a -> MultiSet a

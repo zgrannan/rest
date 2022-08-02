@@ -189,7 +189,7 @@ smtGTE t u | t == u    = smtTrue
 smtGTE t u  = GTE t u
 
 app :: T.Text -> [SMTExpr a] -> T.Text
-app op trms = T.concat ["(", op, " ", (T.intercalate " " (map exprString trms)), ")"]
+app op trms = T.concat ["(", op, " ", T.intercalate " " (map exprString trms), ")"]
 
 exprString :: SMTExpr a -> T.Text
 exprString (And [])           = "true"

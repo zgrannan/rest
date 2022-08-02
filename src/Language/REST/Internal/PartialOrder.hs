@@ -125,7 +125,7 @@ replaceUnsafe froms to po@(PartialOrder m) = result where
 
   descs = S.unions (map (`descendents` po) froms)
 
-  filtered = M.filterWithKey (\k _ -> notElem k froms) m
+  filtered = M.filterWithKey (\k _ -> k `notElem` froms) m
   m' =
     if S.null descs
     then filtered

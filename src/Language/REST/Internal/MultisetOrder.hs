@@ -28,7 +28,7 @@ removeEQs :: (Eq x, Ord x, Hashable x) => MultiSet x -> MultiSet x -> (MultiSet 
 removeEQs ts0 = go (M.toList ts0) M.empty where
   go []       ts us                   = (ts, us)
   go (x : xs) ts us | x `M.member` us = go xs ts (M.delete x us)
-  go (x : xs) ts us | otherwise       = go xs (M.insert x ts) us
+  go (x : xs) ts us        = go xs (M.insert x ts) us
 
 data Replace a =
     ReplaceOne a a

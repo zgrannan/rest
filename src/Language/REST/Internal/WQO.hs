@@ -233,7 +233,7 @@ merge' lhs rhs@(WQO ecs po) = trace' message result where
         let
             xs = EC.toList ec
         in
-            zipWith (curry (\(a, b) -> (a, b, QEQ))) xs (tail xs)
+            zipWith (\ a b -> (a, b, QEQ)) xs (tail xs)
 
     poFacts :: [(a, a, QORelation)]
     poFacts =
