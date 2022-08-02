@@ -30,7 +30,6 @@ lift oc cgen =
   , union  = OC.union oc
   , notStrongerThan = OC.notStrongerThan oc
   }
-  where
 isSat' = OC.isSatisfiable oc
     isSat' :: impl base -> m Bool
 

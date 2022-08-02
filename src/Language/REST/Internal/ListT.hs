@@ -5,7 +5,7 @@ module Language.REST.Internal.ListT where
 import           Control.Applicative
 import           Control.Monad.Trans
 
-data ListT m a = ListT {
+newtype ListT m a = ListT {
   runListT :: m [a]
 }
 

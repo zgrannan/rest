@@ -21,10 +21,10 @@ data OCAlgebra c a m = OCAlgebra
 fuelOC :: (Monad m) => Int -> OCAlgebra Int a m
 fuelOC initFuel = OCAlgebra isSat' refine' initFuel union' notStrongerThan'
   where
-union' = max
     isSat'  c             = return $ c >= 0
-refine' c _ _         = c - 1
-notStrongerThan' c c' = return $ c >= c'
+    refine' c _ _         = c - 1
+    union'                = max
+    notStrongerThan' c c' = return $ c >= c'
 
 -- | @contramap f oca@ transforms an OCA of terms of type @a@ terms of type @b@,
 --   by using @f@ to convert terms of @b@ to equivalent ones of @a@

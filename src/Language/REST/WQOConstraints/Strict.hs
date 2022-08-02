@@ -46,7 +46,7 @@ type WQO = WQO.WQO
 --   2. Related, calculating the entire set @ws@ is computationally expensive,
 --      and often unnecessary for RESTs use-case, where continuing the path only
 --      requires knowing if /any/ WQO is permitted.
-data StrictOC a = StrictOC (S.Set (WQO a))
+newtype StrictOC a = StrictOC (S.Set (WQO a))
   deriving (Eq, Ord, Generic, Hashable)
 
 instance (Show a, Eq a, Ord a, Hashable a) => Show (StrictOC a) where

@@ -26,7 +26,7 @@ import qualified Data.List as L
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 
-data MultiSet a = MultiSet (M.HashMap a Int) deriving (Eq, Generic, Hashable, Ord)
+newtype MultiSet a = MultiSet (M.HashMap a Int) deriving (Eq, Generic, Hashable, Ord)
 
 instance Show a => Show (MultiSet a) where
   show ms = "{" ++ L.intercalate ", " (map show $ toList ms) ++ "}"

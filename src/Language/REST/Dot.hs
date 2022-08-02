@@ -62,7 +62,7 @@ edgeString :: Edge -> String
 edgeString (Edge efrom eto elabel color esubLabel style) =
     let
         sub = escape esubLabel
-        escape xs = concatMap go xs
+        escape = concatMap go
             where
                 go '\\' = "\\"
                 go '\n' = "<br />"
