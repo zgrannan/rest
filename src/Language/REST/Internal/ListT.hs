@@ -11,8 +11,7 @@ data ListT m a = ListT {
 
 instance (Monad m) => Functor (ListT m) where
   fmap f (ListT mxs) = ListT $ do
-    xs <- mxs
-    return $ map f xs
+    map f <$> mxs
 
 instance (Monad m) => Applicative (ListT m) where
   pure x                    = ListT (return [x])

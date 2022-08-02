@@ -42,7 +42,7 @@ delete k = deleteMany k 1
 deleteMany :: (Hashable a, Eq a) => a -> Int -> MultiSet a -> MultiSet a
 deleteMany k v (MultiSet ms) | Just c <- M.lookup k ms
                              , c > v = MultiSet $ M.insert k (c - v) ms
-deleteMany k _ (MultiSet ms) | otherwise = MultiSet $ M.delete k ms
+deleteMany k _ (MultiSet ms)  = MultiSet $ M.delete k ms
 
 distinctElems :: MultiSet a -> [a]
 distinctElems (MultiSet ms) = M.keys ms
@@ -69,12 +69,12 @@ member k (MultiSet ms) = M.member k ms
 toList :: MultiSet a -> [a]
 toList ms = concatMap go (toOccurList ms)
   where
-    go (k, num) = take num $ repeat k
+    go (k, num) = replicate num k
 
 insert :: (Eq a, Hashable a) => a -> MultiSet a -> MultiSet a
 insert k (MultiSet ms) | Just c <- M.lookup k ms
                        = MultiSet $ M.insert k (c + 1) ms
-insert k (MultiSet ms) | otherwise
+insert k (MultiSet ms) 
                        = MultiSet $ M.insert k 1 ms
 
 singleton :: (Eq a, Hashable a) => a -> MultiSet a

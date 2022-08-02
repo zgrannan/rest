@@ -62,9 +62,7 @@ intersect :: (Eq a, Ord a, Hashable a) => ConstraintsADT a -> ConstraintsADT a -
 #ifdef OPTIMIZE_WQO
 -- Optimization
 intersect (Sat t) (Sat u) =
-  case WQO.merge t u of
-    Just t' -> Sat t'
-    Nothing -> Unsat
+  maybe Unsat Sat (WQO.merge t u)
 #endif
 
 intersect (Sat w) v            | w == WQO.empty = v
@@ -76,19 +74,19 @@ intersect t1 (Union t2 t3) | t1 == t2 || t1 == t3 = t1
 #ifdef OPTIMIZE_WQO
 intersect (Sat w1) (Intersect (Sat w2) t2) =
   case WQO.merge w1 w2 of
-    Just w' -> intersect (Sat w') t2
+    Just w' -> Sat w' `intersect` t2
     Nothing -> Unsat
 intersect (Sat w1) (Intersect t2 (Sat w2)) =
   case WQO.merge w1 w2 of
-    Just w' -> intersect (Sat w') t2
+    Just w' -> Sat w' `intersect` t2
     Nothing -> Unsat
 intersect (Intersect t1 (Sat w1)) (Sat w2) =
   case WQO.merge w1 w2 of
-    Just w' -> intersect t1 (Sat w')
+    Just w' -> t1 `intersect` Sat w'
     Nothing -> Unsat
 intersect (Intersect (Sat w1) t1) (Sat w2) =
   case WQO.merge w1 w2 of
-    Just w' -> intersect t1 (Sat w')
+    Just w' -> t1 `intersect` Sat w'
     Nothing -> Unsat
 #endif
 intersect t1 t2            = Intersect t1 t2
@@ -108,7 +106,7 @@ union c1 c2            = Union c1 c2
 -- | @addConstraint o c@ strengthes @c@ to also contain every relation in @o@
 addConstraint
  :: (Ord a, Hashable a) => WQO a -> ConstraintsADT a -> ConstraintsADT a
-addConstraint o c = intersect (Sat o) c
+addConstraint o = intersect (Sat o)
 
 notStrongerThan
   :: (Eq a, ToSMTVar a Int)
@@ -117,10 +115,10 @@ notStrongerThan
   -> SMTExpr Bool
 notStrongerThan t1 t2 | t1 == t2            = smtTrue
 notStrongerThan t1 _  | t1 == noConstraints = smtTrue
-notStrongerThan t1 t2 | otherwise           = Implies (toSMT t2) (toSMT t1)
+notStrongerThan t1 t2            = Implies (toSMT t2) (toSMT t1)
 
 noConstraints :: ConstraintsADT a
-noConstraints = Sat (WQO.empty)
+noConstraints = Sat WQO.empty
 
 unsatisfiable :: ConstraintsADT a
 unsatisfiable = Unsat
@@ -143,8 +141,8 @@ cached :: (Ord a) => ConstraintsADT a -> GCMonad a -> GCMonad a
 cached key thunk = do
   cache <- gets cs
   case M.lookup key cache of
-    Just result -> trace'' ("ADT Cache hit") $ return result
-    Nothing     -> trace'' ("ADT Cache miss") $ do
+    Just result -> trace'' "ADT Cache hit" $ return result
+    Nothing     -> trace'' "ADT Cache miss" $ do
       result <- trace'' "Do thunk" thunk
       trace'' "Done" $ modify (\st -> st{cs = M.insert key result (cs st)})
       return result
@@ -156,7 +154,7 @@ cached' :: (Hashable a, Show a, Ord a) => (WQO a, WQO a) -> Maybe (WQO a) -> Sta
 cached' (lhs, rhs) thunk = do
   cache <- gets ms
   case M.lookup (lhs, rhs) cache of
-    Just result -> trace'' ("WQO Cache hit") $ return result
+    Just result -> trace'' "WQO Cache hit" $ return result
     Nothing     -> trace'' ("WQO Cache miss" ++ show (lhs, rhs)) $ do
       trace'' "Done" $ modify (\st -> st{ms = M.insert (rhs, lhs) thunk $ M.insert (lhs, rhs) thunk (ms st)})
       return thunk
@@ -181,15 +179,15 @@ getConstraints' c@(Intersect lhs rhs) = cached c $ do
   c1' <- cached c1 $ getConstraints' c1
   if null c1'
     then return []
-    else (cached c2 $ getConstraints' c2) >>= go c1'
+    else cached c2 (getConstraints' c2) >>= go c1'
   where
       go :: [WQO a] -> [WQO a] -> State (GCState a) [WQO a]
       go c1' c2' = flatten <$>
-        (sequence $ do
+        sequence (do
           wqo1 <- c1'
           wqo2 <- c2'
           return (cached' (wqo1, wqo2) $ WQO.merge wqo1 wqo2))
-      flatten = concatMap Mb.maybeToList
+      flatten = catMaybes
       (c1, c2) =
         if cost lhs > cost rhs
         then (lhs, rhs)
@@ -203,7 +201,7 @@ permits
 permits adt wqo = any (`WQO.notStrongerThan` wqo) (getConstraints adt)
 
 isSatisfiable :: (ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) => ConstraintsADT a -> SMTExpr Bool
-isSatisfiable s = toSMT s
+isSatisfiable = toSMT
 
 instance (Eq a, Hashable a,  Show a) => Show (ConstraintsADT a) where
   show (Sat w)         = show w
@@ -226,3 +224,4 @@ adtOC' = OC.OC
   union
   unsatisfiable
   undefined
+

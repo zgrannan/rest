@@ -86,10 +86,8 @@ instance (Show a, Eq a, Hashable a) => Show (WQO a) where
     show (WQO ecs po) = L.intercalate " ∧ " (map show ecs' ++ po')
         where
             ecs'          = filter (not . EC.isSingleton) $ S.toList ecs
-            po'           = 
-                if PO.isEmpty po 
-                    then []
-                    else [show po]
+            po'           =
+                [show po | not (PO.isEmpty po)]
             --         else [show $ PO.mapUnsafe ecHead po]
             -- ecHead (x, y) = (EC.head x, EC.head y)
 
@@ -100,7 +98,7 @@ empty :: WQO a
 empty = WQO S.empty PO.empty
 
 singleton :: (Ord a, Eq a, Hashable a) => (a, a, QORelation) -> Maybe (WQO a)
-singleton t = insertMaybe empty t
+singleton = insertMaybe empty
 
 {-# INLINE elems #-}
 elems :: (Ord a) => WQO a -> S.Set a
@@ -133,7 +131,7 @@ getEquivalenceClasses' (WQO classes _) source target =
     t <- L.find (EC.isMember source) classes'
     if EC.isMember target t
       then return (t, t)
-      else ((,) t) <$> L.find (EC.isMember target) classes'
+      else (t,) <$> L.find (EC.isMember target) classes'
   where
     classes' = S.toList classes
 
@@ -142,12 +140,12 @@ getEquivalenceClasses' (WQO classes _) source target =
 {-# INLINE getRelation #-}
 getRelation :: (Ord a, Eq a, Hashable a) => WQO a -> a -> a -> Maybe QORelation
 getRelation _ f g | f == g = Just QEQ
-getRelation wqo@(WQO _ po) source target 
+getRelation wqo@(WQO _ po) source target
     | Just (s, t) <- getEquivalenceClasses' wqo source target
     = if s == t
         then Just QEQ
-        else 
-            if PO.gt po s t 
+        else
+            if PO.gt po s t
                 then Just QGT
                 else Nothing
     | otherwise = Nothing
@@ -192,7 +190,7 @@ notStrongerThan (WQO ecs po) (WQO ecs' po') = result where
     let
       Just ec' = M.lookup ec ecsMap
     in
-      descs `S.isSubsetOf` (PO.descendents ec' po')
+      descs `S.isSubsetOf` PO.descendents ec' po'
 
 
 
@@ -211,16 +209,16 @@ trace' _ x = x
 merge :: forall a. (Ord a, Eq a, Hashable a) => WQO a -> WQO a -> Maybe (WQO a)
 merge lhs@(WQO ecs po) rhs@(WQO ecs' po') | S.disjoint (elems lhs) (elems rhs)
   = Just $ WQO (S.union ecs ecs') (PO.unionDisjointUnsafe po po')
-merge lhs rhs | otherwise =
+merge lhs rhs  =
   if S.size (elems lhs) >= S.size (elems rhs)
   then merge' lhs rhs
   else merge' rhs lhs
 
 {-# SPECIALISE merge' :: WQO Op -> WQO Op -> Maybe (WQO Op) #-}
 merge' :: forall a. (Ord a, Eq a, Hashable a) => WQO a -> WQO a -> Maybe (WQO a)
-merge' lhs rhs@(WQO ecs po) = trace' message $ result where
+merge' lhs rhs@(WQO ecs po) = trace' message result where
 
-    message = "Merge " ++ (show $ hash lhs) ++ " " ++ (show $ hash rhs)
+    message = "Merge " ++ show (hash lhs) ++ " " ++ show (hash rhs)
 
     withEQs' = go lhs ecsFacts
 
@@ -235,10 +233,10 @@ merge' lhs rhs@(WQO ecs po) = trace' message $ result where
         let
             xs = EC.toList ec
         in
-            map (\(a, b) -> (a, b, QEQ)) (zip xs (tail xs))
+            zipWith (curry (\(a, b) -> (a, b, QEQ))) xs (tail xs)
 
     poFacts :: [(a, a, QORelation)]
-    poFacts = 
+    poFacts =
         map (\(a, b) -> (head (EC.toList a), head (EC.toList b), QGT)) (PO.toList po)
 
     go r []       = Just r
@@ -276,7 +274,7 @@ relevantTo wqo0 as bs = go empty cartesianProduct where
   go wqo ((f, g) : xs) | Just r  <- getRelation wqo0 g f
                        , wqo'    <- get wqo $ insert wqo (g, f, r)
                        = go wqo' xs
-  go wqo (_ : xs)      | otherwise = go wqo xs
+  go wqo (_ : xs)       = go wqo xs
 
 {-# INLINE insertMaybe #-}
 {-# SPECIALISE insertMaybe :: WQO Op -> (Op, Op, QORelation) -> Maybe (WQO Op) #-}
@@ -291,13 +289,13 @@ insertMaybe wqo t = case insert wqo t of
 {-# SPECIALISE insert :: WQO Op -> (Op, Op, QORelation) -> ExtendOrderingResult Op #-}
 insert :: (Ord a, Eq a, Hashable a) => WQO a -> (a, a, QORelation) -> ExtendOrderingResult a
 insert _   (f, g, QGT)  | f == g = Contradicts
-insert wqo (f, g, r)    | Just r' <- getRelation wqo f g 
+insert wqo (f, g, r)    | Just r' <- getRelation wqo f g
                         = if r == r' then AlreadyImplied else Contradicts
 insert wqo (f, g, _)    | isJust $ getRelation wqo g f = Contradicts
 
 insert wqo@(WQO ecs po) (f, g, QEQ) = ValidExtension $
     case getEquivalenceClasses wqo f g of
-        (Nothing, Nothing) -> 
+        (Nothing, Nothing) ->
             let
                 ecs' = S.insert (EC.fromList [f, g]) ecs
             in
@@ -308,7 +306,7 @@ insert wqo@(WQO ecs po) (f, g, QEQ) = ValidExtension $
 
 insert wqo@(WQO ecs po) (f, g, QGT) = ValidExtension $
     case getEquivalenceClasses wqo f g of
-        (Nothing, Nothing) -> 
+        (Nothing, Nothing) ->
             let
                 f'       = EC.singleton f
                 g'       = EC.singleton g
@@ -316,7 +314,7 @@ insert wqo@(WQO ecs po) (f, g, QGT) = ValidExtension $
                 Just po' = PO.insert po f' g'
             in
                 WQO ecs' po'
-        (Just ec, Nothing)   -> 
+        (Just ec, Nothing)   ->
             let
                 g'       = EC.singleton g
                 ecs'     = S.insert g' ecs
@@ -324,14 +322,14 @@ insert wqo@(WQO ecs po) (f, g, QGT) = ValidExtension $
             in
                 WQO ecs' po'
 
-        (Nothing, Just ec) -> 
+        (Nothing, Just ec) ->
             let
                 f'       = EC.singleton f
                 ecs'     = S.insert f' ecs
                 Just po' = PO.insert po f' ec
             in
                 WQO ecs' po'
-        (Just ec1, Just ec2) -> 
+        (Just ec1, Just ec2) ->
             WQO ecs (PO.insertUnsafe po ec1 ec2)
 
 -- | Generates all the possible orderings of the elements in the given set.

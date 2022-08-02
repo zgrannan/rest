@@ -47,7 +47,7 @@ rpoTerm (RT.App f xs) = App f $ MS.fromList (map rpoTerm xs)
 isSubtermOf :: RuntimeTerm -> RuntimeTerm -> Bool
 isSubtermOf t u@(App _ us) = t == u || any (t `isSubtermOf`) (MS.distinctElems us)
 
-type CacheKey oc = ((oc Op), Relation, RuntimeTerm, RuntimeTerm)
+type CacheKey oc = (oc Op, Relation, RuntimeTerm, RuntimeTerm)
 
 type Cache oc = M.HashMap (CacheKey oc) (oc Op)
 
@@ -95,7 +95,7 @@ rpo' oc r cs (App f ts) (App g us)        | f == g            = rpoMul oc r cs t
 rpo' oc r cs t@(App f ts) u@(App g us) = incDepth result
   where
     cs'    = noConstraints oc
-    result = cached (cs, r, t, u) $ (intersect oc cs <$> result')
+    result = cached (cs, r, t, u) (intersect oc cs <$> result')
     result' = cached (cs', r, t, u) $
       if r == EQ
       then rpoMul oc r (addConstraint oc (f =. g) cs') ts us
@@ -122,7 +122,7 @@ rpoGTE'
   -> RT.RuntimeTerm
   -> RT.RuntimeTerm
   -> Identity (oc Op)
-rpoGTE' impl oc t u = rpo impl GTE oc t u
+rpoGTE' impl = rpo impl GTE
 
 
 -- Non symbolic version

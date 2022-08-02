@@ -37,7 +37,7 @@ data GraphType =
   deriving (Read)
 
 -- | A GraphViz node
-data Node = Node 
+data Node = Node
     { nodeID     :: NodeID
     , label      :: String
     , nodeStyle  :: String
@@ -60,7 +60,7 @@ nodeString (Node nid elabel style color) =
 
 edgeString :: Edge -> String
 edgeString (Edge efrom eto elabel color esubLabel style) =
-    let 
+    let
         sub = escape esubLabel
         escape xs = concatMap go xs
             where
@@ -77,8 +77,8 @@ edgeString (Edge efrom eto elabel color esubLabel style) =
         printf "\t%s -> %s [label = <%s<br/>%s>\ncolor=\"%s\"\nstyle=\"%s\"];" efrom eto labelPart sub color style
 
 graphString :: DiGraph -> String
-graphString (DiGraph name nodes edges) = 
-    printf "digraph %s {\n%s\n\n%s\n}" name (nodesString) (edgesString)
+graphString (DiGraph name nodes edges) =
+    printf "digraph %s {\n%s\n\n%s\n}" name nodesString edgesString
     where
         nodesString :: String
         nodesString = intercalate "\n" (map nodeString (S.toList nodes))

@@ -1,8 +1,8 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
+
+
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ImplicitParams #-}
+
 {-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -Wno-error=deprecations #-}
 
@@ -97,7 +97,7 @@ rest :: forall m rule term oc rtype .
   , RESTResult rtype)
   => RESTParams m rule term oc rtype
   -> term
-  -> m ((rtype rule term oc), Maybe (Path rule term oc))
+  -> m (rtype rule term oc, Maybe (Path rule term oc))
 rest RESTParams{re,ru,ocImpl,workStrategy,initRes,target,etStrategy} t =
   rest' (RESTState initRes [([], PathTerm t S.empty)] initET Nothing)
   where
@@ -141,8 +141,8 @@ rest RESTParams{re,ru,ocImpl,workStrategy,initRes,target,etStrategy} t =
               t'  <- ListT $ S.toList <$> apply ptTerm r
               return (t', r)
 
-        accepted :: (S.HashSet (term, rule)) -> m (M.HashMap term oc)
-        accepted userRWs = M.fromList <$> (runListT $ do
+        accepted :: S.HashSet (term, rule) -> m (M.HashMap term oc)
+        accepted userRWs = M.fromList <$> runListT (do
           t' <- liftSet $ S.map fst userRWs
           guard $ L.notElem t' tsTerms
           let ord = refine ocImpl lastOrdering ptTerm t'

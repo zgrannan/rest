@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ImplicitParams #-}
+
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -31,16 +31,16 @@ lift oc cgen =
   , notStrongerThan = OC.notStrongerThan oc
   }
   where
+isSat' = OC.isSatisfiable oc
     isSat' :: impl base -> m Bool
-    isSat' aoc = OC.isSatisfiable oc aoc
 
-    top' :: impl base
-    top' = OC.noConstraints oc
+top' :: impl base
+top' = OC.noConstraints oc
 
-    refine' :: impl base -> lifted -> lifted -> impl base
-    refine' c t u =
-      let
-        pair   = runIdentity $ cgen oc GTE top' t u
-        result = OC.intersect oc c pair
-      in
-        result
+refine' :: impl base -> lifted -> lifted -> impl base
+refine' c t u =
+  let
+    pair   = runIdentity $ cgen oc GTE top' t u
+    result = OC.intersect oc c pair
+  in
+    result

@@ -1,10 +1,10 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
+
+
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ImplicitParams #-}
+
+
+
 
 module Language.REST.LPO (lpo, lpoStrict) where
 
@@ -50,7 +50,7 @@ lpo' False oc EQ _cs (App _f ts) (App _g us) | length ts /= length us = unsatisf
 lpo' False oc EQ cs (App f ts) (App g us) =
   let
     cs'  = intersect oc cs (singleton oc $ f =. g)
-    subs = map (uncurry $ lpo' False oc EQ cs') (zip ts us)
+    subs = zipWith (curry (uncurry $ lpo' False oc EQ cs')) ts us
   in
     intersectAll oc (cs' : subs)
 
@@ -74,12 +74,12 @@ lpo' strict oc r cs t@(App f ts) u@(App g us) = result
     case3 =
       if strict && f /= g
       then unsatisfiable oc
-      else intersectAll oc ([tDominatesUs, (lex oc (r == GT) cs (lpo' strict) ts us)] ++ symEQ) where
-        symEQ = if f == g then [] else [singleton oc (f =. g)]
+      else intersectAll oc ([tDominatesUs, lex oc (r == GT) cs (lpo' strict) ts us] ++ symEQ) where
+        symEQ = [singleton oc (f =. g) | not (f == g)]
 
 
     tDominatesUs = intersectAll oc (map go us) where
-      go ui = lpo' strict oc GT cs t ui
+      go = lpo' strict oc GT cs t
 
 
 -- | Constraint generator for a quasi-order extension to the Lexicographic path ordering

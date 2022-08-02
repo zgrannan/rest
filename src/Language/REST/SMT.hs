@@ -6,10 +6,10 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
+
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | This module contains functionality for creating SMTLIB expressions and interacting
@@ -142,8 +142,8 @@ toFormula = go False where
   go _ (And [])         = "⊤"
   go p (And ts)         = eparens p $ T.intercalate " ∧ " $ map (go (not p)) ts
   go p (Add ts)         = eparens p $ T.intercalate " + " $ map (go (not p)) ts
-  go p (GTE t u)        = eparens p $ T.intercalate " ≥ " $ map (go True) $ [t, u]
-  go p (Greater t u)    = eparens p $ T.intercalate " > " $ map (go True) $ [t, u]
+  go p (GTE t u)        = eparens p $ T.intercalate " ≥ " $ map (go True) [t, u]
+  go p (Greater t u)    = eparens p $ T.intercalate " > " $ map (go True) [t, u]
   go _ (Var (SMTVar v)) = v
   go _ (Const c)        = T.pack (show c)
   go _ _e               = undefined
@@ -186,10 +186,10 @@ smtAnd t        u        = And [t, u]
 -- | `smtGTE t u` returns an SMT expression \( t \geqslant u \). If @t == u@, returns 'smtTrue'.
 smtGTE :: SMTExpr Int -> SMTExpr Int -> SMTExpr Bool
 smtGTE t u | t == u    = smtTrue
-smtGTE t u | otherwise = GTE t u
+smtGTE t u  = GTE t u
 
 app :: T.Text -> [SMTExpr a] -> T.Text
-app op trms = T.concat $ ["(", op, " ", (T.intercalate " " (map exprString trms)), ")"]
+app op trms = T.concat ["(", op, " ", (T.intercalate " " (map exprString trms)), ")"]
 
 exprString :: SMTExpr a -> T.Text
 exprString (And [])           = "true"
@@ -207,7 +207,7 @@ exprString (Const i)          = T.pack (show i)
 
 commandString :: SMTCommand -> T.Text
 commandString (SMTAssert expr) = app "assert" [expr]
-commandString (DeclareVar var) = T.concat $ ["(declare-const ", var,  " Int)"]
+commandString (DeclareVar var) = T.concat ["(declare-const ", var,  " Int)"]
 commandString CheckSat = "(check-sat)"
 commandString Push     = "(push)"
 commandString Pop      = "(pop)"
@@ -234,7 +234,7 @@ killZ3 (stdIn, _) = hClose stdIn
 withZ3 :: MonadIO m => (SolverHandle -> m b) -> m b
 withZ3 f =
   do
-    z3     <- liftIO $ spawnZ3
+    z3     <- liftIO spawnZ3
     result <- f z3
     liftIO $ killZ3 z3
     return result
@@ -263,7 +263,7 @@ checkSat' (stdIn, stdOut) expr = do
   return sat
   where
     sendCommands cmds = do
-      hPutStr stdIn $ (T.unpack (T.intercalate "\n" (map commandString cmds))) ++ "\n"
+      hPutStr stdIn $ T.unpack (T.intercalate "\n" (map commandString cmds)) ++ "\n"
       hFlush stdIn
 
 -- | @checkSat expr@ launches Z3, to checks satisfiability of @expr@, terminating Z3

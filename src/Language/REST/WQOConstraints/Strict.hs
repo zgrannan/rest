@@ -61,7 +61,7 @@ getOrdering (StrictOC o) =
 -- | Constraints that permit any 'WQO'. In this case implemented by
 --   a singleton set containing an empty WQO.
 noConstraints :: forall a. (Eq a, Ord a, Hashable a) => StrictOC a
-noConstraints = StrictOC (S.singleton (WQO.empty))
+noConstraints = StrictOC (S.singleton WQO.empty)
 
 unsatisfiable :: StrictOC a
 unsatisfiable = StrictOC S.empty

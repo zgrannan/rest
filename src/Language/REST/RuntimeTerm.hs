@@ -38,10 +38,10 @@ instance ToRuntimeTerm RuntimeTerm where
 -- term where @s@ is replaced with @s'@ in @t@. Also includes the pair (t, id),
 -- representing the term itself.
 -- TODO: Consider more efficient implementations
-subTerms :: RuntimeTerm -> [(RuntimeTerm, (RuntimeTerm -> RuntimeTerm))]
+subTerms :: RuntimeTerm -> [(RuntimeTerm, RuntimeTerm -> RuntimeTerm)]
 subTerms t@(App f ts) = (t, id) : concatMap st [0..length ts - 1]
   where
-    st :: Int -> [(RuntimeTerm, (RuntimeTerm -> RuntimeTerm))]
+    st :: Int -> [(RuntimeTerm, RuntimeTerm -> RuntimeTerm)]
     st i =
       let
         ti = ts !! i

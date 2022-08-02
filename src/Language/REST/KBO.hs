@@ -12,7 +12,7 @@ import           Language.REST.Internal.Util
 import qualified Data.Map as M
 
 termOps :: RuntimeTerm -> [Op]
-termOps (App f xs) = f:(concatMap termOps xs)
+termOps (App f xs) = f:concatMap termOps xs
 
 arityConstraints :: RuntimeTerm -> SMTExpr Bool
 arityConstraints t = toExpr $ go M.empty t where
@@ -22,7 +22,7 @@ arityConstraints t = toExpr $ go M.empty t where
   go m (App f ts)  = foldl go (M.insert f 0 m) ts
 
   toExpr m = And $ map toConstraint (M.toList m)
-  toConstraint (sym, n) = toSMT sym `smtGTE` (Const n)
+  toConstraint (sym, n) = toSMT sym `smtGTE` Const n
 
 
 -- | @kboGTE t u@ returns the SMT expression describing constraints
