@@ -187,7 +187,7 @@ getConstraints' c@(Intersect lhs rhs) = cached c $ do
           wqo1 <- c1'
           wqo2 <- c2'
           return (cached' (wqo1, wqo2) $ WQO.merge wqo1 wqo2))
-      flatten = catMaybes
+      flatten = Mb.catMaybes
       (c1, c2) =
         if cost lhs > cost rhs
         then (lhs, rhs)

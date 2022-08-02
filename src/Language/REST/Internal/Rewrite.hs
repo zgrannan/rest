@@ -13,6 +13,7 @@ module Language.REST.Internal.Rewrite
 
 import GHC.Generics (Generic)
 
+import           Data.Maybe (isNothing)
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
