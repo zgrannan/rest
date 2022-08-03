@@ -1,6 +1,7 @@
 module WQO where
 
 import Language.REST.Internal.WQO as WQO
+import Data.Maybe (isNothing)
 
 basicInvalid :: Maybe (WQO Char)
 basicInvalid = do
@@ -14,5 +15,5 @@ tests =
     ValidExtension fgyz = insert fg ("y", "z", QGT)
   in
     [ ("NotStrongerThan", fg `notStrongerThan` fgyz)
-    , ("RejectInvalid", basicInvalid == Nothing)
+    , ("RejectInvalid", isNothing basicInvalid)
     ]
