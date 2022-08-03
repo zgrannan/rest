@@ -100,9 +100,7 @@ toGraph' gte mss0 = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes
         Just (MultisetGE repls) = multisetGE (\t u -> gte (fst t) (fst u)) ts us
 
         lookupTIndex :: Int -> (Int, Int)
-        lookupTIndex tindex = case Mp.lookup (tindex, tsIndex) mp of
-          Just t  -> t
-          Nothing -> (tindex, tsIndex)
+        lookupTIndex tindex = Mb.fromMaybe (tindex, tsIndex) (Mp.lookup (tindex, tsIndex) mp)
 
         mp' = go mp repls where
           go mpi [] = mpi
