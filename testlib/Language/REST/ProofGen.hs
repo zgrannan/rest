@@ -41,10 +41,7 @@ toProof (steps, PathTerm result _) = "    " ++ (L.intercalate "\n=== " $ proofSt
       where
         lemma = go (subTerms t)
 
-        lemmaName =
-          case name of
-            Just n  -> T.pack n
-            Nothing -> "lemma"
+        lemmaName = maybe "lemma" T.pack name
 
         toLemma s = toLH False (App (Op lemmaName) (map snd $ L.sort $ M.toList s))
 
