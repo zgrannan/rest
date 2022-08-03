@@ -24,7 +24,7 @@ isSubset :: MetaTerm -> MetaTerm -> Rewrite
 isSubset mt1 mt2 = mt1 \/ mt2 ~> mt2
 
 userRWs :: S.HashSet Rewrite
-userRWs = S.union A.evalRWs $ S.fromList $
+userRWs = S.union A.evalRWs $ S.fromList
   [
     distribL (/\) (\/)
   , distribR (/\) (\/)

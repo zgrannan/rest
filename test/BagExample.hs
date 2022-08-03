@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE ImplicitParams #-}
+
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 
 module BagExample (mkBagGraph) where
 
@@ -31,7 +31,7 @@ import qualified Data.Text as T
 import GHC.Generics (Generic)
 import           Data.Hashable
 
-data PChar = PChar Char deriving (Eq, Ord, Generic, Hashable)
+newtype PChar = PChar Char deriving (Eq, Ord, Generic, Hashable)
 
 instance ToSMTVar PChar Int where
   toSMTVar c = SMTVar $ T.pack $ "char_" ++ show c
@@ -39,7 +39,7 @@ instance ToSMTVar PChar Int where
 instance Show PChar where
   show (PChar c) = return c
 
-data Bag = Bag String
+newtype Bag = Bag String
   deriving (Eq, Ord, Generic, Hashable)
 
 instance Show Bag where
@@ -62,12 +62,12 @@ infixr 1 ~>
 
 instance RewriteRule IO Rewrite Bag where
   apply bag1 (Rewrite bag' result) | bag1 == bag' = return result
-  apply _ _ | otherwise                           = return S.empty
+  apply _ _                            = return S.empty
 
 
 fromPath :: [String] -> S.HashSet Rewrite
 fromPath [] = S.empty
-fromPath xs = S.fromList $ map go (zip xs (tail xs))
+fromPath xs = S.fromList $ zipWith (curry go) xs (tail xs)
   where
     go :: (String, String) -> Rewrite
     go (x, y) = Rewrite (bag x) (S.singleton $ bag y)
@@ -80,7 +80,7 @@ start :: String
 start = "AAB"
 
 rules :: S.HashSet Rewrite
-rules = fromPaths $
+rules = fromPaths
   [  start ~> "ACD" ~> "AAAA" ~> "ABDD" ~> []
   ,  start ~> "ABD" ~> "AB"  ~> "BBD" ~> []
   ]

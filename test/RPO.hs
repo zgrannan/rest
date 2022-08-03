@@ -47,7 +47,7 @@ rpoSeq
   :: (?impl::WQOConstraints impl m, Show (impl Op), Eq (impl Op), Hashable (impl Op))
   => [RuntimeTerm]
   -> impl Op
-rpoSeq xs = go (OC.noConstraints ?impl) xs where
+rpoSeq = go (OC.noConstraints ?impl) where
   go c (t:u:_xss) = OC.intersect ?impl c (rpoGTE t u)
   go c _        = c
 

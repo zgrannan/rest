@@ -37,7 +37,7 @@ expandM :: MetaTerm -> Rewrite
 expandM xs0 = multisetOf xs0 ~> ite (isEmpty xs0) empty (singleton (hd xs0) \/ multisetOf (tl xs0))
 
 userRWs :: S.HashSet Rewrite
-userRWs = S.fromList $
+userRWs = S.fromList
   [
     commutes (\/) `named` "mpComm"
   , assocL (\/) `named` "mpAssoc"

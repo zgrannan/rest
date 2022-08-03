@@ -46,7 +46,7 @@ pp = prettyPrint (PPArgs []
                   ] showInt)
   where
     showInt :: MT.MetaTerm -> Maybe Text
-    showInt t = fmap (pack . show) $ termToInt t
+    showInt t = pack . show <$> termToInt t
 
 op :: GenParser Char st Op
 op = fmap (Op . pack) (many (alphaNum <|> char '\''))
