@@ -12,18 +12,18 @@ import Control.Monad.Identity
 import qualified Arith as A
 
 import qualified Data.HashMap.Strict as M
-import qualified ExploredTerms as ExploredTerms
+import qualified ExploredTerms
 import OpOrdering
 import DSL
-import WQO as WQO
-import MultisetOrder as MultisetOrder
+import WQO
+import MultisetOrder
 import Nat
-import RPO as RPO
-import KBO as KBO
-import StrictOC as StrictOC
-import LazyOC as LazyOC
-import SMT as SMT
-import qualified QuickCheckTests as QuickCheckTests
+import RPO
+import KBO
+import StrictOC
+import LazyOC
+import SMT
+import qualified QuickCheckTests
 import System.IO
 
 import Language.REST.ExploredTerms
@@ -62,7 +62,7 @@ rewrites :: (Show oc, Hashable oc, Eq oc)
   => OCAlgebra oc RuntimeTerm IO
   -> S.HashSet Rewrite -> S.HashSet Rewrite -> RuntimeTerm -> IO (S.HashSet RuntimeTerm)
 rewrites impl evalRWs userRWs t0 =
-  resultTerms <$> fst <$> rest
+  resultTerms . fst <$> rest
     RESTParams
       { re           = evalRWs
       , ru           = userRWs

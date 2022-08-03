@@ -16,7 +16,7 @@ c' x1 = RWApp (Op "c") [x1]
 d' x1 = RWApp (Op "d") [x1]
 
 userRWs :: S.HashSet Rewrite
-userRWs = S.fromList $
+userRWs = S.fromList
   [
     a' (b' x) ~> a' (d' x)
   , d' (b' x) ~> b' (d' x)

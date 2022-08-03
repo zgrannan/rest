@@ -15,7 +15,7 @@ data Replace a =
   | Replace a [a]
   deriving (Show)
 
-data MultisetGE a = MultisetGE [Replace a] deriving (Show)
+newtype MultisetGE a = MultisetGE [Replace a] deriving (Show)
 
 type GTE a = a -> a -> Bool
 
@@ -33,7 +33,7 @@ multisetGE gte ts0 us0 = go [] (M.toList ts0) (M.toList us0)
     go rs (t : ts) us | Just u <- L.find (equiv t) us
       = go (ReplaceOne t u:rs) ts (L.delete u us)
 
-    go rs (t : ts) us | otherwise =
+    go rs (t : ts) us  =
         let
           (lts, us') = L.partition (t `gt`)  us
         in

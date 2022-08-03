@@ -1,4 +1,4 @@
-{-# LANGUAGE ImplicitParams #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -20,7 +20,7 @@ import Language.REST.Dot
 import Language.REST.Internal.WorkStrategy
 import DSL
 import Nat
-import Set as Set
+import Set
 import qualified Multiset as MS
 import NonTerm as NT
 import qualified Lists as Li
@@ -142,9 +142,9 @@ mkRESTGraph' :: (MonadIO m, Show c, Hashable c, Ord c) =>
 mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
   do
     let pr (Rewrite t u _) = printf "%s → %s" (pp t) (pp u)
-    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList userRWs0
-    liftIO $ mapM_ (\rw -> putStrLn $ pr rw) $ S.toList evalRWs0
-    start <- liftIO $ getCurrentTime
+    liftIO $ mapM_ (putStrLn . pr) $ S.toList userRWs0
+    liftIO $ mapM_ (putStrLn . pr) $ S.toList evalRWs0
+    start <- liftIO getCurrentTime
     (PathsResult paths, targetPath) <- rest
       RESTParams
         { re           = evalRWs0
@@ -155,7 +155,7 @@ mkRESTGraph' impl evalRWs0 userRWs0 name term0 params =
         , initRes      = pathsResult
         , etStrategy   = if gUseETOpt params then ExploreWhenNeeded else ExploreAlways
         } (parseTerm term0)
-    end <- liftIO $ getCurrentTime
+    end <- liftIO getCurrentTime
     liftIO $ printf "REST run completed, in %s\n" $ show $ diffUTCTime end start
     liftIO $ putStrLn "Drawing graph"
     let showCons = if gShowConstraints params then show else const ""
@@ -189,5 +189,5 @@ challengeRulesNoCommute = S.union setDistribRules $ S.fromList
 main :: IO ()
 main = do
   mkRESTGraph RPO S.empty (S.insert (s1 /\ s0 ~> emptyset) challengeRulesNoCommute) "fig4" "f(intersect(union(s₀,s₁), s₀))" (withNoETOpt defaultParams)
-  mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
-  mkRESTGraph RPO S.empty (S.fromList $ [x #+ y ~> y #+ x] ++ ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams
+  mkRESTGraph RPO S.empty (S.fromList $ (x #+ y ~> y #+ x) : ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-noopt" "a + (b + a)" (withNoETOpt defaultParams)
+  mkRESTGraph RPO S.empty (S.fromList $ (x #+ y ~> y #+ x) : ((x #+ y) #+ v <~> x #+ (y #+ v))) "fig8-opt" "a + (b + a)" defaultParams

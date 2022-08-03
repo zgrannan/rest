@@ -13,7 +13,7 @@ import Data.Hashable
 import GHC.Generics (Generic)
 import qualified Data.Set as S
 
-data ConcreteOC = ConcreteOC (S.Set (WQO.WQO Op))
+newtype ConcreteOC = ConcreteOC (S.Set (WQO.WQO Op))
   deriving (Eq, Ord, Generic, Hashable)
 
 instance Show ConcreteOC where
