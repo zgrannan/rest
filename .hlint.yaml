@@ -3,3 +3,6 @@
 
 # For some tests we want to write code that triggers HLint.
 - ignore: {name: "Avoid reverse", within: [Lists]}
+
+# False positive?
+- ignore: {name: "Redundant seq"}
