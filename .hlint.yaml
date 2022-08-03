@@ -10,7 +10,6 @@
 - ignore: {name: "Redundant bracket"} # 56 hints
 - ignore: {name: "Redundant guard"} # 2 hints
 - ignore: {name: "Redundant seq"} # 1 hint
-- ignore: {name: "Replace case with maybe"} # 1 hint
 - ignore: {name: "Unused LANGUAGE pragma"} # 3 hints
 - ignore: {name: "Use :"} # 2 hints
 - ignore: {name: "Use <$>"} # 2 hints
