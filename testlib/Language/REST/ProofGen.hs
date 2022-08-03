@@ -31,13 +31,13 @@ toLH parens (App op args) =
   withParens parens $ printf "%s %s" (opToLH op) (L.intercalate " " $ map (toLH True) args)
 
 toProof :: Path Rewrite RuntimeTerm a -> String
-toProof (steps, PathTerm result _) = "    " ++ (L.intercalate "\n=== " $ proofSteps ++ [toLH False result]) ++ "\n*** QED"
+toProof (steps, PathTerm result _) = "    " ++ L.intercalate "\n=== " (proofSteps ++ [toLH False result]) ++ "\n*** QED"
   where
     proofSteps :: [String]
     proofSteps = map proofStep $ zip steps [0..]
 
-    proofStep ((Step (PathTerm t _) _ _ True), _)     = toLH False t
-    proofStep ((Step (PathTerm t _) (Rewrite lhs rhs name) _ False), i) = toLH False t ++ " ? " ++ toLemma lemma
+    proofStep (Step (PathTerm t _) _ _ True, _)                       = toLH False t
+    proofStep (Step (PathTerm t _) (Rewrite lhs rhs name) _ False, i) = toLH False t ++ " ? " ++ toLemma lemma
       where
         lemma = go (subTerms t)
 

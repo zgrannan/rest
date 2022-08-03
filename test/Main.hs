@@ -77,7 +77,7 @@ explainOrient ts0 = withZ3 go where
       do
         mapM_ (explain (refine impl (top impl))) pairs
         printf "Result:\n%s\n" (show $ orient impl ts)
-        (isSatisfiable SC.strictOC (orient impl ts)) >>= print
+        isSatisfiable SC.strictOC (orient impl ts) >>= print
     where
       impl :: OCAlgebra (SC.StrictOC Op) RuntimeTerm Identity
       impl = lift SC.strictOC lpo

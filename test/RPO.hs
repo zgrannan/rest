@@ -59,7 +59,7 @@ tests =
     g = Op "g"
     h = Op "h"
   in
-    [ ("RPO1",   return $ (rpoGTE "f(z)" "g(s(z))")
+    [ ("RPO1",   return $ rpoGTE "f(z)" "g(s(z))"
               == OC.intersect ?impl (OC.singleton ?impl (f >. g)) (OC.singleton ?impl (f >. s)))
     , ("RPO2", isUnsatisfiable ?impl $
          OC.intersect ?impl
@@ -73,8 +73,8 @@ tests =
     , ("SynGTE", return $ synGTE OpOrdering.empty (App s [App s [App g [App (Op "+") [App h [App s [App z []]],App z []],App s [App s [App g [App z [],App z []]]]]]]) (App z []))
     , ("SynGTE2",
         return $ synGTE (Mb.fromJust $ mergeAll [
-          ("cons" >. g)
-        , (f >. s)
-        , (h >. g)
-        , (h >. "nil")]) "s(cons(h(h(z)), f(nil, nil, z)))"  "g(z, cons(g(nil, nil), s(s(z))))")
+          "cons" >. g
+        , f >. s
+        , h >. g
+        , h >. "nil"]) "s(cons(h(h(z)), f(nil, nil, z)))"  "g(z, cons(g(nil, nil), s(s(z))))")
     ]
