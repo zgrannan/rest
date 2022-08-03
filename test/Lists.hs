@@ -35,6 +35,6 @@ evalRWs = S.fromList [
 
 userRWs :: S.HashSet Rewrite
 userRWs = S.fromList [
-    reverse (xs .++ ys) ~> (reverse ys) .++ (reverse xs)
-  , (reverse ys) .++ (reverse xs) ~> reverse (xs .++ ys)
+    reverse (xs .++ ys) ~> reverse ys .++ reverse xs
+  , reverse ys .++ reverse xs ~> reverse (xs .++ ys)
   ]

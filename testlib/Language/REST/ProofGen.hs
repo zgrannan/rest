@@ -36,8 +36,8 @@ toProof (steps, PathTerm result _) = "    " ++ (L.intercalate "\n=== " $ proofSt
     proofSteps :: [String]
     proofSteps = map proofStep $ zip steps [0..]
 
-    proofStep ((Step (PathTerm t _) _ _ True), _)     = toLH False t
-    proofStep ((Step (PathTerm t _) (Rewrite lhs rhs name) _ False), i) = toLH False t ++ " ? " ++ toLemma lemma
+    proofStep (Step (PathTerm t _) _ _ True, _)                       = toLH False t
+    proofStep (Step (PathTerm t _) (Rewrite lhs rhs name) _ False, i) = toLH False t ++ " ? " ++ toLemma lemma
       where
         lemma = go (subTerms t)
 

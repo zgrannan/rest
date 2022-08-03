@@ -21,6 +21,6 @@ userRWs =
       [
           x #+ zero'    ~> x
         , zero'    #+ x ~> x
-        , (neg x) #+ x  ~> zero'
+        , neg x #+ x  ~> zero'
         , (x #+ y) #+ v ~> x #+ (y #+ v)
       ]

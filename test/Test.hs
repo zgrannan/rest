@@ -104,9 +104,9 @@ runTestSuite name tests1 = do
 orderingTests :: (Hashable (oc Op), Show (oc Op), Ord (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
 orderingTests =
   [
-    ("simple1", return $ not $ (rpoGTE "f(t1)" "g(t2)") `permits'` (t1Op =. t2Op))
-  , ("simple2", return $ (rpoGTE "f(t1)" "g(t2)") `permits'` (Mb.fromJust $ merge (f >. g) (t1Op =. t2Op)))
-  , ("simple3", return $ (rpoGTE "f(t1)" "g(t2)") `permits'` (Mb.fromJust $ merge (f >. g) (t1Op >. t2Op)))
+    ("simple1", return $ not $ rpoGTE "f(t1)" "g(t2)" `permits'` (t1Op =. t2Op))
+  , ("simple2", return $ rpoGTE "f(t1)" "g(t2)" `permits'` (Mb.fromJust $ merge (f >. g) (t1Op =. t2Op)))
+  , ("simple3", return $ rpoGTE "f(t1)" "g(t2)" `permits'` (Mb.fromJust $ merge (f >. g) (t1Op >. t2Op)))
   , ("subterm", return $ rpoGTE "f(g)" "f" == noConstraints ?impl)
   , ("intersect", OC.isUnsatisfiable ?impl $ OC.intersect ?impl (OC.singleton ?impl (f  >. g)) (OC.singleton ?impl (g >. f)))
   ]
@@ -119,8 +119,8 @@ proveEQ :: (Show oc, Hashable oc, Eq oc) =>
   -> RuntimeTerm -> RuntimeTerm -> IO Bool
 proveEQ impl evalRWs userRWs have want =
   do
-    rw1 <- (rewrites impl evalRWs userRWs have)
-    rw2 <- (rewrites impl evalRWs userRWs want)
+    rw1 <- rewrites impl evalRWs userRWs have
+    rw2 <- rewrites impl evalRWs userRWs want
     return $ not $ disjoint rw1 rw2
   where
     disjoint s1 s2 = S.null $ s1 `S.intersection` s2
@@ -137,15 +137,13 @@ arithTests :: (Show oc, Hashable oc, Eq oc) => OCAlgebra oc RuntimeTerm IO -> [(
 arithTests impl =
   [
     ("Contains", return $ contains (intToTerm 2) (intToTerm 1))
-  , ("Diverge", not <$> (diverges impl [ (intToTerm 2) .+ t1
-                               , (intToTerm 1) .+ t1
-                               ]
-                    ))
-  , ("Diverge3", not <$> (diverges impl [ (t1 .+ t2) .+ t3
+  , ("Diverge", not <$> diverges impl [ intToTerm 2 .+ t1
+                               , intToTerm 1 .+ t1
+                               ])
+  , ("Diverge3", not <$> diverges impl [ (t1 .+ t2) .+ t3
                                , t1 .+ (t2 .+ t3)
                                , (t2 .+ t3) .+ t1
-                               ]
-                    ))
+                               ])
   , ("Eval1", arithEQ (intToTerm 2 .+ intToTerm 3) 5)
   , ("Eval2", arithEQ (ack (intToTerm 3) (intToTerm 2)) 29)
   , ("Subst1", return $ subst (M.fromList [("X", intToTerm 1), ("Y", intToTerm 2)]) (x #+ y) == (intToTerm 1 .+ intToTerm 2))
@@ -184,7 +182,7 @@ arithTests impl =
     termTest2 = proveEQ impl evalRWs userRWs (App f1 [zero]) (App g1 [zero])
       where
         evalRWs = S.union termEvalRWs A.evalRWs
-        userRWs = S.insert (MT.RWApp f1 [x] ~> MT.RWApp g1 [(suc' (suc' x))]) A.userRWs
+        userRWs = S.insert (MT.RWApp f1 [x] ~> MT.RWApp g1 [suc' (suc' x)]) A.userRWs
         termEvalRWs = S.fromList
           [  MT.RWApp f1 [suc' x] ~> MT.RWApp g1 [suc' x]
           ,  MT.RWApp f1 [zero']  ~> zero'
@@ -201,7 +199,7 @@ completeTests :: (Show oc, Hashable oc, Eq oc) => OCAlgebra oc RuntimeTerm IO ->
 completeTests impl =
   [ ("CompleteDiverges", not <$> diverges impl [App start [], App mid [], App finish []])
   , ("Complete1"     , eq (App start []) (App finish []))
-  , ("EvalComplete2" , (== (App finish [])) <$> eval completeUserRWs (App start' [App s1 []]) )
+  , ("EvalComplete2" , (== App finish []) <$> eval completeUserRWs (App start' [App s1 []]) )
   , ("Complete2"     , eq (App start' [App s1 []]) (App finish []))
   ]
   where

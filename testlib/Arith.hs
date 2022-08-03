@@ -24,11 +24,11 @@ evalRWs :: S.HashSet Rewrite
 evalRWs =
     S.fromList
       [
-        (suc' x) <# (suc' y) ~> x <# y
-      , (suc' x) #+ y ~> suc' (x #+ y)
+        suc' x <# suc' y ~> x <# y
+      , suc' x #+ y ~> suc' (x #+ y)
       , zero'    #+ x ~> x
 
-      , (suc' x) #* y ~> y #+ (x #* y)
+      , suc' x #* y ~> y #+ (x #* y)
       , zero'     #* y ~> zero'
 
       , ack' zero' x           ~> suc' x
@@ -46,7 +46,7 @@ userRWs =
       , x #* y        ~> y #* x
 
       , (x #+ y) #* v ~> (x #* v) #+ (y #* v)
-      , (neg x) #+ x ~> zero'
+      , neg x #+ x ~> zero'
       -- , (x #* v) #+ (y #* v) ~> (x #+ y) #* v
 
       --  , x ~> x #+ zero'

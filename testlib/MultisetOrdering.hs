@@ -31,14 +31,14 @@ multisetGE gte ts0 us0 = go [] (M.toList ts0) (M.toList us0)
 
     go :: [Replace a] -> [a] -> [a] -> Maybe (MultisetGE a)
     go rs (t : ts) us | Just u <- L.find (equiv t) us
-      = go ((ReplaceOne t u):rs) ts (L.delete u us)
+      = go (ReplaceOne t u:rs) ts (L.delete u us)
 
     go rs (t : ts) us | otherwise =
         let
           (lts, us') = L.partition (t `gt`)  us
         in
-          go ((Replace t lts) : rs) ts us'
-    go rs ts [] = Just $ MultisetGE $ (map ((flip Replace) []) ts) ++ rs
+          go (Replace t lts : rs) ts us'
+    go rs ts [] = Just $ MultisetGE $ map (`Replace` []) ts ++ rs
     go _  [] _  = Nothing
 
 
@@ -92,7 +92,7 @@ toGraph' gte mss0 = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes
 
     replEdges = toEdges Mp.empty
 
-    toEdges :: Mp.HashMap (Int, Int) (Int, Int) -> [IndexedMultisetPair a] -> ([(Maybe Node, Edge)])
+    toEdges :: Mp.HashMap (Int, Int) (Int, Int) -> [IndexedMultisetPair a] -> [(Maybe Node, Edge)]
     toEdges _ [] = []
     toEdges mp (((ts, tsIndex), (us, usIndex)) : mss) =
         concatMap redges repls ++ toEdges mp' mss

@@ -54,7 +54,7 @@ gen_po =
       let po' = fromMaybe po $ PO.insert po f g
       go po' (n - 1)
 
-gen_wqo_steps :: Gen ([(Op, Op, WQO.QORelation)])
+gen_wqo_steps :: Gen [(Op, Op, WQO.QORelation)]
 gen_wqo_steps =
   do
     numOps <- choose (0, 10)
@@ -83,7 +83,7 @@ gen_term = sized go
   where
     go :: Int -> Gen RuntimeTerm
     go sz = do
-      (op, arity) <- oneof $ map return $ (filter ((<= sz) . snd) syms)
+      (op, arity) <- oneof $ map return $ filter ((<= sz) . snd) syms
       args        <- vectorOf arity (go (sz `div` (arity + 1)))
       return $ App (Op op) args
 
@@ -134,7 +134,7 @@ prop_rpoCons impl t u = monadicIO $ do
     ordering    = Mb.fromJust (OC.getOrdering impl constraints)
 
 prop_permits :: [(Op, Op, WQO.QORelation)] -> Bool
-prop_permits steps = SC.permits (SC.noConstraints) (toWQO steps)
+prop_permits steps = SC.permits SC.noConstraints (toWQO steps)
 
 -- Should fail
 -- If this prop was true, we'd only ever need to check each term once

@@ -42,12 +42,12 @@ userRWs = S.fromList $
     commutes (\/) `named` "mpComm"
   , assocL (\/) `named` "mpAssoc"
   , assocR (\/) `named` "mpAssoc"
-  , (singleton x) \/ (multisetOf y) ~> multisetOf (cons x y)
+  , singleton x \/ multisetOf y ~> multisetOf (cons x y)
   ]
 
 evalRWs :: S.HashSet Rewrite
 evalRWs = S.fromList
-  [ multisetOf (cons x y) ~> (singleton x) \/ (multisetOf y)
+  [ multisetOf (cons x y) ~> singleton x \/ multisetOf y
   , expandM xs
   , expandM ys
   ]

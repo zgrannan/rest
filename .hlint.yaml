@@ -5,16 +5,15 @@
 - ignore: {name: "Functor law"} # 1 hint
 - ignore: {name: "Fuse concatMap/map"} # 1 hint
 - ignore: {name: "Move brackets to avoid $"} # 7 hints
-- ignore: {name: "Redundant $"} # 7 hints
+- ignore: {name: "Redundant $"} # 6 hints
 - ignore: {name: "Redundant as"} # 10 hints
-- ignore: {name: "Redundant bracket"} # 56 hints
 - ignore: {name: "Redundant guard"} # 2 hints
 - ignore: {name: "Redundant seq"} # 1 hint
 - ignore: {name: "Replace case with fromMaybe"} # 1 hint
 - ignore: {name: "Replace case with maybe"} # 1 hint
 - ignore: {name: "Unused LANGUAGE pragma"} # 3 hints
 - ignore: {name: "Use :"} # 2 hints
-- ignore: {name: "Use <$>"} # 2 hints
+- ignore: {name: "Use <$>"} # 1 hint
 - ignore: {name: "Use camelCase"} # 10 hints
 - ignore: {name: "Use catMaybes"} # 1 hint
 - ignore: {name: "Use isNothing"} # 1 hint
