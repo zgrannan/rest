@@ -1,6 +1,5 @@
 # Warnings currently triggered by your code
 - ignore: {name: "Avoid lambda"} # 2 hints
-- ignore: {name: "Avoid reverse"} # 1 hint
 - ignore: {name: "Eta reduce"} # 1 hint
 - ignore: {name: "Functor law"} # 1 hint
 - ignore: {name: "Fuse concatMap/map"} # 1 hint
@@ -15,3 +14,6 @@
 - ignore: {name: "Use newtype instead of data"} # 4 hints
 - ignore: {name: "Use unwords"} # 1 hint
 - ignore: {name: "Use zipWith"} # 2 hints
+
+# For some tests we want to write code that triggers HLint.
+- ignore: {name: "Avoid reverse", within: [Lists]}
