@@ -56,7 +56,7 @@ canOrient :: forall oc m . Show oc
 canOrient terms = isSat ?impl (orient ?impl terms)
 
 diverges :: (Show oc) => OCAlgebra oc RuntimeTerm IO -> [RuntimeTerm] -> IO Bool
-diverges impl ts = not <$> (isSat impl $ orient impl ts)
+diverges impl ts = not <$> isSat impl (orient impl ts)
 
 rewrites :: (Show oc, Hashable oc, Eq oc)
   => OCAlgebra oc RuntimeTerm IO
@@ -105,8 +105,8 @@ orderingTests :: (Hashable (oc Op), Show (oc Op), Ord (oc Op)) => (?impl :: WQOC
 orderingTests =
   [
     ("simple1", return $ not $ rpoGTE "f(t1)" "g(t2)" `permits'` (t1Op =. t2Op))
-  , ("simple2", return $ rpoGTE "f(t1)" "g(t2)" `permits'` (Mb.fromJust $ merge (f >. g) (t1Op =. t2Op)))
-  , ("simple3", return $ rpoGTE "f(t1)" "g(t2)" `permits'` (Mb.fromJust $ merge (f >. g) (t1Op >. t2Op)))
+  , ("simple2", return $ rpoGTE "f(t1)" "g(t2)" `permits'` Mb.fromJust (merge (f >. g) (t1Op =. t2Op)))
+  , ("simple3", return $ rpoGTE "f(t1)" "g(t2)" `permits'` Mb.fromJust (merge (f >. g) (t1Op >. t2Op)))
   , ("subterm", return $ rpoGTE "f(g)" "f" == noConstraints ?impl)
   , ("intersect", OC.isUnsatisfiable ?impl $ OC.intersect ?impl (OC.singleton ?impl (f  >. g)) (OC.singleton ?impl (g >. f)))
   ]

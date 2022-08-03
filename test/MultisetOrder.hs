@@ -32,6 +32,6 @@ tests :: [(String, Bool)]
 tests = [
     ("Constraints",
      SC.noConstraints /=
-     (runIdentity $ ms SC.noConstraints (M.fromList "bc") (M.fromList "aa")))
+     runIdentity (ms SC.noConstraints (M.fromList "bc") (M.fromList "aa")))
   , ("Unsat", SC.isUnsatisfiable $ runIdentity unsat)
   ]

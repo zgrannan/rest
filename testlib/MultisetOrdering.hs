@@ -78,7 +78,7 @@ toGraph' gte mss0 = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes
       from edge == nodeID node || to edge == nodeID node
 
     edges :: S.HashSet Edge
-    edges = S.fromList $ topEdges ++ (map snd $ replEdges pairs)
+    edges = S.fromList $ topEdges ++ map snd (replEdges pairs)
 
     topEdges = map go (M.toList (fst $ head indexed)) where
       go (_, index) =

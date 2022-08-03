@@ -86,7 +86,7 @@ rules = fromPaths $
   ]
 
 showBag :: Bag -> String
-showBag (Bag bag1) = "{ " ++ (L.intercalate ", " $ map return bag1) ++ " }"
+showBag (Bag bag1) = "{ " ++ L.intercalate ", " (map return bag1) ++ " }"
 
 showRule :: Rewrite -> String
 showRule _ = ""
