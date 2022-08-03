@@ -84,7 +84,7 @@ toGraph' gte mss0 = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes
       go (_, index) =
         mkEdge "⊤" (nodeName (index,  0))
 
-    botNodes = S.fromList $ concatMap Mb.maybeToList $ map fst $ replEdges pairs
+    botNodes = S.fromList $ Mb.mapMaybe fst (replEdges pairs)
 
     nodeName :: (Int,  Int) -> String
     nodeName (elemIndex,  msIndex) =
