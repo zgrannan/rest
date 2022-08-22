@@ -8,6 +8,7 @@ module Main where
 
 import qualified Data.List as L
 import Data.Hashable
+import Control.Monad (guard)
 import Control.Monad.Identity
 import qualified Arith as A
 
