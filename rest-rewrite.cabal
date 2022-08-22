@@ -73,7 +73,7 @@ library testlib
                 , monad-loops >= 0.4.3 && < 0.5
                 , unordered-containers >= 0.2.11
                 , text
-                , time >= 1.9.3 && < 1.10
+                , time >= 1.9.3 && < 1.13
   exposed-modules:
       Arith
       DSL
@@ -124,7 +124,7 @@ Test-Suite rest
                 , unordered-containers >= 0.2.11
                 , testlib
                 , text
-                , time >= 1.9.3 && < 1.10
+                , time
                 -- , liquidhaskell
                 -- , liquid-base
   other-modules:
