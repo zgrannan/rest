@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -8,7 +9,9 @@ module Main where
 
 import qualified Data.List as L
 import Data.Hashable
+#if MIN_VERSION_mtl(2,3,0)
 import Control.Monad (guard)
+#endif
 import Control.Monad.Identity
 import qualified Arith as A
 
