@@ -58,7 +58,7 @@ library
                 , parsec               >= 3.1.14 && < 3.2
                 , mtl                  >= 2.2.2 && < 2.3
                 , unordered-containers >= 0.2.13 && < 0.3
-                , text                 >= 1.2.4 && < 1.3
+                , text                 >= 1.2.4 && < 2.1
 
 library testlib
   default-language:  Haskell2010
@@ -72,7 +72,7 @@ library testlib
                 , mtl
                 , monad-loops >= 0.4.3 && < 0.5
                 , unordered-containers >= 0.2.11
-                , text >= 1.2.2
+                , text
                 , time >= 1.9.3 && < 1.10
   exposed-modules:
       Arith
@@ -123,7 +123,7 @@ Test-Suite rest
                 , mtl
                 , unordered-containers >= 0.2.11
                 , testlib
-                , text >= 1.2.2
+                , text
                 , time >= 1.9.3 && < 1.10
                 -- , liquidhaskell
                 -- , liquid-base
