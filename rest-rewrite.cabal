@@ -10,6 +10,9 @@ description:        REST is a Rewriting library with online termination checking
 synopsis:           Rewriting library with online termination checking
 license-file:       LICENSE
 
+extra-source-files:
+  graphs/.DONOTDELETE
+
 source-repository head
   type:     git
   location: https://github.com/zgrannan/rest
