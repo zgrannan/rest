@@ -76,7 +76,7 @@ library testlib
                 , monad-loops >= 0.4.3 && < 0.5
                 , unordered-containers >= 0.2.11
                 , text
-                , time >= 1.9.3 && < 1.13
+                , time >= 1.9.3 && < 1.15
   exposed-modules:
       Arith
       DSL
