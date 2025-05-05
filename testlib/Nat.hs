@@ -46,7 +46,7 @@ pp = prettyPrint (PPArgs []
                   ] showInt)
   where
     showInt :: MT.MetaTerm -> Maybe Text
-    showInt t = pack . show <$> termToInt t
+    showInt t = pack . Prelude.show <$> termToInt t
 
 op :: GenParser Char st Op
 op = fmap (Op . pack) (many (alphaNum <|> char '\''))
@@ -96,7 +96,7 @@ term = try infixTerm <|> nonInfixTerm
 parseTerm :: String -> RuntimeTerm
 parseTerm str =
   case parse term "" str of
-    Left err -> error (show err)
+    Left err -> error (Prelude.show err)
     Right t  -> t
 
 instance IsString RuntimeTerm where
