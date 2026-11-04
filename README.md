@@ -1,6 +1,6 @@
 Haskell implementation for [REST: REwriting and Selecting Termination orderings][rest-paper]
 
-[rest-paper]: https://s3.us-west-1.wasabisys.com/zg-public/paper.pdf
+[rest-paper]: https://arxiv.org/abs/2202.05872
 
 
 ## Graph Generation
