@@ -188,13 +188,9 @@ notStrongerThan (WQO ecs po) (WQO ecs' po') = result where
       ec' <- L.find (ec `EC.isSubsetOf`) (S.toList ecs')
       mkEcsMap (M.insert ec ec' buf) rest
   gt ecsMap (ec, descs) =
-    let
-      Just ec' = M.lookup ec ecsMap
-    in
-      descs `S.isSubsetOf` PO.descendents ec' po'
-
-
-
+    case M.lookup ec ecsMap of
+      Just ec' -> descs `S.isSubsetOf` PO.descendents ec' po'
+      _ -> error "notStrongerThan: missing equivalence class"
 
 mergeAll :: forall a. (Show a, Ord a, Eq a, Hashable a) => [WQO a] -> Maybe (WQO a)
 mergeAll []            = Just empty
@@ -312,24 +308,27 @@ insert wqo@(WQO ecs po) (f, g, QGT) = ValidExtension $
                 f'       = EC.singleton f
                 g'       = EC.singleton g
                 ecs'     = S.insert f' $ S.insert g' ecs
-                Just po' = PO.insert po f' g'
-            in
-                WQO ecs' po'
+             in
+                case PO.insert po f' g' of
+                  Nothing  -> error "insert: failed to insert into partial order"
+                  Just po' -> WQO ecs' po'
         (Just ec, Nothing)   ->
             let
                 g'       = EC.singleton g
                 ecs'     = S.insert g' ecs
-                Just po' = PO.insert po ec g'
-            in
-                WQO ecs' po'
+             in
+                case PO.insert po ec g' of
+                  Nothing  -> error "insert: failed to insert into partial order"
+                  Just po' -> WQO ecs' po'
 
         (Nothing, Just ec) ->
             let
                 f'       = EC.singleton f
                 ecs'     = S.insert f' ecs
-                Just po' = PO.insert po f' ec
-            in
-                WQO ecs' po'
+             in
+                case PO.insert po f' ec of
+                  Nothing  -> error "insert: failed to insert into partial order"
+                  Just po' -> WQO ecs' po'
         (Just ec1, Just ec2) ->
             WQO ecs (PO.insertUnsafe po ec1 ec2)
 

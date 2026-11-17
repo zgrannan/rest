@@ -7,7 +7,12 @@ mkShell {
     cacert
     git
     nix
-    stack
+    cabal-install
+    graphviz
+    haskell.compiler.ghc9141
+    z3
   ];
+
+  LANG = "C.UTF-8";
 }
 

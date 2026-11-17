@@ -10,10 +10,12 @@ basicInvalid = do
 
 tests :: [(String, Bool)]
 tests =
-  let
-    ValidExtension fg   = insert empty ("f", "g", QGT)
-    ValidExtension fgyz = insert fg ("y", "z", QGT)
-  in
-    [ ("NotStrongerThan", fg `notStrongerThan` fgyz)
-    , ("RejectInvalid", isNothing basicInvalid)
-    ]
+  case insert empty ("f", "g", QGT) of
+    ValidExtension fg ->
+      case insert fg ("y", "z", QGT) of
+        ValidExtension fgyz ->
+          [ ("NotStrongerThan", fg `notStrongerThan` fgyz)
+          , ("RejectInvalid", isNothing basicInvalid)
+          ]
+        _ -> error "Failed to insert (\"y\", \"z\", QGT)"
+    _ -> error "Failed to insert (\"f\", \"g\", QGT)"
