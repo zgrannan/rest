@@ -20,9 +20,9 @@ tests = [
       parseOO "f > + ^ + = cons ^ cons > z ^ f = g"
     )
   ) ]
-        where
+    where
 
-        Just wqo = mergeAll [ "cons" =. "z"
+        wqo = fromJust $ mergeAll [ "cons" =. "z"
                 , "g" =. "nil"
                 , "h" =. "s"
                 , "cons" >. "g"

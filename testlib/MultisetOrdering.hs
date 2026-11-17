@@ -97,7 +97,9 @@ toGraph' gte mss0 = DiGraph "msograph" (toOrderedSet (S.union elemNodes botNodes
     toEdges mp (((ts, tsIndex), (us, usIndex)) : mss) =
         concatMap redges repls ++ toEdges mp' mss
       where
-        Just (MultisetGE repls) = multisetGE (\t u -> gte (fst t) (fst u)) ts us
+        MultisetGE repls =
+          Mb.fromMaybe (error "toEdges: multisetGE failed") $
+            multisetGE (\t u -> gte (fst t) (fst u)) ts us
 
         lookupTIndex :: Int -> (Int, Int)
         lookupTIndex tindex = Mb.fromMaybe (tindex, tsIndex) (Mp.lookup (tindex, tsIndex) mp)

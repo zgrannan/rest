@@ -7,7 +7,6 @@ module QuickCheckTests where
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
-import Control.Monad.Identity
 import Data.Hashable (Hashable)
 import Data.Maybe as Mb
 import qualified Data.Text as T

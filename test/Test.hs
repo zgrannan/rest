@@ -12,7 +12,6 @@ import Data.Hashable
 #if MIN_VERSION_mtl(2,3,0)
 import Control.Monad (guard)
 #endif
-import Control.Monad.Identity
 import qualified Arith as A
 
 import qualified Data.HashMap.Strict as M

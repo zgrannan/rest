@@ -23,7 +23,6 @@ instance (Monad m) => Applicative (ListT m) where
       map f xs
 
 instance (Monad m) => Monad (ListT m) where
-  return x         = ListT (return [x])
   (ListT mxs) >>= f = ListT $ do
     xs <- mxs
     res <- mapM (runListT . f) xs
