@@ -23,4 +23,4 @@ jobs:
             .stack-work
           key: stack-cache-${{ runner.os }}-${{ env.cache-version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nixpkgs.nix') }}
       - name: Build & test
-        run: nix-shell --pure --run "stack --nix test --pedantic"
+        run: nix-shell --pure --run "cabal update && cabal test -fdevel"
