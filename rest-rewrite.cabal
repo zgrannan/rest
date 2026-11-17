@@ -62,8 +62,7 @@ library
     Language.REST.SMT
     Language.REST.Types
     Language.REST.WQOConstraints
-    Language.REST.WQOConstraints.ADT
-    Language.REST.WQOConstraints.Lazy
+    Language.REST.WQOConstraints.SMT
     Language.REST.WQOConstraints.Strict
   hs-source-dirs: src
   build-depends:  base                 >= 4.7 && < 5
@@ -119,11 +118,11 @@ Test-Suite test-rest
   other-modules:
     ExploredTerms
     KBO
-    LazyOC
     MultisetOrder
     OpOrdering
     QuickCheckTests
     RPO
+    RPOEquiv
     SMT
     StrictOC
     WQO

@@ -25,6 +25,7 @@ import qualified Multiset as MS
 import NonTerm as NT
 import qualified Lists as Li
 
+import Language.REST (rpoOCA)
 import Language.REST.Core
 import Language.REST.ConcreteOC
 import Language.REST.ExploredTerms
@@ -33,10 +34,9 @@ import Language.REST.OCToAbstract
 import Language.REST.Op
 import Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
-import qualified Language.REST.WQOConstraints.ADT    as AC
+import Language.REST.WQOConstraints.SMT (smtOC)
 import Language.REST.KBO (kbo)
 import Language.REST.LPO (lpo, lpoStrict)
-import Language.REST.RPO
 import Language.REST.ProofGen
 import Language.REST.Rest
 import Language.REST.Types
@@ -119,11 +119,11 @@ mkRESTGraph ::
   -> GraphParams
   -> IO ()
 mkRESTGraph LPOStrict evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpoStrict) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> mkRESTGraph' (lift (smtOC z3) lpoStrict) evalRWs0 userRWs0 name term0 params
 mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> mkRESTGraph' (lift (smtOC z3) lpo) evalRWs0 userRWs0 name term0 params
 mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> mkRESTGraph' (rpoOCA z3) evalRWs0 userRWs0 name term0 params
 mkRESTGraph (RPOConcrete ops) evalRWs0 userRWs0 name term0 params =
   mkRESTGraph' (concreteOC $ DS.fromList ops) evalRWs0 userRWs0 name term0 params
 mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =

@@ -61,15 +61,6 @@ tests =
   in
     [ ("RPO1",   return $ rpoGTE "f(z)" "g(s(z))"
               == OC.intersect ?impl (OC.singleton ?impl (f >. g)) (OC.singleton ?impl (f >. s)))
-    , ("RPO2", isUnsatisfiable ?impl $
-         OC.intersect ?impl
-           (rpoGTE "f(z)" "g(s(z))")
-           (rpoGTE "g(s(z))" "f(h(z))"))
-    , ("RPO3", isSatisfiable ?impl (rpoGTE bigLeft bigRight))
-    , ("RPO4", isUnsatisfiable ?impl (rpoGTE massiveLeft massiveRight))
-    , ("RPO5", isSatisfiable ?impl (rpoGTE listsLeft listsRight))
-    , ("RPO6", isSatisfiable ?impl (rpoGTE flattenLeft2 flattenRight2))
-    , ("RPOOrient", isUnsatisfiable ?impl $ rpoSeq flattenSeq)
     , ("SynGTE", return $ synGTE OpOrdering.empty (App s [App s [App g [App (Op "+") [App h [App s [App z []]],App z []],App s [App s [App g [App z [],App z []]]]]]]) (App z []))
     , ("SynGTE2",
         return $ synGTE (Mb.fromJust $ mergeAll [
@@ -78,3 +69,19 @@ tests =
         , h >. g
         , h >. "nil"]) "s(cons(h(h(z)), f(nil, nil, z)))"  "g(z, cons(g(nil, nil), s(s(z))))")
     ]
+
+-- | Satisfiability tests. These must run against a solver-backed instance
+--   ('smtOC'), because folding a long RPO sequence through a DNF instance
+--   ('Strict') expands exponentially.
+solverTests :: (Hashable (oc Op), Eq (oc Op), Show (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
+solverTests =
+  [ ("RPO2", isUnsatisfiable ?impl $
+       OC.intersect ?impl
+         (rpoGTE "f(z)" "g(s(z))")
+         (rpoGTE "g(s(z))" "f(h(z))"))
+  , ("RPO3", isSatisfiable ?impl (rpoGTE bigLeft bigRight))
+  , ("RPO4", isUnsatisfiable ?impl (rpoGTE massiveLeft massiveRight))
+  , ("RPO5", isSatisfiable ?impl (rpoGTE listsLeft listsRight))
+  , ("RPO6", isSatisfiable ?impl (rpoGTE flattenLeft2 flattenRight2))
+  , ("RPOOrient", isUnsatisfiable ?impl $ rpoSeq flattenSeq)
+  ]
