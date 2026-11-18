@@ -54,7 +54,7 @@ import qualified Data.HashSet as S
 
 
 diverges :: (Show oc) => OCAlgebra oc RuntimeTerm IO -> [RuntimeTerm] -> IO Bool
-diverges impl ts = not <$> isSat impl (orient impl ts)
+diverges impl ts = not <$> (orient impl ts >>= isSat impl)
 
 rewrites :: (Show oc, Hashable oc, Eq oc)
   => OCAlgebra oc RuntimeTerm IO
@@ -250,7 +250,7 @@ main = spawnZ3 >>= go where
       putStrLn "Running REST Test Suite"
       runTestSuite "ExploredTerms" ExploredTerms.tests
       runTestSuite "SMT" SMT.tests
-      runTestSuite "KBO" (KBO.tests z3)
+      runTestSuite "KBO" KBO.tests
       _ <- QuickCheckTests.tests
       runTestSuite "OpOrdering" OpOrdering.tests
       ocTests z3
@@ -258,7 +258,13 @@ main = spawnZ3 >>= go where
       runTestSuite "LPOEquiv" (LPOEquiv.tests z3)
       runTestSuite "MultisetOrder" MultisetOrder.tests
       runTestSuite "WQO" WQO.tests
-      implTests "KBO" (kbo z3) []
-      implTests "RPO" (rpoOCA z3) []
-      implTests "LPO" (lpoOCA z3) ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
+      withZ3 $ \z3r -> do
+        oca <- kbo z3r "$KBO_"
+        implTests "KBO" oca []
+      withZ3 $ \z3r -> do
+        oca <- rpoOCA z3r "$R_"
+        implTests "RPO" oca []
+      withZ3 $ \z3l -> do
+        ocaL <- lpoOCA z3l "$L_"
+        implTests "LPO" ocaL ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
       killZ3 z3
