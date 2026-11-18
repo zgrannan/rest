@@ -118,6 +118,7 @@ Test-Suite test-rest
   other-modules:
     ExploredTerms
     KBO
+    LPOEquiv
     MultisetOrder
     OpOrdering
     QuickCheckTests

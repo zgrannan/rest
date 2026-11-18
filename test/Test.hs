@@ -23,18 +23,17 @@ import MultisetOrder
 import Nat
 import RPO
 import RPOEquiv
+import LPOEquiv
 import KBO
 import StrictOC
 import SMT
 import qualified QuickCheckTests
 import System.IO
 
-import Language.REST (rpoOCA)
+import Language.REST (lpoOCA, rpoOCA)
 import Language.REST.ExploredTerms
 import Language.REST.OCAlgebra
-import Language.REST.OCToAbstract
 import Language.REST.Core
-import Language.REST.LPO (lpo)
 import Language.REST.KBO (kbo)
 import Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
@@ -256,9 +255,10 @@ main = spawnZ3 >>= go where
       runTestSuite "OpOrdering" OpOrdering.tests
       ocTests z3
       runTestSuite "RPOEquiv" (RPOEquiv.tests z3)
+      runTestSuite "LPOEquiv" (LPOEquiv.tests z3)
       runTestSuite "MultisetOrder" MultisetOrder.tests
       runTestSuite "WQO" WQO.tests
       implTests "KBO" (kbo z3) []
       implTests "RPO" (rpoOCA z3) []
-      implTests "LPO" (lift (smtOC z3) lpo) ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
+      implTests "LPO" (lpoOCA z3) ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
       killZ3 z3
