@@ -76,7 +76,8 @@ explainOrient ts0 = withZ3 go where
       do
         mapM_ (explain (refine impl (top impl))) pairs
         printf "Result:\n%s\n" (show $ orient impl ts)
-        isSatisfiable SC.strictOC (orient impl ts) >>= print
+        let cs = runIdentity $ orient impl ts
+        isSatisfiable SC.strictOC cs >>= print
     where
       impl :: OCAlgebra (SC.StrictOC Op) RuntimeTerm Identity
       impl = lift SC.strictOC lpo
@@ -118,15 +119,23 @@ mkRESTGraph ::
   -> GraphParams
   -> IO ()
 mkRESTGraph LPOStrict evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lpoStrictOCA z3) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- lpoStrictOCA z3 "$R0_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lpoOCA z3) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- lpoOCA z3 "$R1_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (rpoOCA z3) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- rpoOCA z3 "$R2_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph (RPOConcrete ops) evalRWs0 userRWs0 name term0 params =
   mkRESTGraph' (concreteOC $ DS.fromList ops) evalRWs0 userRWs0 name term0 params
 mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- kbo z3 "$R3_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph (Fuel n) evalRWs0 userRWs0 name term0 params =
   mkRESTGraph' (fuelOC n) evalRWs0 userRWs0 name term0 params
 

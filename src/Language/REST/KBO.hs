@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE NamedFieldPuns #-}
 
 module Language.REST.KBO (kbo, kboGTE) where
 
+import           Data.Text (Text)
 import           Language.REST.OCAlgebra
 import           Language.REST.Op
 import           Language.REST.RuntimeTerm as RT
@@ -10,6 +10,7 @@ import           Language.REST.SMT
 import           Language.REST.Internal.Util
 
 import qualified Data.Map as M
+import GHC.Stack (HasCallStack)
 
 termOps :: RuntimeTerm -> [Op]
 termOps (App f xs) = f:concatMap termOps xs
@@ -36,15 +37,5 @@ kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps 
 
 
 -- | OCA for a quasi-order extension to the Knuth-Bendix ordering
-kbo :: SolverHandle -> OCAlgebra (SMTExpr Bool) RuntimeTerm IO
-kbo solver = OCAlgebra
-  {  isSat           = checkSat' solver
-  ,  refine
-  ,  top             = smtTrue
-  ,  union
-  ,  notStrongerThan
-  }
-  where
-    union  e1 e2          = Or [e1, e2]
-    refine e t u          = e `smtAnd` kboGTE t u
-    notStrongerThan e1 e2 = checkSat' solver (Implies e2 e1)
+kbo :: HasCallStack => SolverHandle -> Text -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
+kbo solver prefix = smtOCA solver prefix kboGTE

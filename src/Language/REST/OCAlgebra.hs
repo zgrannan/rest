@@ -7,7 +7,7 @@ module Language.REST.OCAlgebra where
 --  of type @a@. @m@ is the computation context for @isSat@.
 data OCAlgebra c a m = OCAlgebra
   { isSat  :: c -> m Bool       -- ^ Checks if the constraints are satisfiable
-  , refine :: c -> a -> a -> c  -- ^ @refine c t u@ strengthens @c@ to permit @t >= u@
+  , refine :: c -> a -> a -> m c -- ^ @refine c t u@ strengthens @c@ to permit @t >= u@
   , top    :: c                 -- ^ Initial constraints for use in REST
 
   , union  :: c -> c -> c       -- ^ Computes the union of constraints; used in 'ExploredTerms' as an optimization
@@ -22,7 +22,7 @@ fuelOC :: (Monad m) => Int -> OCAlgebra Int a m
 fuelOC initFuel = OCAlgebra isSat' refine' initFuel union' notStrongerThan'
   where
     isSat'  c             = return $ c >= 0
-    refine' c _ _         = c - 1
+    refine' c _ _         = return $ c - 1
     union'                = max
     notStrongerThan' c c' = return $ c >= c'
 
@@ -34,13 +34,14 @@ contramap :: forall c a b m .
   -> OCAlgebra c b m
 contramap f oca = oca{refine = refine'}
   where
-    refine' :: c -> b -> b -> c
+    refine' :: c -> b -> b -> m c
     refine' c t1 t2 = refine oca c (f t1) (f t2)
 
 -- | @bimapConstraints to from oca@ yields an oca using @d@ to track constraints; @to@ and @from@ should
 --   define an isomorphism between c and d
 bimapConstraints :: forall c d a m .
-     (c -> d)
+     Functor m
+  => (c -> d)
   -> (d -> c)
   -> OCAlgebra c a m
   -> OCAlgebra d a m
@@ -49,8 +50,8 @@ bimapConstraints to from oca = OCAlgebra isSat' refine' (to (top oca)) union' no
     isSat' :: d -> m Bool
     isSat' c = isSat oca (from c)
 
-    refine' :: d -> a -> a -> d
-    refine' c t1 t2 = to $ refine oca (from c) t1 t2
+    refine' :: d -> a -> a -> m d
+    refine' c t1 t2 = to <$> refine oca (from c) t1 t2
 
     union' :: d -> d -> d
     union' c1 c2 = to $ union oca (from c1) (from c2)

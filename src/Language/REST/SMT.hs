@@ -19,8 +19,13 @@ module Language.REST.SMT
     checkSat
   , checkSat'
   , getModel
+  , InternHandle
+  , internSMTExpr
+  , newInternState
   , parseModel
   , killZ3
+  , sendCommands
+  , sendCommandsNow
   , spawnZ3
   , smtAdd
   , smtAnd
@@ -36,8 +41,11 @@ module Language.REST.SMT
   , Z3Model
 ) where
 
+import Control.Exception (bracket_)
+import Control.Monad (unless)
 import Control.Monad.IO.Class
 import Data.Hashable
+import Data.IORef
 import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.Set as S
@@ -48,6 +56,7 @@ import Text.Parsec.Prim
 import Text.ParserCombinators.Parsec.Char
 import GHC.Generics (Generic)
 import GHC.IO.Handle
+import GHC.Stack (HasCallStack)
 
 -- | A model returned by Z3 corresponding to a satisfiable
 --   set of constraints. Untyped.
@@ -162,7 +171,13 @@ vars (Var (SMTVar var)) = S.singleton var
 vars (Implies e1 e2) = S.union (vars e1) (vars e2)
 vars (Const _)       = S.empty
 
-data SMTCommand = SMTAssert (SMTExpr Bool) | DeclareVar T.Text | CheckSat | Push | Pop
+data SMTCommand
+    = SMTAssert (SMTExpr Bool)
+    | DeclareVar T.Text
+    | CheckSat
+    | Push
+    | Pop
+    | DefineConst T.Text (SMTExpr Bool)
 
 smtFalse :: SMTExpr Bool
 smtFalse = Or []
@@ -211,10 +226,7 @@ commandString (DeclareVar var) = T.concat ["(declare-const ", var,  " Int)"]
 commandString CheckSat = "(check-sat)"
 commandString Push     = "(push)"
 commandString Pop      = "(pop)"
-
-askCmds :: SMTExpr Bool -> [SMTCommand]
-askCmds expr = varDecls ++ [SMTAssert expr, CheckSat] where
-  varDecls = map DeclareVar $ S.toList (vars expr)
+commandString (DefineConst n e) = T.concat ["(define-fun ", n, " () Bool ", exprString e, ")"]
 
 -- | The handle (stdIn, stdOut) used for interacting with Z3
 type SolverHandle = (Handle, Handle)
@@ -245,35 +257,43 @@ getModel stdIn = do
   hPutStr stdIn "(get-model)\n"
   hFlush stdIn
 
--- | @checkSat' handles expr@ checks satisfiability of @expr@ in an instantiated SMT solver.
---   This is wrapped in a @push@ / @pop@, so it does not change the SMT environment
-checkSat' :: (Handle,  Handle) -> SMTExpr Bool -> IO Bool
-checkSat' (stdIn, stdOut) expr = do
-  sendCommands $ Push:askCmds expr
-  result <- hGetLine stdOut
-  sat <- case result of
-    "sat"   -> do
-      -- getModel stdIn
-      -- model <- readModel stdOut
-      -- putStrLn model
-      return True
-    "unsat" -> return False
-    other   -> error other
-  sendCommands [Pop]
-  return sat
-  where
-    sendCommands cmds = do
-      hPutStr stdIn $ T.unpack (T.intercalate "\n" (map commandString cmds)) ++ "\n"
-      hFlush stdIn
+sendCommands :: (Handle, Handle) -> [SMTCommand] -> IO ()
+sendCommands (stdIn, _) cmds = do
+  hPutStr stdIn $ T.unpack (T.intercalate "\n" (map commandString cmds)) ++ "\n"
 
--- | @checkSat expr@ launches Z3, to checks satisfiability of @expr@, terminating Z3
---   afterwards. Just a utility wrapper for `checkSat'`
-checkSat :: SMTExpr Bool -> IO Bool
-checkSat expr = do
-  z3     <- spawnZ3
-  result <- checkSat' z3 expr
-  killZ3 z3
-  return result
+sendCommandsNow :: (Handle, Handle) -> [SMTCommand] -> IO ()
+sendCommandsNow hs@(stdIn, _) cmds = do
+  sendCommands hs cmds
+  hFlush stdIn
+
+-- | Like 'checkSat', but emits to the SMT solver any constant declarations
+-- necessary to check the expression.
+checkSat' :: HasCallStack => (Handle,  Handle) -> SMTExpr Bool -> IO Bool
+checkSat' hs@(_, stdOut) expr = do
+  bracket_ (sendCommandsNow hs [Push]) (sendCommands hs [Pop]) $ do
+    sendCommandsNow hs $ Push : askCmds expr
+    result <- hGetLine stdOut
+    case result of
+      "sat"   -> return True
+      "unsat" -> return False
+      other   -> error other
+  where
+    askCmds :: SMTExpr Bool -> [SMTCommand]
+    askCmds e =
+      map DeclareVar (S.toList $ vars e) ++ [SMTAssert expr, CheckSat]
+
+-- | @checkSat handles expr@ checks satisfiability of @expr@ in an instantiated SMT solver.
+--   This is wrapped in a @push@ / @pop@, so it does not change the SMT environment
+checkSat :: HasCallStack => (Handle,  Handle) -> SMTExpr Bool -> IO Bool
+checkSat hs@(_, stdOut) expr = do
+  bracket_
+    (sendCommandsNow hs [Push, SMTAssert expr, CheckSat])
+    (sendCommands hs [Pop]) $ do
+      result <- hGetLine stdOut
+      case result of
+        "sat"   -> return True
+        "unsat" -> return False
+        other   -> error $ "checkSat: solver said: " ++ other
 
 -- | This class allows elements of type @a@ to be used as SMT /vaiables/ of type @b@.
 --   For example, the instance @ToSMTVar Op Int@ allows 'RuntimeTerm' operators to be
@@ -292,3 +312,83 @@ instance ToSMT Int Int where
 instance {-# OVERLAPPABLE #-} (ToSMTVar a b) => ToSMT a b where
   toSMT :: a -> SMTExpr b
   toSMT op = Var $ toSMTVar op
+
+
+-- Interning ordering constraints
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- Ordering constraints can grow large with the repeated applications of the
+-- 'refine' function. The size of the expressions grows linearly with the length
+-- of a rewrite path.
+--
+-- For this reason the implementation interns ordering constraints by declaring
+-- a binding for the result of each call to 'refine'. This binding is sent to
+-- the SMT solver.
+--
+-- Later calls to refine that take the result as input receive the
+-- bound variable instead.
+--
+-- Defining the binding requires declaring in advance all the variables
+-- that the expression uses, which it is done during the 'refine' call as well.
+--
+-- The implementation keeps a list of bindings that have been defined
+-- and variables that have been declared, so duplicate declarations are
+-- avoided.
+--
+-- An alternative that was considered before https://github.com/zgrannan/rest/pull/48
+-- was to reduce the expressions by simplifications, but this replicates
+-- manipulations that the SMT solver already does, there is no guarantee
+-- that the expressions admit being simplified enough to bound the size,
+-- and different OCAlgebras would likely have to deal with the same problem.
+--
+
+
+-- | A handle for interning SMT expressions. This is used to avoid sending the same
+--  SMT expression to the solver multiple times, which can be inefficient.
+data InternHandle = InternHandle
+  { -- | Prefix to use for then names of interned expressions
+    ihPrefix :: T.Text
+    -- | Handle to the SMT solver to which the interned expressions are sent
+  , ihSolver :: SolverHandle
+    -- | State used to intern the SMT expressions produced by 'refine'
+  , ihState  :: IORef InternState
+  }
+
+-- | State used to intern the SMT expressions produced by 'refine'.
+data InternState = InternState
+  { -- | The next integer to use for naming an interned expression
+    isNext    :: Int
+    -- | A map from SMT expressions to the names of their interned versions
+  , isBinds :: M.Map (SMTExpr Bool) T.Text
+    -- | The set of names of interned expressions
+  , isBindNames :: S.Set T.Text
+    -- | The set of variables of sort Int that have been declared in the SMT solver
+  , isIntVars :: S.Set T.Text
+  }
+
+-- | Creates a new 'BindHandle' with the given prefix and SMT solver handle.
+newInternState :: T.Text -> SolverHandle -> IO InternHandle
+newInternState prefix sh = do
+    InternHandle prefix sh
+      <$> newIORef (InternState 0 M.empty S.empty S.empty)
+
+-- | Interns the given SMT expression, returning a variable that represents it.
+internSMTExpr :: InternHandle -> SMTExpr Bool -> IO (SMTExpr Bool)
+internSMTExpr ih e = do
+  st <- readIORef (ihState ih)
+  case M.lookup e (isBinds st) of
+    Just v  -> return $ Var $ SMTVar v
+    Nothing -> do
+      let newInts = vars e `S.difference` isBindNames st `S.difference` isIntVars st
+      unless (S.null newInts) $
+        sendCommands (ihSolver ih) (map DeclareVar (S.toList newInts))
+      let n = isNext st
+          v = ihPrefix ih <> T.pack (show n)
+      writeIORef (ihState ih) st
+        { isNext    = n + 1
+        , isBinds = M.insert e v (isBinds st)
+        , isBindNames = S.insert v (isBindNames st)
+        , isIntVars = S.union (isIntVars st) newInts
+        }
+      sendCommands (ihSolver ih) [DefineConst v e]
+      return $ Var $ SMTVar v
