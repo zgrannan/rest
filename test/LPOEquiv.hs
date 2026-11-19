@@ -9,7 +9,7 @@ import Prelude hiding (GT, EQ)
 
 import Control.Monad.Identity (runIdentity)
 
-import Language.REST.SMT hiding (GTE)
+import Language.REST.SMT
 import Language.REST.Types (Relation(..))
 import Language.REST.RuntimeTerm
 import Language.REST.LPO (lpoSMTRel, lpoStrictSMTRel, lpo, lpoStrict)
@@ -55,10 +55,10 @@ ref z3 strict r t u =
     gen False = lpo
 
 notE :: SMTExpr Bool -> SMTExpr Bool
-notE p = Implies p smtFalse
+notE p = smtImplies p smtFalse
 
 iff :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
-iff a b = And [Implies a b, Implies b a]
+iff a b = smtAnd [smtImplies a b, smtImplies b a]
 
 equiv :: SolverHandle -> SMTExpr Bool -> SMTExpr Bool -> IO Bool
 equiv z3 e1 e2 = not <$> checkSat' z3 (notE (iff e1 e2))

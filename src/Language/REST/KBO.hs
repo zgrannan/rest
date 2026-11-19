@@ -22,7 +22,7 @@ arityConstraints t = toExpr $ go M.empty t where
   go m (App f [targ]) = go (M.insert f 1 m) targ
   go m (App f ts)  = foldl go (M.insert f 0 m) ts
 
-  toExpr m = And $ map toConstraint (M.toList m)
+  toExpr m = smtAnd $ map toConstraint (M.toList m)
   toConstraint (sym, n) = toSMT sym `smtGTE` Const n
 
 
@@ -30,7 +30,7 @@ arityConstraints t = toExpr $ go M.empty t where
 -- on the weights of function symbols such that @t@ is greater than @u@
 -- in the KBO ordering.
 kboGTE :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
-kboGTE t u = arityConstraints t `smtAnd` arityConstraints u `smtAnd` (size tOps `smtGTE` size uOps)
+kboGTE t u = smtAnd [arityConstraints t, arityConstraints u, size tOps `smtGTE` size uOps]
   where
     (tOps, uOps) = removeEqBy (==) (termOps t) (termOps u)
     size ops     = smtAdd (map toSMT ops)
