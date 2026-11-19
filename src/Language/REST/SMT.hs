@@ -155,7 +155,12 @@ toFormula = go False where
   go p (Greater t u)    = eparens p $ T.intercalate " > " $ map (go True) [t, u]
   go _ (Var (SMTVar v)) = v
   go _ (Const c)        = T.pack (show c)
-  go _ _e               = undefined
+  go _ (Or [])          = "⊥"
+  go p (Or ts)          = eparens p $ T.intercalate " ∨ " $ map (go (not p)) ts
+  go p (Equal ts)
+    | length ts < 2 = "⊤"
+    | otherwise     = eparens p $ T.intercalate " = " $ map (go True) ts
+  go p (Implies t u)    = eparens p $ T.intercalate " ⇒ " $ map (go True) [t, u]
 
   eparens True t = T.concat ["(", t, ")"]
   eparens False t = t
