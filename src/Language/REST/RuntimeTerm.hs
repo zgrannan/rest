@@ -75,8 +75,8 @@ smtOCA z3 prefix step = do
     is <- newInternState prefix z3
     return $ OCAlgebra
       { isSat           = checkSat z3
-      , refine          = \e t u -> internSMTExpr is $ smtAnd e (step t u)
+      , refine          = \e t u -> internSMTExpr is $ smtAnd [e , step t u]
       , top             = smtTrue
-      , union           = \e1 e2 -> Or [e1, e2]
-      , notStrongerThan = \e1 e2 -> checkSat z3 (Implies e2 e1)
+      , union           = \e1 e2 -> smtOr [e1, e2]
+      , notStrongerThan = \e1 e2 -> checkSat z3 (smtImplies e2 e1)
       }

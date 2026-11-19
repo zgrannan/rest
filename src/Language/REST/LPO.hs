@@ -19,7 +19,7 @@ import           Language.REST.Internal.OpOrdering as OpOrdering
 import           Language.REST.WQOConstraints as OC
 import           Language.REST.Types
 import           Language.REST.RuntimeTerm
-import           Language.REST.SMT hiding (GTE)
+import           Language.REST.SMT
 
 lex
   :: (Eq a, Ord b, Hashable b)
@@ -99,24 +99,25 @@ lpoSMT' :: Bool -> Relation -> SMTExpr Bool -> RuntimeTerm -> RuntimeTerm -> SMT
 lpoSMT' strict r e t@(App f ts) u@(App g us)
   | not strict && r == EQ && length ts /= length us = smtFalse
   | not strict && r == EQ =
-      let cs'  = smtAnd e (eqPrec f g)
+      let cs'  = smtAnd [e, eqPrec f g]
           subs = zipWith (lpoSMT' strict EQ cs') ts us
-      in conj (cs' : subs)
+      in smtAnd (cs' : subs)
   | strict && r == EQ = if t == u then e else smtFalse
-  | otherwise = smtAnd e (Or [case1, case2, case3])
+  | otherwise = smtAnd [e, smtOr [case1, case2, case3]]
   where
-    case1 = Or [ lpoSMT' strict GTE e ti u | ti <- ts ]
-    case2 = if f == g then smtFalse else smtAnd tDominatesUs (gtPrec f g)
+    case1 = smtOr [ lpoSMT' strict GTE e ti u | ti <- ts ]
+    case2 = if f == g then smtFalse else smtAnd [tDominatesUs, gtPrec f g]
     case3 = if strict && f /= g
       then smtFalse
-      else conj ([ tDominatesUs
+      else smtAnd
+                ([ tDominatesUs
                  , lexSMT (r == GT) e ts us
                  ] ++ [ eqPrec f g | f /= g ])
 
-    tDominatesUs = conj [ lpoSMT' strict GT e t uj | uj <- us ]
+    tDominatesUs = smtAnd [ lpoSMT' strict GT e t uj | uj <- us ]
 
     eqPrec :: Op -> Op -> SMTExpr Bool
-    eqPrec a b = Equal [toSMT a, toSMT b]
+    eqPrec a b = smtEqual [toSMT a, toSMT b]
 
     gtPrec :: Op -> Op -> SMTExpr Bool
     gtPrec a b = Greater (toSMT a) (toSMT b)
@@ -127,12 +128,10 @@ lpoSMT' strict r e t@(App f ts) u@(App g us)
     lexSMT isGT acc []    [] = if isGT then smtFalse else acc
     lexSMT isGT acc (x:xs) (y:ys)
       | x == y = lexSMT isGT acc xs ys
-      | otherwise = Or [ lpoSMT' strict GT acc x y
+      | otherwise = smtOr
+                       [ lpoSMT' strict GT acc x y
                        , lexSMT isGT (lpoSMT' strict EQ acc x y) xs ys
                        ]
-
-conj :: [SMTExpr Bool] -> SMTExpr Bool
-conj = foldl smtAnd smtTrue
 
 -- | The GTE instance of 'lpoSMT'' for the non-strict ordering.
 lpoSMTRel :: Relation -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool

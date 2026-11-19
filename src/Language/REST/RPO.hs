@@ -28,7 +28,7 @@ import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT
 import           Language.REST.Internal.MultisetOrder
 import           Language.REST.Internal.Util
-import           Language.REST.SMT hiding (GTE)
+import           Language.REST.SMT
 
 instance Show RuntimeTerm where
   show (App op trms) =
@@ -176,15 +176,16 @@ rpoSMT' r e t u
   | u `isSubtermOf` t                   = if r == EQ then smtFalse else e
   | App f ts <- t, App g us <- u, f == g = rpoMulSMT r e ts us
   | App f ts <- t, App g us <- u         =
-      let eqPrec = Equal [toSMT f, toSMT g]
+      let eqPrec = smtEqual [toSMT f, toSMT g]
           gtPrec = Greater (toSMT f) (toSMT g)
           body
             | r == EQ   = rpoMulSMT r eqPrec ts us
-            | otherwise = Or [ rpoMulSMT GT gtPrec (MS.singleton t) us
+            | otherwise = smtOr
+                             [ rpoMulSMT GT gtPrec (MS.singleton t) us
                              , rpoMulSMT r  eqPrec ts us
                              , rpoMulSMT GTE smtTrue ts (MS.singleton u)
                              ]
-      in smtAnd e body
+      in smtAnd [e, body]
 
 rpoMulSMT :: Relation -> SMTExpr Bool -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> SMTExpr Bool
 rpoMulSMT r e ts0 us0 = uncurry go (removeEQs ts0 us0)
@@ -193,7 +194,7 @@ rpoMulSMT r e ts0 us0 = uncurry go (removeEQs ts0 us0)
       | MS.null ts && MS.null us       = if r == GT then smtFalse else e
       | not (MS.null ts) && MS.null us = if r == EQ then smtFalse else e
       | MS.null ts && not (MS.null us) = smtFalse
-      | otherwise = Or [ posConstraints pos1 | pos1 <- HS.toList (possibilities r (MS.toList ts) (MS.toList us)) ]
+      | otherwise = smtOr [ posConstraints pos1 | pos1 <- HS.toList (possibilities r (MS.toList ts) (MS.toList us)) ]
 
     posConstraints pos1 = L.foldl' apply e (HS.toList pos1)
       where
@@ -201,4 +202,4 @@ rpoMulSMT r e ts0 us0 = uncurry go (removeEQs ts0 us0)
         apply acc (Replace t ts')  =
           if HS.null ts'
             then acc
-            else L.foldl' (\a u' -> smtAnd a (rpoSMT' GT smtTrue t u')) acc (HS.toList ts')
+            else smtAnd $ acc : map (rpoSMT' GT smtTrue t) (HS.toList ts')

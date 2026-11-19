@@ -29,12 +29,15 @@ module Language.REST.SMT
   , spawnZ3
   , smtAdd
   , smtAnd
+  , smtEqual
+  , smtImplies
+  , smtOr
   , smtFalse
   , smtGTE
   , smtTrue
   , withZ3
   , SolverHandle
-  , SMTExpr(..)
+  , SMTExpr(Const, Greater)
   , SMTVar(..)
   , ToSMT(..)
   , ToSMTVar(..)
@@ -196,12 +199,51 @@ smtAdd :: [SMTExpr Int] -> SMTExpr Int
 smtAdd [] = Const 0
 smtAdd ts = Add ts
 
--- | `smtAnd t u` returns an smt expression representing \( t \land u \).
-smtAnd :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
-smtAnd (And xs) (And ys) = And $ L.nub (xs ++ ys)
-smtAnd (And xs) e        = And $ L.nub (xs ++ [e])
-smtAnd e        (And ys) = And $ L.nub (e:ys)
-smtAnd t        u        = And [t, u]
+smtOr :: [SMTExpr Bool] -> SMTExpr Bool
+smtOr xs0 =
+    let xs1 = filter (not . isSmtFalse) $ concatMap flattenOr xs0
+     in if any isSmtTrue xs1 then
+          smtTrue
+        else
+          case L.nub xs1 of
+            []  -> smtFalse
+            [x] -> x
+            xs2 -> Or xs2
+  where
+    flattenOr (Or xs) = xs
+    flattenOr x      = [x]
+
+isSmtFalse :: SMTExpr Bool -> Bool
+isSmtFalse (Or []) = True
+isSmtFalse _       = False
+
+smtImplies :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
+smtImplies t u = Implies t u
+
+smtEqual :: [SMTExpr a] -> SMTExpr Bool
+smtEqual xs = case L.nub xs of
+  []  -> smtTrue
+  [_] -> smtTrue
+  xs' -> Equal xs'
+
+-- | `smtAnd ts` returns an smt expression representing \( t0 \land ... \land tn \).
+smtAnd :: [SMTExpr Bool] -> SMTExpr Bool
+smtAnd xs0 =
+    let xs1 = filter (not . isSmtTrue) $ concatMap flattenAnd xs0
+     in if any isSmtFalse xs1 then
+          smtFalse
+        else
+          case L.nub xs1 of
+            []  -> smtTrue
+            [x] -> x
+            xs2 -> And xs2
+  where
+    flattenAnd (And ys) = ys
+    flattenAnd y       = [y]
+
+isSmtTrue :: SMTExpr Bool -> Bool
+isSmtTrue (And []) = True
+isSmtTrue _        = False
 
 -- | `smtGTE t u` returns an SMT expression \( t \geqslant u \). If @t == u@, returns 'smtTrue'.
 smtGTE :: SMTExpr Int -> SMTExpr Int -> SMTExpr Bool
