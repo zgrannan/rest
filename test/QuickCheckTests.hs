@@ -15,7 +15,6 @@ import qualified Language.REST.Internal.PartialOrder as PO
 import qualified Language.REST.Internal.WQO as WQO
 import qualified Language.REST.WQOConstraints        as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
-import qualified Language.REST.WQOConstraints.Lazy   as LC
 import           Language.REST.RPO
 import           Language.REST.Op
 import           Language.REST.RuntimeTerm
@@ -160,4 +159,4 @@ tests = sequence
         , quickCheckWith stdArgs{maxSize = 10, maxSuccess = 20, maxDiscardRatio = 100} (prop_rpoCons ?impl)
         ]
   where
-    ?impl = LC.lazyOC
+    ?impl = SC.strictOC

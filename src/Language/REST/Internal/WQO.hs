@@ -50,7 +50,7 @@ instance Show QORelation where
   show QEQ = "≈"
 
 instance {-# OVERLAPPING #-} ToSMTVar a Int => ToSMT (WQO a) Bool where
-  toSMT (WQO ecs po) = And $ ecsSMT ++ posSMT where
+  toSMT (WQO ecs po) = smtAnd $ ecsSMT ++ posSMT where
 
     toSMT' :: a -> SMTExpr Int
     toSMT' = toSMT
@@ -59,7 +59,7 @@ instance {-# OVERLAPPING #-} ToSMTVar a Int => ToSMT (WQO a) Bool where
       ec <- S.toList ecs
       let ecl = EC.toList ec
       guard $ length ecl >= 2
-      return $ Equal (map toSMT' ecl)
+      return $ smtEqual (map toSMT' ecl)
 
     posSMT = do
       (ec, vs) <- PO.toDescsList po

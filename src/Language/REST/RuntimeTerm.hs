@@ -1,20 +1,26 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Language.REST.RuntimeTerm
   ( RuntimeTerm(..)
   , ToRuntimeTerm(..)
   , subTerms
   , contains
+  , smtOCA
   )
 where
 
 import           Data.Hashable
+import           Data.Text (Text)
 import           GHC.Generics (Generic)
 import           Text.Printf
 import qualified Data.List as L
 
+import           Language.REST.OCAlgebra
 import           Language.REST.Op
+import           Language.REST.SMT
+import GHC.Stack (HasCallStack)
 
 -- | Ground terms
 data RuntimeTerm = App Op [RuntimeTerm] deriving (Eq, Ord, Generic, Hashable)
@@ -56,3 +62,21 @@ subTerms t@(App f ts) = (t, id) : concatMap st [0..length ts - 1]
 contains :: RuntimeTerm -> RuntimeTerm -> Bool
 contains t1 t2 | t1 == t2 = True
 contains (App _ ts) t     = any (contains t) ts
+
+-- | Builds an ordering constraint algebra from a @step@ that translates
+-- an ordering constraint to an 'SMTExpr'.
+smtOCA
+  :: HasCallStack
+  => SolverHandle
+  -> Text
+  -> (RuntimeTerm -> RuntimeTerm -> SMTExpr Bool)
+  -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
+smtOCA z3 prefix step = do
+    is <- newInternState prefix z3
+    return $ OCAlgebra
+      { isSat           = checkSat z3
+      , refine          = \e t u -> internSMTExpr is $ smtAnd [e , step t u]
+      , top             = smtTrue
+      , union           = \e1 e2 -> smtOr [e1, e2]
+      , notStrongerThan = \e1 e2 -> checkSat z3 (smtImplies e2 e1)
+      }

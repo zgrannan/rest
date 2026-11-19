@@ -19,7 +19,7 @@ data Term = Term String Int
 exploreFuncs :: ExploreFuncs Term Constraints Identity
 exploreFuncs = EF undefined subsume refine where
   subsume c0 c1               = return $ c0 >= c1
-  refine  c  _  (Term _ dest) = c - dest
+  refine  c  _  (Term _ dest) = return $ c - dest
 
 t0 :: Term
 t0 = Term "t0" 5

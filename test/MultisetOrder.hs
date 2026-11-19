@@ -1,7 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module MultisetOrder where
 
 import Prelude hiding (GT)
-
 
 import Control.Monad.Identity
 
@@ -10,28 +11,29 @@ import Language.REST.Internal.MultisetOrder
 import Language.REST.WQOConstraints.Strict as SC
 import Language.REST.WQOConstraints as OC
 import Language.REST.Types
+import Language.REST.Op
 
-compareChar :: ConstraintGen impl Char Char Identity
-compareChar impl r oc c1 c2 = Identity $ intersectRelation impl oc (c1, c2, r)
+compareOp :: ConstraintGen impl Op Op Identity
+compareOp impl r oc c1 c2 = Identity $ intersectRelation impl oc (c1, c2, r)
 
-existingOC :: StrictOC Char
-existingOC = OC.intersectRelation strictOC' SC.noConstraints ('a', 'c', GTE)
+existingOC :: StrictOC Op
+existingOC = OC.intersectRelation strictOC' SC.noConstraints (Op "a", Op "c", GTE)
 
-ms :: StrictOC Char -> MultiSet Char -> MultiSet Char -> Identity (StrictOC Char)
-ms = multisetOrder compareChar strictOC' GTE
+ms :: StrictOC Op -> MultiSet Op -> MultiSet Op -> Identity (StrictOC Op)
+ms = multisetOrder compareOp strictOC' GTE
 
-multisetNext :: Identity (StrictOC Char)
-multisetNext = ms existingOC (M.fromList "bac") (M.fromList "aaaa")
+multisetNext :: Identity (StrictOC Op)
+multisetNext = ms existingOC (M.fromList [Op "b", Op "a", Op "c"]) (M.fromList (replicate 4 (Op "a")))
 
-unsat :: Identity (StrictOC Char)
+unsat :: Identity (StrictOC Op)
 unsat = do
   mn <- multisetNext
-  return $ OC.intersectRelation strictOC' mn ('c', 'a', GT)
+  return $ OC.intersectRelation strictOC' mn (Op "c", Op "a", GT)
 
 tests :: [(String, Bool)]
-tests = [
-    ("Constraints",
+tests =
+  [ ("Constraints",
      SC.noConstraints /=
-     runIdentity (ms SC.noConstraints (M.fromList "bc") (M.fromList "aa")))
+     runIdentity (ms SC.noConstraints (M.fromList [Op "b", Op "c"]) (M.fromList [Op "a", Op "a"])))
   , ("Unsat", SC.isUnsatisfiable $ runIdentity unsat)
   ]

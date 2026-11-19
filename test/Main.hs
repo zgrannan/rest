@@ -25,6 +25,7 @@ import qualified Multiset as MS
 import NonTerm as NT
 import qualified Lists as Li
 
+import Language.REST (rpoOCA, lpoOCA, lpoStrictOCA)
 import Language.REST.Core
 import Language.REST.ConcreteOC
 import Language.REST.ExploredTerms
@@ -33,10 +34,8 @@ import Language.REST.OCToAbstract
 import Language.REST.Op
 import Language.REST.WQOConstraints as OC
 import qualified Language.REST.WQOConstraints.Strict as SC
-import qualified Language.REST.WQOConstraints.ADT    as AC
 import Language.REST.KBO (kbo)
-import Language.REST.LPO (lpo, lpoStrict)
-import Language.REST.RPO
+import Language.REST.LPO (lpo)
 import Language.REST.ProofGen
 import Language.REST.Rest
 import Language.REST.Types
@@ -77,7 +76,8 @@ explainOrient ts0 = withZ3 go where
       do
         mapM_ (explain (refine impl (top impl))) pairs
         printf "Result:\n%s\n" (show $ orient impl ts)
-        isSatisfiable SC.strictOC (orient impl ts) >>= print
+        let cs = runIdentity $ orient impl ts
+        isSatisfiable SC.strictOC cs >>= print
     where
       impl :: OCAlgebra (SC.StrictOC Op) RuntimeTerm Identity
       impl = lift SC.strictOC lpo
@@ -119,15 +119,23 @@ mkRESTGraph ::
   -> GraphParams
   -> IO ()
 mkRESTGraph LPOStrict evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpoStrict) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- lpoStrictOCA z3 "$R0_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph LPO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) lpo) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- lpoOCA z3 "$R1_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph RPO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (lift (AC.adtOC z3) rpo) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- rpoOCA z3 "$R2_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph (RPOConcrete ops) evalRWs0 userRWs0 name term0 params =
   mkRESTGraph' (concreteOC $ DS.fromList ops) evalRWs0 userRWs0 name term0 params
 mkRESTGraph KBO evalRWs0 userRWs0 name term0 params =
-  withZ3 $ \z3 -> mkRESTGraph' (kbo z3) evalRWs0 userRWs0 name term0 params
+  withZ3 $ \z3 -> do
+    oca <- kbo z3 "$R3_"
+    mkRESTGraph' oca evalRWs0 userRWs0 name term0 params
 mkRESTGraph (Fuel n) evalRWs0 userRWs0 name term0 params =
   mkRESTGraph' (fuelOC n) evalRWs0 userRWs0 name term0 params
 
