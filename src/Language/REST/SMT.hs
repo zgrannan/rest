@@ -149,21 +149,21 @@ instance Show (SMTExpr a) where
 
 
 toFormula :: SMTExpr a -> T.Text
-toFormula = go False where
-  go :: Bool -> SMTExpr a -> T.Text
+toFormula = go 10 where
+  go :: Int -> SMTExpr a -> T.Text
   go _ (And [])         = "⊤"
-  go p (And ts)         = eparens p $ T.intercalate " ∧ " $ map (go (not p)) ts
-  go p (Add ts)         = eparens p $ T.intercalate " + " $ map (go (not p)) ts
-  go p (GTE t u)        = eparens p $ T.intercalate " ≥ " $ map (go True) [t, u]
-  go p (Greater t u)    = eparens p $ T.intercalate " > " $ map (go True) [t, u]
+  go p (And ts)         = eparens (p <= 5) $ T.intercalate " ∧ " $ map (go 5) ts
+  go p (Add ts)         = eparens (p <= 3) $ T.intercalate " + " $ map (go 3) ts
+  go p (GTE t u)        = eparens (p <= 4) $ T.intercalate " ≥ " $ map (go 4) [t, u]
+  go p (Greater t u)    = eparens (p <= 4) $ T.intercalate " > " $ map (go 4) [t, u]
   go _ (Var (SMTVar v)) = v
   go _ (Const c)        = T.pack (show c)
   go _ (Or [])          = "⊥"
-  go p (Or ts)          = eparens p $ T.intercalate " ∨ " $ map (go (not p)) ts
+  go p (Or ts)          = eparens (p <= 6) $ T.intercalate " ∨ " $ map (go 6) ts
   go p (Equal ts)
     | length ts < 2 = "⊤"
-    | otherwise     = eparens p $ T.intercalate " = " $ map (go True) ts
-  go p (Implies t u)    = eparens p $ T.intercalate " ⇒ " $ map (go True) [t, u]
+    | otherwise     = eparens (p <= 4) $ T.intercalate " = " $ map (go 4) ts
+  go p (Implies t u)    = eparens (p <= 6) $ T.intercalate " ⇒ " $ map (go 6) [t, u]
 
   eparens True t = T.concat ["(", t, ")"]
   eparens False t = t
