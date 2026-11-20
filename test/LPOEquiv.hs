@@ -19,11 +19,11 @@ import Nat () -- IsString RuntimeTerm
 
 tests :: SolverHandle -> [(String, IO Bool)]
 tests z3 =
-  [ (label, equiv z3 (srExpr (step strict r t u)) (ref z3 strict r t u))
+  [ (label, equiv z3 (step strict r t u) (ref z3 strict r t u))
   | (label, strict, r, t, u) <- cases
   ]
   where
-    step :: Bool -> Relation -> RuntimeTerm -> RuntimeTerm -> SMTResult
+    step :: Bool -> Relation -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
     step True  = lpoStrictSMTRel
     step False = lpoSMTRel
 

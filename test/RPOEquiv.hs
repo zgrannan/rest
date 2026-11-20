@@ -19,7 +19,7 @@ import Nat () -- IsString RuntimeTerm
 
 tests :: SolverHandle -> [(String, IO Bool)]
 tests z3 =
-  [ (label, equiv z3 (srExpr (rpoSMTRel r t u)) (ref z3 r t u))
+  [ (label, equiv z3 (rpoSMTRel r t u) (ref z3 r t u))
   | (label, r, t, u) <- cases
   ]
   where

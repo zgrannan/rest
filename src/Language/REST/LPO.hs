@@ -1,7 +1,6 @@
 
 
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 
@@ -13,9 +12,7 @@ module Language.REST.LPO (lpo, lpoStrict, lpoSMT, lpoStrictSMT, lpoSMTRel, lpoSt
 import Prelude hiding (EQ, GT, lex)
 
 import Control.Monad.Identity
-import Control.Monad.State.Strict
 import Data.Hashable
-import qualified Data.HashMap.Strict as M
 
 import           Language.REST.Op
 import           Language.REST.Internal.OpOrdering as OpOrdering
@@ -97,53 +94,27 @@ lpoStrict :: (Show (oc Op), Eq (oc Op), Hashable (oc Op)) => ConstraintGen oc Op
 lpoStrict oc r cs t u = return $ lpo' True oc r cs t u
 
 -- | Direct SMT translation of the LPO constraint generator, without going
---   through 'WQOConstraints'. The returned bindings are the memoized cores
---   that the caller should intern.
-type LPOKey = (Bool, Relation, SMTExpr Bool, RuntimeTerm, RuntimeTerm)
-
-data LPMCache = LPMCache
-  { lpMemo  :: M.HashMap LPOKey (SMTExpr Bool)
-  , lpBinds :: [SMTExpr Bool]
-  }
-
-emptyLPMCache :: LPMCache
-emptyLPMCache = LPMCache M.empty []
-
-memoLPO :: LPOKey -> State LPMCache (SMTExpr Bool) -> State LPMCache (SMTExpr Bool)
-memoLPO key thunk = do
-  st <- get
-  case M.lookup key (lpMemo st) of
-    Just v  -> pure v
-    Nothing -> do
-      v <- thunk
-      modify (\s -> s { lpMemo = M.insert key v (lpMemo s), lpBinds = lpBinds s ++ [v] })
-      pure v
-
-lpoSMT' :: Bool -> Relation -> SMTExpr Bool -> RuntimeTerm -> RuntimeTerm -> State LPMCache (SMTExpr Bool)
-lpoSMT' strict r e t@(App f ts) u@(App g us) =
-  memoLPO (strict, r, e, t, u) $
-    if | not strict && r == EQ && length ts /= length us -> pure smtFalse
-       | not strict && r == EQ -> do
-           let cs' = smtAnd [e, eqPrec f g]
-           subs <- mapM (\(a, b) -> lpoSMT' strict EQ cs' a b) (zip ts us)
-           pure (smtAnd (cs' : subs))
-       | strict && r == EQ -> pure (if t == u then e else smtFalse)
-       | otherwise -> do
-           c1 <- case1
-           c2 <- case2
-           c3 <- case3
-           pure (smtAnd [e, smtOr [c1, c2, c3]])
+--   through 'WQOConstraints'.
+lpoSMT' :: Bool -> Relation -> SMTExpr Bool -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
+lpoSMT' strict r e t@(App f ts) u@(App g us)
+  | not strict && r == EQ && length ts /= length us = smtFalse
+  | not strict && r == EQ =
+      let cs'  = smtAnd [e, eqPrec f g]
+          subs = zipWith (lpoSMT' strict EQ cs') ts us
+      in smtAnd (cs' : subs)
+  | strict && r == EQ = if t == u then e else smtFalse
+  | otherwise = smtAnd [e, smtOr [case1, case2, case3]]
   where
-    case1 = smtOr <$> mapM (\ti -> lpoSMT' strict GTE e ti u) ts
-    case2 = if f == g then pure smtFalse else do
-      td <- tDominatesUs
-      pure (smtAnd [td, gtPrec f g])
-    case3 = if strict && f /= g then pure smtFalse else do
-      td <- tDominatesUs
-      lx <- lexSMT (r == GT) e ts us
-      pure (smtAnd ([td, lx] ++ [eqPrec f g | f /= g]))
+    case1 = smtOr [ lpoSMT' strict GTE e ti u | ti <- ts ]
+    case2 = if f == g then smtFalse else smtAnd [tDominatesUs, gtPrec f g]
+    case3 = if strict && f /= g
+      then smtFalse
+      else smtAnd
+                ([ tDominatesUs
+                 , lexSMT (r == GT) e ts us
+                 ] ++ [ eqPrec f g | f /= g ])
 
-    tDominatesUs = smtAnd <$> mapM (\uj -> lpoSMT' strict GT e t uj) us
+    tDominatesUs = smtAnd [ lpoSMT' strict GT e t uj | uj <- us ]
 
     eqPrec :: Op -> Op -> SMTExpr Bool
     eqPrec a b = smtEqual [toSMT a, toSMT b]
@@ -151,32 +122,27 @@ lpoSMT' strict r e t@(App f ts) u@(App g us) =
     gtPrec :: Op -> Op -> SMTExpr Bool
     gtPrec a b = Greater (toSMT a) (toSMT b)
 
-    lexSMT :: Bool -> SMTExpr Bool -> [RuntimeTerm] -> [RuntimeTerm] -> State LPMCache (SMTExpr Bool)
-    lexSMT isGT acc [] (_:_) = pure smtFalse
-    lexSMT _   acc (_:_) [] = pure acc
-    lexSMT isGT acc []    [] = pure (if isGT then smtFalse else acc)
+    lexSMT :: Bool -> SMTExpr Bool -> [RuntimeTerm] -> [RuntimeTerm] -> SMTExpr Bool
+    lexSMT isGT acc [] (_:_) = smtFalse
+    lexSMT _   acc (_:_) [] = acc
+    lexSMT isGT acc []    [] = if isGT then smtFalse else acc
     lexSMT isGT acc (x:xs) (y:ys)
       | x == y = lexSMT isGT acc xs ys
-      | otherwise = do
-          a    <- lpoSMT' strict GT acc x y
-          acc' <- lpoSMT' strict EQ acc x y
-          b    <- lexSMT isGT acc' xs ys
-          pure (smtOr [a, b])
+      | otherwise = smtOr
+                       [ lpoSMT' strict GT acc x y
+                       , lexSMT isGT (lpoSMT' strict EQ acc x y) xs ys
+                       ]
 
 -- | The GTE instance of 'lpoSMT'' for the non-strict ordering.
-lpoSMTRel :: Relation -> RuntimeTerm -> RuntimeTerm -> SMTResult
-lpoSMTRel r t u =
-  let (e, st) = runState (lpoSMT' False r smtTrue t u) emptyLPMCache
-  in SMTResult e (lpBinds st)
+lpoSMTRel :: Relation -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
+lpoSMTRel r = lpoSMT' False r smtTrue
 
-lpoSMT :: RuntimeTerm -> RuntimeTerm -> SMTResult
+lpoSMT :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
 lpoSMT = lpoSMTRel GTE
 
 -- | The GTE instance of 'lpoSMT'' for the strict ordering.
-lpoStrictSMTRel :: Relation -> RuntimeTerm -> RuntimeTerm -> SMTResult
-lpoStrictSMTRel r t u =
-  let (e, st) = runState (lpoSMT' True r smtTrue t u) emptyLPMCache
-  in SMTResult e (lpBinds st)
+lpoStrictSMTRel :: Relation -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
+lpoStrictSMTRel r = lpoSMT' True r smtTrue
 
-lpoStrictSMT :: RuntimeTerm -> RuntimeTerm -> SMTResult
+lpoStrictSMT :: RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
 lpoStrictSMT = lpoStrictSMTRel GTE

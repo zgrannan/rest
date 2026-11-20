@@ -69,16 +69,13 @@ smtOCA
   :: HasCallStack
   => SolverHandle
   -> Text
-  -> (RuntimeTerm -> RuntimeTerm -> SMTResult)
+  -> (RuntimeTerm -> RuntimeTerm -> SMTExpr Bool)
   -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
 smtOCA z3 prefix step = do
     is <- newInternState prefix z3
     return $ OCAlgebra
       { isSat           = checkSat z3
-      , refine          = \e t u -> do
-          let SMTResult c binds = step t u
-          c' <- internSMTResult is (SMTResult c binds)
-          internSMTExpr is (smtAnd [e, c'])
+      , refine          = \e t u -> internSMTExpr is $ smtAnd [e , step t u]
       , top             = smtTrue
       , union           = \e1 e2 -> smtOr [e1, e2]
       , notStrongerThan = \e1 e2 -> checkSat z3 (smtImplies e2 e1)

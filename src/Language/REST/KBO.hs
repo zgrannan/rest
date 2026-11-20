@@ -38,4 +38,4 @@ kboGTE t u = smtAnd [arityConstraints t, arityConstraints u, size tOps `smtGTE` 
 
 -- | OCA for a quasi-order extension to the Knuth-Bendix ordering
 kbo :: HasCallStack => SolverHandle -> Text -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
-kbo solver prefix = smtOCA solver prefix (\t u -> SMTResult (kboGTE t u) [])
+kbo solver prefix = smtOCA solver prefix kboGTE
