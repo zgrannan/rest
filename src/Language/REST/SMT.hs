@@ -1,14 +1,10 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
 
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -97,60 +93,27 @@ parseModel str = case parse modelParser "" str of
   Right t  -> t
 
 -- | An SMT variable
-newtype SMTVar a = SMTVar T.Text deriving (Eq, Ord)
+newtype SMTVar = SMTVar T.Text deriving (Eq, Ord, Hashable, Generic)
 
 -- | SMTLib expressions
-data SMTExpr a where
-    And     :: [SMTExpr Bool] -> SMTExpr Bool
-    Add     :: [SMTExpr Int]  -> SMTExpr Int
-    Or      :: [SMTExpr Bool] -> SMTExpr Bool
-    Equal   :: [SMTExpr a]    -> SMTExpr Bool
-    Greater :: SMTExpr Int    -> SMTExpr Int  -> SMTExpr Bool
-    GTE     :: SMTExpr Int    -> SMTExpr Int  -> SMTExpr Bool
-    Implies :: SMTExpr Bool   -> SMTExpr Bool -> SMTExpr Bool
-    Var     :: SMTVar a       -> SMTExpr a
-    Const   :: Int            -> SMTExpr Int
+data SMTExpr
+    = And [SMTExpr]
+    | Add [SMTExpr]
+    | Or [SMTExpr]
+    | Equal [SMTExpr]
+    | Greater SMTExpr SMTExpr
+    | GTE SMTExpr SMTExpr
+    | Implies SMTExpr SMTExpr
+    | Var SMTVar
+    | Const Int
+  deriving (Eq, Ord, Hashable, Generic)
 
-
-data UntypedExpr =
-    UAnd [UntypedExpr]
-  | UAdd [UntypedExpr]
-  | UOr  [UntypedExpr]
-  | UEqual  [UntypedExpr]
-  | UGreater UntypedExpr UntypedExpr
-  | UGTE UntypedExpr UntypedExpr
-  | UImplies UntypedExpr UntypedExpr
-  | UVar T.Text
-  | UConst Int
-  deriving (Show, Eq, Ord, Hashable, Generic)
-
-toUntyped :: SMTExpr a -> UntypedExpr
-toUntyped (And xs) = UAnd (map toUntyped xs)
-toUntyped (Add xs) = UAdd (map toUntyped xs)
-toUntyped (Or xs)  = UOr (map toUntyped xs)
-toUntyped (Equal xs) = UEqual (map toUntyped xs)
-toUntyped (Greater t u) = UGreater (toUntyped t) (toUntyped u)
-toUntyped (GTE t u) = UGTE (toUntyped t) (toUntyped u)
-toUntyped (Implies t u) = UImplies (toUntyped t) (toUntyped u)
-toUntyped (Var (SMTVar text)) = UVar text
-toUntyped (Const i) = UConst i
-
-instance (Eq (SMTExpr a)) where
-  t == u = toUntyped t == toUntyped u
-
-instance (Ord (SMTExpr a)) where
-  t <= u = toUntyped t <= toUntyped u
-
-instance Hashable (SMTExpr a) where
-  hashWithSalt salt e = hashWithSalt salt (toUntyped e)
-
-instance Show (SMTExpr a) where
+instance Show SMTExpr where
   show = T.unpack . toFormula
 
-
-toFormula :: SMTExpr a -> T.Text
+toFormula :: SMTExpr -> T.Text
 toFormula = go 10 where
-  go :: Int -> SMTExpr a -> T.Text
+  go :: Int -> SMTExpr -> T.Text
   go _ (And [])         = "⊤"
   go p (And ts)         = eparens (p <= 5) $ T.intercalate " ∧ " $ map (go 5) ts
   go p (Add ts)         = eparens (p <= 3) $ T.intercalate " + " $ map (go 3) ts
@@ -168,7 +131,7 @@ toFormula = go 10 where
   eparens True t = T.concat ["(", t, ")"]
   eparens False t = t
 
-vars :: SMTExpr a -> S.Set T.Text
+vars :: SMTExpr -> S.Set T.Text
 vars (And ts)        = S.unions (map vars ts)
 vars (Add ts)        = S.unions (map vars ts)
 vars (Or ts)         = S.unions (map vars ts)
@@ -180,26 +143,26 @@ vars (Implies e1 e2) = S.union (vars e1) (vars e2)
 vars (Const _)       = S.empty
 
 data SMTCommand
-    = SMTAssert (SMTExpr Bool)
+    = SMTAssert SMTExpr
     | DeclareVar T.Text
     | CheckSat
     | Push
     | Pop
-    | DefineConst T.Text (SMTExpr Bool)
+    | DefineConst T.Text SMTExpr
 
-smtFalse :: SMTExpr Bool
+smtFalse :: SMTExpr
 smtFalse = Or []
 
-smtTrue :: SMTExpr Bool
+smtTrue :: SMTExpr
 smtTrue  = And []
 
 -- | Returns an SMT expression that adds all elements in the list. If the list is empty,
 --   returns @Const 0@.
-smtAdd :: [SMTExpr Int] -> SMTExpr Int
+smtAdd :: [SMTExpr] -> SMTExpr
 smtAdd [] = Const 0
 smtAdd ts = Add ts
 
-smtOr :: [SMTExpr Bool] -> SMTExpr Bool
+smtOr :: [SMTExpr] -> SMTExpr
 smtOr xs0 =
     let xs1 = filter (not . isSmtFalse) $ concatMap flattenOr xs0
      in if any isSmtTrue xs1 then
@@ -213,21 +176,21 @@ smtOr xs0 =
     flattenOr (Or xs) = xs
     flattenOr x      = [x]
 
-isSmtFalse :: SMTExpr Bool -> Bool
+isSmtFalse :: SMTExpr -> Bool
 isSmtFalse (Or []) = True
 isSmtFalse _       = False
 
-smtImplies :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
+smtImplies :: SMTExpr -> SMTExpr -> SMTExpr 
 smtImplies = Implies
 
-smtEqual :: [SMTExpr a] -> SMTExpr Bool
+smtEqual :: [SMTExpr] -> SMTExpr
 smtEqual xs = case L.nub xs of
   []  -> smtTrue
   [_] -> smtTrue
   xs' -> Equal xs'
 
 -- | `smtAnd ts` returns an smt expression representing \( t0 \land ... \land tn \).
-smtAnd :: [SMTExpr Bool] -> SMTExpr Bool
+smtAnd :: [SMTExpr] -> SMTExpr
 smtAnd xs0 =
     let xs1 = filter (not . isSmtTrue) $ concatMap flattenAnd xs0
      in if any isSmtFalse xs1 then
@@ -241,19 +204,19 @@ smtAnd xs0 =
     flattenAnd (And ys) = ys
     flattenAnd y       = [y]
 
-isSmtTrue :: SMTExpr Bool -> Bool
+isSmtTrue :: SMTExpr -> Bool
 isSmtTrue (And []) = True
 isSmtTrue _        = False
 
 -- | `smtGTE t u` returns an SMT expression \( t \geqslant u \). If @t == u@, returns 'smtTrue'.
-smtGTE :: SMTExpr Int -> SMTExpr Int -> SMTExpr Bool
+smtGTE :: SMTExpr -> SMTExpr -> SMTExpr
 smtGTE t u | t == u    = smtTrue
 smtGTE t u  = GTE t u
 
-app :: T.Text -> [SMTExpr a] -> T.Text
+app :: T.Text -> [SMTExpr] -> T.Text
 app op trms = T.concat ["(", op, " ", T.intercalate " " (map exprString trms), ")"]
 
-exprString :: SMTExpr a -> T.Text
+exprString :: SMTExpr -> T.Text
 exprString (And [])           = "true"
 exprString (Add es)           = app "+" es
 exprString (Or [])            = "false"
@@ -315,7 +278,7 @@ sendCommandsNow hs@(stdIn, _) cmds = do
 
 -- | Like 'checkSat', but emits to the SMT solver any constant declarations
 -- necessary to check the expression.
-checkSat' :: HasCallStack => (Handle,  Handle) -> SMTExpr Bool -> IO Bool
+checkSat' :: HasCallStack => (Handle,  Handle) -> SMTExpr -> IO Bool
 checkSat' hs@(_, stdOut) expr = do
   bracket_ (sendCommandsNow hs [Push]) (sendCommands hs [Pop]) $ do
     sendCommandsNow hs $ Push : askCmds expr
@@ -325,13 +288,13 @@ checkSat' hs@(_, stdOut) expr = do
       "unsat" -> return False
       other   -> error other
   where
-    askCmds :: SMTExpr Bool -> [SMTCommand]
+    askCmds :: SMTExpr -> [SMTCommand]
     askCmds e =
       map DeclareVar (S.toList $ vars e) ++ [SMTAssert expr, CheckSat]
 
 -- | @checkSat handles expr@ checks satisfiability of @expr@ in an instantiated SMT solver.
 --   This is wrapped in a @push@ / @pop@, so it does not change the SMT environment
-checkSat :: HasCallStack => (Handle,  Handle) -> SMTExpr Bool -> IO Bool
+checkSat :: HasCallStack => (Handle,  Handle) -> SMTExpr -> IO Bool
 checkSat hs@(_, stdOut) expr = do
   bracket_
     (sendCommandsNow hs [Push, SMTAssert expr, CheckSat])
@@ -345,19 +308,19 @@ checkSat hs@(_, stdOut) expr = do
 -- | This class allows elements of type @a@ to be used as SMT /vaiables/ of type @b@.
 --   For example, the instance @ToSMTVar Op Int@ allows 'RuntimeTerm' operators to be
 --   represented as 'Int' variables.
-class ToSMTVar a b | a -> b where
-  toSMTVar :: a -> SMTVar b
+class ToSMTVar a where
+  toSMTVar :: a -> SMTVar
 
 -- | This class allows elements of type @a@ to be used as SMT expressions of type
 --   @b@
-class ToSMT a b where
-  toSMT :: a -> SMTExpr b
+class ToSMT a where
+  toSMT :: a -> SMTExpr
 
-instance ToSMT Int Int where
+instance ToSMT Int where
   toSMT = Const
 
-instance {-# OVERLAPPABLE #-} (ToSMTVar a b) => ToSMT a b where
-  toSMT :: a -> SMTExpr b
+instance {-# OVERLAPPABLE #-} ToSMTVar a => ToSMT a where
+  toSMT :: a -> SMTExpr
   toSMT op = Var $ toSMTVar op
 
 
@@ -406,7 +369,7 @@ data InternState = InternState
   { -- | The next integer to use for naming an interned expression
     isNext    :: Int
     -- | A map from SMT expressions to the names of their interned versions
-  , isBinds :: M.Map (SMTExpr Bool) T.Text
+  , isBinds :: M.Map SMTExpr T.Text
     -- | The set of names of interned expressions
   , isBindNames :: S.Set T.Text
     -- | The set of variables of sort Int that have been declared in the SMT solver
@@ -420,7 +383,7 @@ newInternState prefix sh = do
       <$> newIORef (InternState 0 M.empty S.empty S.empty)
 
 -- | Interns the given SMT expression, returning a variable that represents it.
-internSMTExpr :: InternHandle -> SMTExpr Bool -> IO (SMTExpr Bool)
+internSMTExpr :: InternHandle -> SMTExpr -> IO SMTExpr
 internSMTExpr ih e = do
   st <- readIORef (ihState ih)
   case M.lookup e (isBinds st) of
