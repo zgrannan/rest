@@ -47,15 +47,17 @@ module Language.REST.SMT
 import Control.Exception (bracket_)
 import Control.Monad (unless)
 import Control.Monad.IO.Class
+import Control.Monad.State
 import Data.Hashable
 import Data.IORef
+import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
 import Text.Parsec (endBy)
-import Text.Parsec.Prim
+import Text.Parsec.Prim (many, parse, ParsecT, Stream)
 import Text.ParserCombinators.Parsec.Char
 import GHC.Generics (Generic)
 import GHC.IO.Handle
@@ -439,3 +441,96 @@ internSMTExpr ih e = do
         }
       sendCommands (ihSolver ih) [DefineConst v e]
       return $ Var $ SMTVar v
+
+
+data SomeSMTExpr where
+  -- | Holds the size, the hash of the expression, and the expression itself.
+  SomeSMTExpr :: Int -> Int -> SMTExpr a -> SomeSMTExpr
+
+data CSEState = CSEState
+  { -- | Map from SMTExpr hash to the amount of times it has been seen.
+    cseBinds :: IM.IntMap Int
+    -- | Binds discovered so far, in reverse order of discovery.
+    -- The first element is the most recently discovered bind.
+  , cseBindList :: [SomeSMTExpr]
+  }
+
+cseSMTExpr :: SMTExpr a -> State CSEState (Int, SMTExpr a)
+cseSMTExpr e0 = case e0 of
+    e@(And xs) -> cseAnd xs
+    e@(Add xs) -> cseAdd xs
+    e@(Or xs)  -> cseOr xs
+    e@(Equal xs) -> cseEqual xs
+    e@(Greater t u) -> cseGreater t u
+    e@(GTE t u)     -> cseGTE t u
+    e@(Implies t u) -> cseImplies t u
+    e@(Var _)       -> pure $ (1, e)
+    e@(Const _)     -> pure $ (1, e)
+  where
+    cseAnd xs = do
+      (size, xs') <- cseList xs
+      addBind size e0
+      pure (size, And xs')
+
+    cseAdd xs = do
+      (size, xs') <- cseList xs
+      addBind size e0
+      pure (size, Add xs')
+
+    cseOr xs = do
+      (size, xs') <- cseList xs
+      addBind size e0
+      pure (size, Or xs')
+
+    cseEqual :: [SMTExpr a] -> State CSEState (Int, SMTExpr Bool)
+    cseEqual xs = do
+      (size, xs') <- cseList xs
+      addBind size e0
+      pure (size, Equal xs')
+
+    cseGreater t u = do
+      (sizeT, t') <- cseSMTExpr t
+      (sizeU, u') <- cseSMTExpr u
+      let size = sizeT + sizeU
+      addBind size e0
+      pure (size, Greater t' u')
+
+    cseGTE t u = do
+      (sizeT, t') <- cseSMTExpr t
+      (sizeU, u') <- cseSMTExpr u
+      let size = sizeT + sizeU
+      addBind size e0
+      pure (size, GTE t' u')
+
+    cseImplies t u = do
+      (sizeT, t') <- cseSMTExpr t
+      (sizeU, u') <- cseSMTExpr u
+      let size = sizeT + sizeU
+      addBind size e0
+      pure (size, Implies t' u')
+
+    addBind size e | size > 7 = do
+      st <- get
+      let h = hash e
+      case IM.lookup h (cseBinds st) of
+        Just _  -> pure ()
+        Nothing ->
+          put st
+            { cseBinds = IM.insertWith (+) h 1 (cseBinds st)
+            , cseBindList = SomeSMTExpr size h e : cseBindList st
+            }
+    addBind _size _e = pure ()
+
+    cseList :: [SMTExpr a] -> State CSEState (Int, [SMTExpr a])
+    cseList xs = do
+      (sizes, xs') <- unzip <$> mapM cseSMTExpr xs
+      let size = sum sizes
+      pure (size, xs')
+
+
+
+
+
+
+
+
