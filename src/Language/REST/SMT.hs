@@ -21,6 +21,7 @@ module Language.REST.SMT
   , getModel
   , InternHandle
   , internSMTExpr
+  , internSMTResult
   , newInternState
   , parseModel
   , killZ3
@@ -35,6 +36,7 @@ module Language.REST.SMT
   , smtFalse
   , smtGTE
   , smtTrue
+  , SMTResult(..)
   , withZ3
   , SolverHandle
   , SMTExpr(Const, Greater)
@@ -438,4 +440,43 @@ internSMTExpr ih e = do
         , isIntVars = S.union (isIntVars st) newInts
         }
       sendCommands (ihSolver ih) [DefineConst v e]
+      putStrLn $ "Interned: " ++ T.unpack v ++ " = " ++ T.unpack (toFormula e) ++ "\n"
       return $ Var $ SMTVar v
+
+-- | The result of translating an ordering constraint: the final expression and
+--   the distinct subexpressions that were memoized during its construction, in
+--   dependency order (subexpressions before the expressions that use them).
+data SMTResult = SMTResult
+  { srExpr     :: SMTExpr Bool
+  , srBindings :: [SMTExpr Bool]
+  }
+
+-- | Substitutes occurrences of the first expression of each pair with the second.
+substituteSMT :: [(SMTExpr Bool, SMTExpr Bool)] -> SMTExpr Bool -> SMTExpr Bool
+substituteSMT bindings = go
+  where
+    m = M.fromList bindings
+    go e0 =
+      case M.lookup e0 m of
+        Just r  -> r
+        Nothing -> case e0 of
+          And xs      -> And (map go xs)
+          Or xs       -> Or (map go xs)
+          Implies a b -> Implies (go a) (go b)
+          Greater a b -> Greater a b
+          GTE a b     -> GTE a b
+          Equal xs    -> Equal xs
+          Var v       -> Var v
+
+-- | Interns each binding (in dependency order), substitutes the resulting
+--   references into the final expression, and then interns that expression.
+internSMTResult :: InternHandle -> SMTResult -> IO (SMTExpr Bool)
+internSMTResult ih (SMTResult e binds) = do
+  subs <- go [] binds
+  internSMTExpr ih (substituteSMT subs e)
+  where
+    go _    []       = return []
+    go subs (b : bs) = do
+      let b' = substituteSMT subs b
+      r <- internSMTExpr ih b'
+      go ((b, r) : subs) bs

@@ -12,12 +12,12 @@ module Language.REST.RPO (rpo, rpoGTE, synGTE, rpoSMT, rpoSMTRel) where
 import Prelude hiding (EQ, GT)
 
 import Control.Monad.Identity
+import Control.Monad (foldM)
 import Control.Monad.State.Strict
 import GHC.Generics
 import Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as HS
-import qualified Data.List as L
 
 import qualified Language.REST.Internal.MultiSet as MS
 import           Language.REST.Op
@@ -161,45 +161,72 @@ synGTM ordering xs ys = case removeEqBy (synEQ ordering) (MS.toList xs) (MS.toLi
 -- | Direct SMT translation of the RPO constraint generator, without going
 --   through 'WQOConstraints'. @rpoSMTRel r t u@ is the SMT constraint on the
 --   weights of function symbols such that @t@ is related to @u@ by @r@ in the
---   recursive path ordering.
-rpoSMTRel :: Relation -> RT.RuntimeTerm -> RT.RuntimeTerm -> SMTExpr Bool
-rpoSMTRel r t u = rpoSMT' r smtTrue (rpoTerm t) (rpoTerm u)
+--   recursive path ordering. The returned bindings are the memoized cores that
+--   the caller should intern.
+rpoSMTRel :: Relation -> RT.RuntimeTerm -> RT.RuntimeTerm -> SMTResult
+rpoSMTRel r t u =
+  let (e, st) = runState (rpoSMT' r smtTrue (rpoTerm t) (rpoTerm u)) emptySMTCache
+  in SMTResult e (smBinds st)
 
 -- | The GTE instance of 'rpoSMTRel'.
-rpoSMT :: RT.RuntimeTerm -> RT.RuntimeTerm -> SMTExpr Bool
+rpoSMT :: RT.RuntimeTerm -> RT.RuntimeTerm -> SMTResult
 rpoSMT = rpoSMTRel GTE
 
-rpoSMT' :: Relation -> SMTExpr Bool -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
+data SMTCache = SMTCache
+  { smMemo  :: M.HashMap (Relation, RuntimeTerm, RuntimeTerm) (SMTExpr Bool)
+  , smBinds :: [SMTExpr Bool]
+  }
+
+emptySMTCache :: SMTCache
+emptySMTCache = SMTCache M.empty []
+
+memoCore
+  :: (Relation, RuntimeTerm, RuntimeTerm)
+  -> State SMTCache (SMTExpr Bool)
+  -> State SMTCache (SMTExpr Bool)
+memoCore key thunk = do
+  st <- get
+  case M.lookup key (smMemo st) of
+    Just v  -> pure v
+    Nothing -> do
+      v <- thunk
+      modify (\s -> s { smMemo = M.insert key v (smMemo s), smBinds = smBinds s ++ [v] })
+      pure v
+
+rpoSMT' :: Relation -> SMTExpr Bool -> RuntimeTerm -> RuntimeTerm -> State SMTCache (SMTExpr Bool)
 rpoSMT' r e t u
-  | t == u                              = if r == GT then smtFalse else e
-  | t `isSubtermOf` u                   = smtFalse
-  | u `isSubtermOf` t                   = if r == EQ then smtFalse else e
-  | App f ts <- t, App g us <- u, f == g = rpoMulSMT r e ts us
-  | App f ts <- t, App g us <- u         =
+  | t == u                               = memoCore (r, t, u) $ pure (if r == GT then smtFalse else e)
+  | t `isSubtermOf` u                    = memoCore (r, t, u) $ pure smtFalse
+  | u `isSubtermOf` t                    = memoCore (r, t, u) $ pure (if r == EQ then smtFalse else e)
+  | App f ts <- t, App g us <- u, f == g = memoCore (r, t, u) $ rpoMulSMT r e ts us
+  | App f ts <- t, App g us <- u         = do
       let eqPrec = smtEqual [toSMT f, toSMT g]
           gtPrec = Greater (toSMT f) (toSMT g)
-          body
-            | r == EQ   = rpoMulSMT r eqPrec ts us
-            | otherwise = smtOr
-                             [ rpoMulSMT GT gtPrec (MS.singleton t) us
-                             , rpoMulSMT r  eqPrec ts us
-                             , rpoMulSMT GTE smtTrue ts (MS.singleton u)
-                             ]
-      in smtAnd [e, body]
+      core <- memoCore (r, t, u) $
+        if r == EQ
+          then rpoMulSMT r eqPrec ts us
+          else smtOr <$> sequence
+                 [ rpoMulSMT GT gtPrec (MS.singleton t) us
+                 , rpoMulSMT r  eqPrec ts us
+                 , rpoMulSMT GTE smtTrue ts (MS.singleton u)
+                 ]
+      pure (smtAnd [e, core])
 
-rpoMulSMT :: Relation -> SMTExpr Bool -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> SMTExpr Bool
+rpoMulSMT :: Relation -> SMTExpr Bool -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> State SMTCache (SMTExpr Bool)
 rpoMulSMT r e ts0 us0 = uncurry go (removeEQs ts0 us0)
   where
     go ts us
-      | MS.null ts && MS.null us       = if r == GT then smtFalse else e
-      | not (MS.null ts) && MS.null us = if r == EQ then smtFalse else e
-      | MS.null ts && not (MS.null us) = smtFalse
-      | otherwise = smtOr [ posConstraints pos1 | pos1 <- HS.toList (possibilities r (MS.toList ts) (MS.toList us)) ]
+      | MS.null ts && MS.null us       = pure (if r == GT then smtFalse else e)
+      | not (MS.null ts) && MS.null us = pure (if r == EQ then smtFalse else e)
+      | MS.null ts && not (MS.null us) = pure smtFalse
+      | otherwise = smtOr <$> mapM posConstraints (HS.toList (possibilities r (MS.toList ts) (MS.toList us)))
 
-    posConstraints pos1 = L.foldl' apply e (HS.toList pos1)
+    posConstraints pos1 = foldM apply e (HS.toList pos1)
       where
         apply acc (ReplaceOne t u) = rpoSMT' EQ acc t u
         apply acc (Replace t ts')  =
           if HS.null ts'
-            then acc
-            else smtAnd $ acc : map (rpoSMT' GT smtTrue t) (HS.toList ts')
+            then pure acc
+            else do
+              cs <- mapM (rpoSMT' GT smtTrue t) (HS.toList ts')
+              pure (smtAnd (acc : cs))
