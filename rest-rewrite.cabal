@@ -128,6 +128,7 @@ Test-Suite test-rest
     RPO
     RPOEquiv
     SMT
+    SMTExprInstances
     StrictOC
     WQO
 

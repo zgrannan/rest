@@ -24,11 +24,12 @@ import LPOEquiv
 import KBO
 import StrictOC
 import SMT
+import qualified SMTExprInstances
 import qualified QuickCheckTests
 
 import Test.Tasty (defaultMain, testGroup, TestTree)
 import Test.Tasty.HUnit (testCase, assertBool)
-import Control.Exception (finally)
+import Control.Exception (bracket, finally)
 
 import Language.REST (lpoOCA, rpoOCA)
 import Language.REST.ExploredTerms
@@ -235,9 +236,9 @@ ocTests z3 =
 
 main :: IO ()
 main = withZ3 $ \z3 ->
-  withZ3 $ \kboZ3 ->
-  withZ3 $ \rpoZ3 ->
-  withZ3 $ \lpoZ3 ->  do
+  withZ3' $ \kboZ3 ->
+  withZ3' $ \rpoZ3 ->
+  withZ3' $ \lpoZ3 ->  do
     kboImpl <- kbo kboZ3 "$KBO_"
     rpoImpl <- rpoOCA rpoZ3 "$R_"
     lpoImpl <- lpoOCA lpoZ3 "$L_"
@@ -245,6 +246,7 @@ main = withZ3 $ \z3 ->
       defaultMain $ testGroup "REST"
         [ ExploredTerms.tests
         , SMT.tests
+        , SMTExprInstances.tests
         , KBO.tests
         , QuickCheckTests.tests
         , OpOrdering.tests
@@ -258,3 +260,6 @@ main = withZ3 $ \z3 ->
         , ocaGroup "RPO" rpoImpl []
         , ocaGroup "LPO" lpoImpl ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
         ]
+  where
+    withZ3' :: (SolverHandle -> IO a) -> IO a
+    withZ3' = bracket spawnZ3 killZ3

@@ -1,11 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MagicHash #-}
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -44,21 +43,23 @@ module Language.REST.SMT
   , Z3Model
 ) where
 
-import Control.Exception (bracket, bracket_)
+import Control.Exception (bracket_)
 import Control.Monad (unless)
+import Control.Monad.IO.Class
 import Data.Hashable
 import Data.IORef
 import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
+import GHC.Base ((<#), dataToTag#)
 import System.Process
 import Text.Parsec (endBy)
 import Text.Parsec.Prim
 import Text.ParserCombinators.Parsec.Char
-import GHC.Generics (Generic)
 import GHC.IO.Handle
 import GHC.Stack (HasCallStack)
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | A model returned by Z3 corresponding to a satisfiable
 --   set of constraints. Untyped.
@@ -111,37 +112,43 @@ data SMTExpr a where
     Const   :: Int            -> SMTExpr Int
 
 
-data UntypedExpr =
-    UAnd [UntypedExpr]
-  | UAdd [UntypedExpr]
-  | UOr  [UntypedExpr]
-  | UEqual  [UntypedExpr]
-  | UGreater UntypedExpr UntypedExpr
-  | UGTE UntypedExpr UntypedExpr
-  | UImplies UntypedExpr UntypedExpr
-  | UVar T.Text
-  | UConst Int
-  deriving (Show, Eq, Ord, Hashable, Generic)
+instance Eq (SMTExpr a) where
+  And xs == And ys = xs == ys
+  Add xs == Add ys = xs == ys
+  Or xs == Or ys   = xs == ys
+  Equal xs == Equal ys = xs == unsafeCoerce ys
+  Greater t1 u1 == Greater t2 u2 = t1 == t2 && u1 == u2
+  GTE t1 u1 == GTE t2 u2 = t1 == t2 && u1 == u2
+  Implies t1 u1 == Implies t2 u2 = t1 == t2 && u1 == u2
+  Var (SMTVar v1) == Var (SMTVar v2) = v1 == v2
+  Const c1 == Const c2 = c1 == c2
+  _ == _ = False
 
-toUntyped :: SMTExpr a -> UntypedExpr
-toUntyped (And xs) = UAnd (map toUntyped xs)
-toUntyped (Add xs) = UAdd (map toUntyped xs)
-toUntyped (Or xs)  = UOr (map toUntyped xs)
-toUntyped (Equal xs) = UEqual (map toUntyped xs)
-toUntyped (Greater t u) = UGreater (toUntyped t) (toUntyped u)
-toUntyped (GTE t u) = UGTE (toUntyped t) (toUntyped u)
-toUntyped (Implies t u) = UImplies (toUntyped t) (toUntyped u)
-toUntyped (Var (SMTVar text)) = UVar text
-toUntyped (Const i) = UConst i
-
-instance (Eq (SMTExpr a)) where
-  t == u = toUntyped t == toUntyped u
-
-instance (Ord (SMTExpr a)) where
-  t <= u = toUntyped t <= toUntyped u
+instance Ord (SMTExpr a) where
+  And xs `compare` And ys = xs `compare` ys
+  Add xs `compare` Add ys = xs `compare` ys
+  Or xs `compare` Or ys   = xs `compare` ys
+  Equal xs `compare` Equal ys = xs `compare` unsafeCoerce ys
+  Greater t1 u1 `compare` Greater t2 u2 = (t1, u1) `compare` (t2, u2)
+  GTE t1 u1 `compare` GTE t2 u2 = (t1, u1) `compare` (t2, u2)
+  Implies t1 u1 `compare` Implies t2 u2 = (t1, u1) `compare` (t2, u2)
+  Var (SMTVar v1) `compare` Var (SMTVar v2) = v1 `compare` v2
+  Const c1 `compare` Const c2 = c1 `compare` c2
+  a `compare` b =
+    case dataToTag# a <# dataToTag# b of
+      0# -> GT
+      _ -> LT
 
 instance Hashable (SMTExpr a) where
-  hashWithSalt salt e = hashWithSalt salt (toUntyped e)
+  hashWithSalt salt (And xs) = hashWithSalt salt (0 :: Int, xs)
+  hashWithSalt salt (Add xs) = hashWithSalt salt (1 :: Int, xs)
+  hashWithSalt salt (Or xs) = hashWithSalt salt (2 :: Int, xs)
+  hashWithSalt salt (Equal xs) = hashWithSalt salt (3 ::Int, xs)
+  hashWithSalt salt (Greater t u) = hashWithSalt salt (4 :: Int, t, u)
+  hashWithSalt salt (GTE t u) = hashWithSalt salt (5 :: Int, t, u)
+  hashWithSalt salt (Implies t u) = hashWithSalt salt (6 :: Int, t, u)
+  hashWithSalt salt (Var (SMTVar v)) = hashWithSalt salt (7 :: Int, v)
+  hashWithSalt salt (Const c) = hashWithSalt salt (8 :: Int, c)
 
 instance Show (SMTExpr a) where
   show = T.unpack . toFormula
@@ -289,8 +296,13 @@ killZ3 (stdIn, _) = hClose stdIn
 
 -- | @withZ3 f@ instantiates a Z3 instance, runs @f@ with that instance,
 --   and then closes the instance and returns the result
-withZ3 :: (SolverHandle -> IO b) -> IO b
-withZ3 = bracket spawnZ3 killZ3
+withZ3 :: MonadIO m => (SolverHandle -> m b) -> m b
+withZ3 f =
+  do
+    z3     <- liftIO spawnZ3
+    result <- f z3
+    liftIO $ killZ3 z3
+    return result
 
 -- | @getModel@ instructs an instantiated SMT solver to produce its model.
 getModel :: Handle -> IO ()

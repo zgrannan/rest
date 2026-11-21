@@ -14,7 +14,7 @@ tests :: TestTree
 tests = testGroup "KBO"
   [ testCase "Comm"  $ gte "f(a, b)" "f(b, a)" >>= assertBool "Comm"
   , testCase "Assoc" $ gte "f(a, f(b, c))"  "f((a b), c)" >>= assertBool "Assoc"
-  , testCase "Dist"  $ (not <$> gte "f(a, g(b, c))" "g(f(a, b), f(a, c))") >>= assertBool "Dist"
+  , testCase "Dist"  $ gte "f(a, g(b, c))" "g(f(a, b), f(a, c))" >>= assertBool "Dist" . not
   ]
   where
     gte :: RuntimeTerm ->  RuntimeTerm -> IO Bool
