@@ -11,6 +11,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- | This module contains functionality for creating SMTLIB expressions and interacting
 --   with an SMT solver.
@@ -50,7 +51,6 @@ import Control.Monad.IO.Class
 import Data.Hashable
 import Data.IORef
 import qualified Data.Map as M
-import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
@@ -101,10 +101,10 @@ newtype SMTVar a = SMTVar T.Text deriving (Eq, Ord)
 
 -- | SMTLib expressions
 data SMTExpr a where
-    And     :: [SMTExpr Bool] -> SMTExpr Bool
-    Add     :: [SMTExpr Int]  -> SMTExpr Int
-    Or      :: [SMTExpr Bool] -> SMTExpr Bool
-    Equal   :: [SMTExpr a]    -> SMTExpr Bool
+    And     :: S.Set (SMTExpr Bool) -> SMTExpr Bool
+    Add     :: [SMTExpr Int] -> SMTExpr Int
+    Or      :: S.Set (SMTExpr Bool) -> SMTExpr Bool
+    Equal   :: S.Set (SMTExpr a)    -> SMTExpr Bool
     Greater :: SMTExpr Int    -> SMTExpr Int  -> SMTExpr Bool
     GTE     :: SMTExpr Int    -> SMTExpr Int  -> SMTExpr Bool
     Implies :: SMTExpr Bool   -> SMTExpr Bool -> SMTExpr Bool
@@ -169,28 +169,28 @@ instance Show (SMTExpr a) where
 toFormula :: SMTExpr a -> T.Text
 toFormula = go 10 where
   go :: Int -> SMTExpr a -> T.Text
-  go _ (And [])         = "⊤"
-  go p (And ts)         = eparens (p <= 5) $ T.intercalate " ∧ " $ map (go 5) ts
-  go p (Add ts)         = eparens (p <= 3) $ T.intercalate " + " $ map (go 3) ts
+  go _ (And ts) | S.null ts = "⊤"
+  go p (And ts) = eparens (p <= 5) $ T.intercalate " ∧ " $ map (go 5) (S.toList ts)
+  go p (Add ts) = eparens (p <= 3) $ T.intercalate " + " $ map (go 3) ts
   go p (GTE t u)        = eparens (p <= 4) $ T.intercalate " ≥ " $ map (go 4) [t, u]
   go p (Greater t u)    = eparens (p <= 4) $ T.intercalate " > " $ map (go 4) [t, u]
   go _ (Var (SMTVar v)) = v
   go _ (Const c)        = T.pack (show c)
-  go _ (Or [])          = "⊥"
-  go p (Or ts)          = eparens (p <= 6) $ T.intercalate " ∨ " $ map (go 6) ts
+  go _ (Or ts) | S.null ts = "⊥"
+  go p (Or ts) = eparens (p <= 6) $ T.intercalate " ∨ " $ map (go 6) (S.toList ts)
   go p (Equal ts)
-    | length ts < 2 = "⊤"
-    | otherwise     = eparens (p <= 4) $ T.intercalate " = " $ map (go 4) ts
+    | S.size ts < 2 = "⊤"
+    | otherwise = eparens (p <= 4) $ T.intercalate " = " $ map (go 4) (S.toList ts)
   go p (Implies t u)    = eparens (p <= 6) $ T.intercalate " ⇒ " $ map (go 6) [t, u]
 
   eparens True t = T.concat ["(", t, ")"]
   eparens False t = t
 
 vars :: SMTExpr a -> S.Set T.Text
-vars (And ts)        = S.unions (map vars ts)
+vars (And ts)        = S.unions (S.map vars ts)
 vars (Add ts)        = S.unions (map vars ts)
-vars (Or ts)         = S.unions (map vars ts)
-vars (Equal ts)      = S.unions (map vars ts)
+vars (Or ts)         = S.unions (S.map vars ts)
+vars (Equal ts)      = S.unions (S.map vars ts)
 vars (Greater t u)   = S.union (vars t) (vars u)
 vars (GTE t u)       = S.union (vars t) (vars u)
 vars (Var (SMTVar var)) = S.singleton var
@@ -206,10 +206,10 @@ data SMTCommand
     | DefineConst T.Text (SMTExpr Bool)
 
 smtFalse :: SMTExpr Bool
-smtFalse = Or []
+smtFalse = Or S.empty
 
 smtTrue :: SMTExpr Bool
-smtTrue  = And []
+smtTrue  = And S.empty
 
 -- | Returns an SMT expression that adds all elements in the list. If the list is empty,
 --   returns @Const 0@.
@@ -219,48 +219,50 @@ smtAdd ts = Add ts
 
 smtOr :: [SMTExpr Bool] -> SMTExpr Bool
 smtOr xs0 =
-    let xs1 = filter (not . isSmtFalse) $ concatMap flattenOr xs0
+    let xs1 = S.filter (not . isSmtFalse) $ S.unions $ map flattenOr xs0
      in if any isSmtTrue xs1 then
           smtTrue
         else
-          case L.nub xs1 of
-            []  -> smtFalse
-            [x] -> x
-            xs2 -> Or xs2
+          case S.size xs1 of
+            0 -> smtFalse
+            1 | [x] <- S.toList xs1 -> x
+            _ -> Or xs1
   where
     flattenOr (Or xs) = xs
-    flattenOr x      = [x]
+    flattenOr x       = S.singleton x
 
 isSmtFalse :: SMTExpr Bool -> Bool
-isSmtFalse (Or []) = True
+isSmtFalse (Or xs) = S.null xs
 isSmtFalse _       = False
 
 smtImplies :: SMTExpr Bool -> SMTExpr Bool -> SMTExpr Bool
 smtImplies = Implies
 
 smtEqual :: [SMTExpr a] -> SMTExpr Bool
-smtEqual xs = case L.nub xs of
-  []  -> smtTrue
-  [_] -> smtTrue
-  xs' -> Equal xs'
+smtEqual xs =
+  let xs' = S.fromList xs
+   in case S.size xs' of
+       0 -> smtTrue
+       1 -> smtTrue
+       _ -> Equal xs'
 
 -- | `smtAnd ts` returns an smt expression representing \( t0 \land ... \land tn \).
 smtAnd :: [SMTExpr Bool] -> SMTExpr Bool
 smtAnd xs0 =
-    let xs1 = filter (not . isSmtTrue) $ concatMap flattenAnd xs0
+    let xs1 = S.filter (not . isSmtTrue) $ S.unions $ map flattenAnd xs0
      in if any isSmtFalse xs1 then
           smtFalse
         else
-          case L.nub xs1 of
-            []  -> smtTrue
-            [x] -> x
-            xs2 -> And xs2
+          case S.size xs1 of
+            0  -> smtTrue
+            1 | [x] <- S.toList xs1 -> x
+            _ -> And xs1
   where
     flattenAnd (And ys) = ys
-    flattenAnd y       = [y]
+    flattenAnd y       = S.singleton y
 
 isSmtTrue :: SMTExpr Bool -> Bool
-isSmtTrue (And []) = True
+isSmtTrue (And xs) = S.null xs
 isSmtTrue _        = False
 
 -- | `smtGTE t u` returns an SMT expression \( t \geqslant u \). If @t == u@, returns 'smtTrue'.
@@ -272,13 +274,13 @@ app :: T.Text -> [SMTExpr a] -> T.Text
 app op trms = T.concat ["(", op, " ", T.intercalate " " (map exprString trms), ")"]
 
 exprString :: SMTExpr a -> T.Text
-exprString (And [])           = "true"
+exprString (And xs) | S.null xs = "true"
 exprString (Add es)           = app "+" es
-exprString (Or [])            = "false"
-exprString (And   es)         = app "and" es
-exprString (Or    es)         = app "or" es
+exprString (Or xs) | S.null xs = "false"
+exprString (And   es)         = app "and" (S.toList es)
+exprString (Or    es)         = app "or" (S.toList es)
 exprString (Equal xs) | length xs < 2 = "true"
-exprString (Equal es)         = app "=" es
+exprString (Equal es)         = app "=" (S.toList es)
 exprString (Greater e1 e2)    = app ">" [e1, e2]
 exprString (GTE e1 e2)        = app ">=" [e1, e2]
 exprString (Implies e1 e2)    = app "=>" [e1, e2]
