@@ -57,9 +57,9 @@ import System.Process
 import Text.Parsec (endBy)
 import Text.Parsec.Prim
 import Text.ParserCombinators.Parsec.Char
-import GHC.Generics (Generic)
 import GHC.IO.Handle
 import GHC.Stack (HasCallStack)
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | A model returned by Z3 corresponding to a satisfiable
 --   set of constraints. Untyped.
@@ -112,37 +112,55 @@ data SMTExpr a where
     Const   :: Int            -> SMTExpr Int
 
 
-data UntypedExpr =
-    UAnd [UntypedExpr]
-  | UAdd [UntypedExpr]
-  | UOr  [UntypedExpr]
-  | UEqual  [UntypedExpr]
-  | UGreater UntypedExpr UntypedExpr
-  | UGTE UntypedExpr UntypedExpr
-  | UImplies UntypedExpr UntypedExpr
-  | UVar T.Text
-  | UConst Int
-  deriving (Show, Eq, Ord, Hashable, Generic)
+instance Eq (SMTExpr a) where
+  And xs == And ys = xs == ys
+  Add xs == Add ys = xs == ys
+  Or xs == Or ys   = xs == ys
+  Equal xs == Equal ys = xs == unsafeCoerce ys
+  Greater t1 u1 == Greater t2 u2 = t1 == t2 && u1 == u2
+  GTE t1 u1 == GTE t2 u2 = t1 == t2 && u1 == u2
+  Implies t1 u1 == Implies t2 u2 = t1 == t2 && u1 == u2
+  Var (SMTVar v1) == Var (SMTVar v2) = v1 == v2
+  Const c1 == Const c2 = c1 == c2
+  _ == _ = False
 
-toUntyped :: SMTExpr a -> UntypedExpr
-toUntyped (And xs) = UAnd (map toUntyped xs)
-toUntyped (Add xs) = UAdd (map toUntyped xs)
-toUntyped (Or xs)  = UOr (map toUntyped xs)
-toUntyped (Equal xs) = UEqual (map toUntyped xs)
-toUntyped (Greater t u) = UGreater (toUntyped t) (toUntyped u)
-toUntyped (GTE t u) = UGTE (toUntyped t) (toUntyped u)
-toUntyped (Implies t u) = UImplies (toUntyped t) (toUntyped u)
-toUntyped (Var (SMTVar text)) = UVar text
-toUntyped (Const i) = UConst i
-
-instance (Eq (SMTExpr a)) where
-  t == u = toUntyped t == toUntyped u
-
-instance (Ord (SMTExpr a)) where
-  t <= u = toUntyped t <= toUntyped u
+instance Ord (SMTExpr a) where
+  And xs `compare` And ys = xs `compare` ys
+  Add xs `compare` Add ys = xs `compare` ys
+  Or xs `compare` Or ys   = xs `compare` ys
+  Equal xs `compare` Equal ys = xs `compare` unsafeCoerce ys
+  Greater t1 u1 `compare` Greater t2 u2 = (t1, u1) `compare` (t2, u2)
+  GTE t1 u1 `compare` GTE t2 u2 = (t1, u1) `compare` (t2, u2)
+  Implies t1 u1 `compare` Implies t2 u2 = (t1, u1) `compare` (t2, u2)
+  Var (SMTVar v1) `compare` Var (SMTVar v2) = v1 `compare` v2
+  Const c1 `compare` Const c2 = c1 `compare` c2
+  And _ `compare` _ = LT
+  _ `compare` And _ = GT
+  Add _ `compare` _ = LT
+  _ `compare` Add _ = GT
+  Or _ `compare` _ = LT
+  _ `compare` Or _ = GT
+  Equal _ `compare` _ = LT
+  _ `compare` Equal _ = GT
+  Greater _ _ `compare` _ = LT
+  _ `compare` Greater _ _ = GT
+  GTE _ _ `compare` _ = LT
+  _ `compare` GTE _ _ = GT
+  Implies _ _ `compare` _ = LT
+  _ `compare` Implies _ _ = GT
+  Var (SMTVar _) `compare` _ = LT
+  _ `compare` Var (SMTVar _) = GT
 
 instance Hashable (SMTExpr a) where
-  hashWithSalt salt e = hashWithSalt salt (toUntyped e)
+  hashWithSalt salt (And xs) = hashWithSalt salt (0 :: Int, xs)
+  hashWithSalt salt (Add xs) = hashWithSalt salt (1 :: Int, xs)
+  hashWithSalt salt (Or xs) = hashWithSalt salt (2 :: Int, xs)
+  hashWithSalt salt (Equal xs) = hashWithSalt salt (3 ::Int, xs)
+  hashWithSalt salt (Greater t u) = hashWithSalt salt (4 :: Int, t, u)
+  hashWithSalt salt (GTE t u) = hashWithSalt salt (5 :: Int, t, u)
+  hashWithSalt salt (Implies t u) = hashWithSalt salt (6 :: Int, t, u)
+  hashWithSalt salt (Var (SMTVar v)) = hashWithSalt salt (7 :: Int, v)
+  hashWithSalt salt (Const c) = hashWithSalt salt (8 :: Int, c)
 
 instance Show (SMTExpr a) where
   show = T.unpack . toFormula
