@@ -219,17 +219,20 @@ smtAdd ts = Add ts
 
 smtOr :: [SMTExpr Bool] -> SMTExpr Bool
 smtOr xs0 =
-    let xs1 = S.filter (not . isSmtFalse) $ S.unions $ map flattenOr xs0
+    let flattened = S.unions $ map unOr xs0
+        xs1 = S.filter (not . isSmtFalse) flattened
      in if any isSmtTrue xs1 then
           smtTrue
         else
-          case S.size xs1 of
-            0 -> smtFalse
-            1 | [x] <- S.toList xs1 -> x
-            _ -> Or xs1
-  where
-    flattenOr (Or xs) = xs
-    flattenOr x       = S.singleton x
+          let xs2 = S.map reAnd $ absorb $ S.map unAnd xs1
+           in case S.size xs2 of
+                0 -> smtFalse
+                1 | [x] <- S.toList xs2 -> x
+                _ -> Or xs2
+    where
+      reAnd :: S.Set (SMTExpr Bool) -> SMTExpr Bool
+      reAnd xs | S.size xs == 1, [x] <- S.toList xs = x
+      reAnd xs  = And xs
 
 isSmtFalse :: SMTExpr Bool -> Bool
 isSmtFalse (Or xs) = S.null xs
@@ -246,20 +249,48 @@ smtEqual xs =
        1 -> smtTrue
        _ -> Equal xs'
 
+unOr :: SMTExpr Bool -> S.Set (SMTExpr Bool)
+unOr (Or xs) = xs
+unOr x       = S.singleton x
+
+unAnd :: SMTExpr Bool -> S.Set (SMTExpr Bool)
+unAnd (And xs) = xs
+unAnd x        = S.singleton x
+
 -- | `smtAnd ts` returns an smt expression representing \( t0 \land ... \land tn \).
 smtAnd :: [SMTExpr Bool] -> SMTExpr Bool
 smtAnd xs0 =
-    let xs1 = S.filter (not . isSmtTrue) $ S.unions $ map flattenAnd xs0
+    let flattened = S.unions $ map unAnd xs0
+        xs1 = S.filter (not . isSmtTrue) flattened
      in if any isSmtFalse xs1 then
           smtFalse
         else
-          case S.size xs1 of
-            0  -> smtTrue
-            1 | [x] <- S.toList xs1 -> x
-            _ -> And xs1
+          let xs2 = S.map reOr $ absorb $ S.map unOr xs1
+           in case S.size xs2 of
+                0  -> smtTrue
+                1 | [x] <- S.toList xs2 -> x
+                _ -> And xs2
   where
-    flattenAnd (And ys) = ys
-    flattenAnd y       = S.singleton y
+    reOr :: S.Set (SMTExpr Bool) -> SMTExpr Bool
+    reOr xs | S.size xs == 1, [x] <- S.toList xs = x
+    reOr xs  = Or xs
+
+-- | Implements @A && (A || B) === A@ and @A || (B && A) === A@.
+--
+-- The input set contains either a disjunction of conjunctions or a
+-- conjunctions of disjunctions.
+--
+-- The output set contains the same inner sets with any elements that
+-- are proper supersets of other elements removed.
+--
+-- For instance, if the input is @{ {A, B}, {A} }@ the output will be
+-- @{ {A} }@.
+--
+absorb :: S.Set (S.Set (SMTExpr Bool)) -> S.Set (S.Set (SMTExpr Bool))
+absorb ors =
+  let orsList = S.toAscList ors
+   in S.filter (\ox -> not $ any (`S.isProperSubsetOf` ox) orsList) ors
+
 
 isSmtTrue :: SMTExpr Bool -> Bool
 isSmtTrue (And xs) = S.null xs
