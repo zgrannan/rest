@@ -48,16 +48,14 @@ module Language.REST.SMT
 import Control.Exception (bracket_)
 import Control.Monad (unless)
 import Control.Monad.IO.Class
-import Control.Monad.State
 import Data.Hashable
-import qualified Data.IntMap as IM
 import Data.IORef
 import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.Text as T
 import System.Process
 import Text.Parsec (endBy)
-import Text.Parsec.Prim hiding (State)
+import Text.Parsec.Prim
 import Text.ParserCombinators.Parsec.Char
 import GHC.IO.Handle
 import GHC.Stack (HasCallStack)
@@ -491,125 +489,4 @@ internSMTExpr ih e = do
         , isIntVars = S.union (isIntVars st) newInts
         }
       sendCommands (ihSolver ih) [DefineConst v e]
-      putStrLn $ "Interned: " ++ T.unpack v ++ " = " ++ T.unpack (toFormula e) ++ "\n"
       return $ Var $ SMTVar v
-
-data SomeSMTExpr where
-  -- | Holds the size, the hash of the expression, and the expression itself.
-  SomeSMTExpr :: Int -> Int -> IM.IntMap Int -> SMTExpr a -> SomeSMTExpr
-
-data CSEState = CSEState
-  { -- | Map from SMTExpr hash to the amount of times it has been seen.
-    cseBinds :: IM.IntMap Int
-    -- | Binds discovered so far, in reverse order of discovery.
-    -- The first element is the most recently discovered bind.
-  , cseBindList :: [SomeSMTExpr]
-  }
-
--- | Collects the subexpressions of an SMT expression, measuring their size,
--- and counting how many times each subexpression has been seen. The gloval counts
--- are stored in the state, and the counts per subexpression are returned in the
--- 'SomeSMTExpr' value.
---
--- This function should also take a substitution map as an extra parameter,
--- that replaces the common subexpressions with variables (in lazy knot fashion),
--- but for now we leave it incomplete.
---
--- Another missing piece is a function that selects the subexpressions that are
--- worth interning. It should favor the largest subexpressions that are seen more
--- than once, and use the per-subexpression counts to update the global counts as
--- bindings are introuced.
---
-subExprs :: SMTExpr a -> State CSEState SomeSMTExpr
-subExprs e0 = case e0 of
-    And xs -> cseAnd xs
-    Add xs -> cseAdd xs
-    Or xs  -> cseOr xs
-    Equal xs -> cseEqual xs
-    Greater t u -> cseGreater t u
-    GTE t u     -> cseGTE t u
-    Implies t u -> cseImplies t u
-    Var v       -> cseVar v
-    Const c     -> cseConst c
-  where
-    cseAnd xs = do
-      (sz, h, hm) <- cseSet xs
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseAdd xs = do
-      (sz, h, hm) <- cseList xs
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseOr xs = do
-      (sz, h, hm) <- cseSet xs
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseEqual :: S.Set (SMTExpr a) -> State CSEState SomeSMTExpr
-    cseEqual xs = do
-      (sz, h, hm) <- cseSet xs
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseGreater t u = do
-      SomeSMTExpr sz1 h1 hm1 _ <- subExprs t
-      SomeSMTExpr sz2 h2 hm2 _ <- subExprs u
-      let sz = sz1 + sz2
-          h = hashWithSalt h1 h2
-          hm = IM.unionWith (+) hm1 hm2
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseGTE t u = do
-      SomeSMTExpr sz1 h1 hm1 _ <- subExprs t
-      SomeSMTExpr sz2 h2 hm2 _ <- subExprs u
-      let sz = sz1 + sz2
-          h = hashWithSalt h1 h2
-          hm = IM.unionWith (+) hm1 hm2
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseImplies t u = do
-      SomeSMTExpr sz1 h1 hm1 _ <- subExprs t
-      SomeSMTExpr sz2 h2 hm2 _ <- subExprs u
-      let sz = sz1 + sz2
-          h = hashWithSalt h1 h2
-          hm = IM.unionWith (+) hm1 hm2
-      let e = SomeSMTExpr sz h hm e0
-      addBind e
-      pure e
-    cseVar (SMTVar t) = do
-      let h = hash t
-      let e = SomeSMTExpr 1 h (IM.singleton h 1) e0
-      addBind e
-      pure e
-    cseConst c = do
-      let h = hash c
-      let e = SomeSMTExpr 1 h (IM.singleton h 1) e0
-      addBind e
-      pure e
-
-    cseList :: [SMTExpr a] -> State CSEState (Int, Int, IM.IntMap Int)
-    cseList xs = do
-      results <- mapM subExprs xs
-      let sz = sum [s | SomeSMTExpr s _ _ _ <- results]
-          h = foldl hashWithSalt 0 [h' | SomeSMTExpr _ h' _ _ <- results]
-          hm = foldl (IM.unionWith (+)) (IM.singleton h sz) [m | SomeSMTExpr _ _ m _ <- results]
-      return (sz, h, hm)
-
-    cseSet :: S.Set (SMTExpr a) -> State CSEState (Int, Int, IM.IntMap Int)
-    cseSet xs = cseList $ S.toAscList xs
-
-    addBind :: SomeSMTExpr -> State CSEState ()
-    addBind e@(SomeSMTExpr sz h _ _) = do
-      st <- get
-      case IM.lookup h (cseBinds st) of
-        Nothing | sz > 7 -> do
-          let newBinds = IM.insert h 1 (cseBinds st)
-          put st
-            { cseBinds = newBinds
-            , cseBindList = e : cseBindList st
-            }
-        _  -> return ()
