@@ -4,16 +4,13 @@
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main where
 
-import qualified Data.List as L
-import Data.Hashable
-#if MIN_VERSION_mtl(2,3,0)
-import Control.Monad (guard)
-#endif
 import qualified Arith as A
 
+import Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified ExploredTerms
 import OpOrdering
@@ -28,7 +25,10 @@ import KBO
 import StrictOC
 import SMT
 import qualified QuickCheckTests
-import System.IO
+
+import Test.Tasty (defaultMain, testGroup, TestTree)
+import Test.Tasty.HUnit (testCase, assertBool)
+import Control.Exception (finally)
 
 import Language.REST (lpoOCA, rpoOCA)
 import Language.REST.ExploredTerms
@@ -36,8 +36,8 @@ import Language.REST.OCAlgebra
 import Language.REST.Core
 import Language.REST.KBO (kbo)
 import Language.REST.WQOConstraints as OC
-import qualified Language.REST.WQOConstraints.Strict as SC
 import Language.REST.WQOConstraints.SMT (smtOC)
+import qualified Language.REST.WQOConstraints.Strict as SC (strictOC)
 import Language.REST.Op
 import Language.REST.RPO
 import Language.REST.Internal.OpOrdering
@@ -73,43 +73,44 @@ rewrites impl evalRWs userRWs t0 =
   where
     ?impl = impl
 
-runTest :: (String, IO Bool) -> IO ()
-runTest (name, test) = do
-  putStr $ "Running " ++ name ++ "... "
-  hFlush stdout
-  ok <- test
-  if ok
-    then putStrLn "Passed"
-    else error $ "Test " ++ name ++ " FAILED"
-
-class Testable a where
-  toTest :: a -> IO Bool
-
-instance Testable Bool where
-  toTest = return
-
-instance Testable (IO Bool) where
-  toTest = id
-
-runTestSuite :: Testable a => String -> [(String, a)] -> IO ()
-runTestSuite name tests1 = do
-  putStrLn $ "Running test suite: " ++ name
-  mapM_ (runTest . go) tests1
-  where
-    go (name1, test) = (name1, toTest test)
+ocaGroup :: String
+         -> OCAlgebra (SMTExpr Bool) RuntimeTerm IO
+         -> [String]
+         -> TestTree
+ocaGroup name impl toSkip =
+  testGroup name
+    [ testGroup "Arith"
+        [ testCase n (t >>= assertBool n)
+        | (n, t) <- arithTests impl
+        , n `notElem` toSkip
+        ]
+    , testGroup "Complete"
+        [ testCase n (t >>= assertBool n)
+        | (n, t) <- completeTests impl
+        , n `notElem` toSkip
+        ]
+    ]
 
 
-orderingTests :: (Hashable (oc Op), Show (oc Op), Ord (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
+orderingTests :: TestTree
 orderingTests =
-  [
-    ("simple1", return $ not $ rpoGTE "f(t1)" "g(t2)" `permits'` (t1Op =. t2Op))
-  , ("simple2", return $ rpoGTE "f(t1)" "g(t2)" `permits'` Mb.fromJust (merge (f >. g) (t1Op =. t2Op)))
-  , ("simple3", return $ rpoGTE "f(t1)" "g(t2)" `permits'` Mb.fromJust (merge (f >. g) (t1Op >. t2Op)))
-  , ("subterm", return $ rpoGTE "f(g)" "f" == noConstraints ?impl)
-  , ("intersect", OC.isUnsatisfiable ?impl $ OC.intersect ?impl (OC.singleton ?impl (f  >. g)) (OC.singleton ?impl (g >. f)))
-  ]
-  where
-    permits' = permits ?impl
+  let ?impl = SC.strictOC @IO in
+  let permits' = permits ?impl in
+    testGroup "Ordering"
+      [
+        testCase "simple1" $
+          assertBool "simple1" $ not $ rpoGTE "f(t1)" "g(t2)" `permits'` (t1Op =. t2Op)
+      , testCase "simple2" $
+          assertBool "simple2" $ rpoGTE "f(t1)" "g(t2)" `permits'` Mb.fromJust (merge (f >. g) (t1Op =. t2Op))
+      , testCase "simple3" $
+          assertBool "simple3" $ rpoGTE "f(t1)" "g(t2)" `permits'` Mb.fromJust (merge (f >. g) (t1Op >. t2Op))
+      , testCase "subterm" $
+          assertBool "subterm" $
+            rpoGTE "f(g)" "f" == noConstraints ?impl
+      , testCase "intersect" $ do
+          isUnsat <- OC.isUnsatisfiable ?impl $ OC.intersect ?impl (OC.singleton ?impl (f  >. g)) (OC.singleton ?impl (g >. f))
+          assertBool "intersect" isUnsat
+      ]
 
 proveEQ :: (Show oc, Hashable oc, Eq oc) =>
      OCAlgebra oc RuntimeTerm IO
@@ -224,47 +225,36 @@ completeTests impl =
     s1      = Op "s1"
     s2      = Op "s2"
 
-ocTests :: SolverHandle -> IO ()
-ocTests z3 = do
-  runTestSuite "StrictOC" StrictOC.tests
-  let ?impl = SC.strictOC in runTestSuite "RPO" RPO.tests
-  let ?impl = smtOC z3 in runTestSuite "RPO-solver" RPO.solverTests
-  let ?impl = SC.strictOC in runTestSuite "Ordering" orderingTests
+ocTests :: SolverHandle -> TestTree
+ocTests z3 =
+  testGroup "OC tests"
+    [ RPO.tests
+    , let ?impl = smtOC z3 in RPO.solverTests
+    , orderingTests
+    ]
 
 main :: IO ()
-main = spawnZ3 >>= go where
-
-  implTests implName impl toSkip = do
-    runTestSuite ("Arith" ++ implName) (withSkips $ arithTests impl)
-    runTestSuite ("Complete" ++ implName) (withSkips $ completeTests impl)
-    where
-      withSkips tests1 = do
-        (name, test) <- tests1
-        guard $ L.notElem name toSkip
-        return (name, test)
-
-
-  go :: SolverHandle -> IO ()
-  go z3 =
-    do
-      putStrLn "Running REST Test Suite"
-      runTestSuite "ExploredTerms" ExploredTerms.tests
-      runTestSuite "SMT" SMT.tests
-      runTestSuite "KBO" KBO.tests
-      _ <- QuickCheckTests.tests
-      runTestSuite "OpOrdering" OpOrdering.tests
-      ocTests z3
-      runTestSuite "RPOEquiv" (RPOEquiv.tests z3)
-      runTestSuite "LPOEquiv" (LPOEquiv.tests z3)
-      runTestSuite "MultisetOrder" MultisetOrder.tests
-      runTestSuite "WQO" WQO.tests
-      withZ3 $ \z3r -> do
-        oca <- kbo z3r "$KBO_"
-        implTests "KBO" oca []
-      withZ3 $ \z3r -> do
-        oca <- rpoOCA z3r "$R_"
-        implTests "RPO" oca []
-      withZ3 $ \z3l -> do
-        ocaL <- lpoOCA z3l "$L_"
-        implTests "LPO" ocaL ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
-      killZ3 z3
+main = withZ3 $ \z3 ->
+  withZ3 $ \kboZ3 ->
+  withZ3 $ \rpoZ3 ->
+  withZ3 $ \lpoZ3 ->  do
+    kboImpl <- kbo kboZ3 "$KBO_"
+    rpoImpl <- rpoOCA rpoZ3 "$R_"
+    lpoImpl <- lpoOCA lpoZ3 "$L_"
+    flip finally (mapM_ killZ3 [z3, kboZ3, rpoZ3, lpoZ3]) $
+      defaultMain $ testGroup "REST"
+        [ ExploredTerms.tests
+        , SMT.tests
+        , KBO.tests
+        , QuickCheckTests.tests
+        , OpOrdering.tests
+        , StrictOC.tests
+        , ocTests z3
+        , RPOEquiv.tests z3
+        , LPOEquiv.tests z3
+        , MultisetOrder.tests
+        , WQO.tests
+        , ocaGroup "KBO" kboImpl []
+        , ocaGroup "RPO" rpoImpl []
+        , ocaGroup "LPO" lpoImpl ["Diverge3", "Arith4", "Arith4.1", "Arith6"]
+        ]

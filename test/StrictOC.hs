@@ -7,11 +7,14 @@ import Language.REST.WQOConstraints.Strict
 import Language.REST.Internal.WQO
 import Language.REST.Internal.OpOrdering
 
-tests :: [(String, Bool)]
-tests =
-  [
-    ("permits", permits noConstraints wqo)
-  , ("permits2", permits noConstraints $ fromJust $ parseOO "+ = f = nil = s ∧ + > g ∧ + > h ∧ cons > + ∧ cons > g")
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, assertBool)
+
+tests :: TestTree
+tests = testGroup "StrictOC"
+  [ testCase "permits" $ assertBool "permits" (permits noConstraints wqo)
+  , testCase "permits2" $ assertBool "permits2" $
+      permits noConstraints $ fromJust $ parseOO "+ = f = nil = s ∧ + > g ∧ + > h ∧ cons > + ∧ cons > g"
   ] where
   wqo = fromJust $ mergeAll
                       [ "cons" =. "z"

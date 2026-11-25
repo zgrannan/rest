@@ -114,6 +114,9 @@ Test-Suite test-rest
                 , unordered-containers
                 , text
                 , rest-rewrite
+                , tasty
+                , tasty-hunit
+                , tasty-quickcheck
                 , testlib
   other-modules:
     ExploredTerms

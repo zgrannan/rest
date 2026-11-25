@@ -1,5 +1,6 @@
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module RPO where
 
@@ -8,11 +9,15 @@ import Nat
 import Language.REST.Op
 import Language.REST.Internal.OpOrdering as OpOrdering
 import Language.REST.WQOConstraints as OC
+import qualified Language.REST.WQOConstraints.Strict as SC (strictOC)
 import Language.REST.RuntimeTerm
 import Language.REST.RPO
 import Language.REST.Internal.WQO
 
 import Data.Maybe as Mb
+
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, assertBool)
 
 bigLeft, bigRight :: RuntimeTerm
 bigLeft = "f(h(s(g(z,nil))),f(g(z,z),nil,h(z)),f(z,nil,z) + g(z,s(z)))"
@@ -52,36 +57,44 @@ rpoSeq = go (OC.noConstraints ?impl) where
   go c _        = c
 
 
-tests :: (Hashable (oc Op), Eq (oc Op), Show (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
+tests :: TestTree
 tests =
+  let ?impl = SC.strictOC @IO in
   let
     f = Op "f"
     g = Op "g"
     h = Op "h"
   in
-    [ ("RPO1",   return $ rpoGTE "f(z)" "g(s(z))"
-              == OC.intersect ?impl (OC.singleton ?impl (f >. g)) (OC.singleton ?impl (f >. s)))
-    , ("SynGTE", return $ synGTE OpOrdering.empty (App s [App s [App g [App (Op "+") [App h [App s [App z []]],App z []],App s [App s [App g [App z [],App z []]]]]]]) (App z []))
-    , ("SynGTE2",
-        return $ synGTE (Mb.fromJust $ mergeAll [
-          "cons" >. g
-        , f >. s
-        , h >. g
-        , h >. "nil"]) "s(cons(h(h(z)), f(nil, nil, z)))"  "g(z, cons(g(nil, nil), s(s(z))))")
-    ]
+    testGroup "RPO"
+      [ testCase "RPO1" $ assertBool "RPO1" $
+          rpoGTE "f(z)" "g(s(z))"
+            == OC.intersect ?impl (OC.singleton ?impl (f >. g)) (OC.singleton ?impl (f >. s))
+      , testCase "SynGTE" $ assertBool "SynGTE" $
+          synGTE OpOrdering.empty (App s [App s [App g [App (Op "+") [App h [App s [App z []]],App z []],App s [App s [App g [App z [],App z []]]]]]]) (App z [])
+      , testCase "SynGTE2" $ assertBool "SynGTE2" $
+          synGTE (Mb.fromJust $ mergeAll [
+            "cons" >. g
+          , f >. s
+          , h >. g
+          , h >. "nil"]) "s(cons(h(h(z)), f(nil, nil, z)))"  "g(z, cons(g(nil, nil), s(s(z))))"
+      ]
 
 -- | Satisfiability tests. These must run against a solver-backed instance
 --   ('smtOC'), because folding a long RPO sequence through a DNF instance
 --   ('Strict') expands exponentially.
-solverTests :: (Hashable (oc Op), Eq (oc Op), Show (oc Op)) => (?impl :: WQOConstraints oc IO) => [(String, IO Bool)]
+solverTests :: (Hashable (oc Op), Eq (oc Op), Show (oc Op)) => (?impl :: WQOConstraints oc IO) => TestTree
 solverTests =
-  [ ("RPO2", isUnsatisfiable ?impl $
-       OC.intersect ?impl
-         (rpoGTE "f(z)" "g(s(z))")
-         (rpoGTE "g(s(z))" "f(h(z))"))
-  , ("RPO3", isSatisfiable ?impl (rpoGTE bigLeft bigRight))
-  , ("RPO4", isUnsatisfiable ?impl (rpoGTE massiveLeft massiveRight))
-  , ("RPO5", isSatisfiable ?impl (rpoGTE listsLeft listsRight))
-  , ("RPO6", isSatisfiable ?impl (rpoGTE flattenLeft2 flattenRight2))
-  , ("RPOOrient", isUnsatisfiable ?impl $ rpoSeq flattenSeq)
-  ]
+  testGroup "RPO-solver"
+    [ testCase "RPO2" $ do
+        isUnsat <- isUnsatisfiable ?impl
+          ( OC.intersect ?impl
+              (rpoGTE "f(z)" "g(s(z))")
+              (rpoGTE "g(s(z))" "f(h(z))")
+          )
+        assertBool "RPO2" isUnsat
+    , testCase "RPO3" $ isSatisfiable ?impl (rpoGTE bigLeft bigRight) >>= assertBool "RPO3"
+    , testCase "RPO4" $ isUnsatisfiable ?impl (rpoGTE massiveLeft massiveRight) >>= assertBool "RPO4"
+    , testCase "RPO5" $ isSatisfiable ?impl (rpoGTE listsLeft listsRight) >>= assertBool "RPO5"
+    , testCase "RPO6" $ isSatisfiable ?impl (rpoGTE flattenLeft2 flattenRight2) >>= assertBool "RPO6"
+    , testCase "RPOOrient" $ isUnsatisfiable ?impl (rpoSeq flattenSeq) >>= assertBool "RPOOrient"
+    ]

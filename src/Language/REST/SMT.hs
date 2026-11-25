@@ -44,9 +44,8 @@ module Language.REST.SMT
   , Z3Model
 ) where
 
-import Control.Exception (bracket_)
+import Control.Exception (bracket, bracket_)
 import Control.Monad (unless)
-import Control.Monad.IO.Class
 import Data.Hashable
 import Data.IORef
 import qualified Data.Map as M
@@ -290,13 +289,8 @@ killZ3 (stdIn, _) = hClose stdIn
 
 -- | @withZ3 f@ instantiates a Z3 instance, runs @f@ with that instance,
 --   and then closes the instance and returns the result
-withZ3 :: MonadIO m => (SolverHandle -> m b) -> m b
-withZ3 f =
-  do
-    z3     <- liftIO spawnZ3
-    result <- f z3
-    liftIO $ killZ3 z3
-    return result
+withZ3 :: (SolverHandle -> IO b) -> IO b
+withZ3 = bracket spawnZ3 killZ3
 
 -- | @getModel@ instructs an instantiated SMT solver to produce its model.
 getModel :: Handle -> IO ()

@@ -17,11 +17,15 @@ import Language.REST.WQOConstraints as OC
 import Language.REST.WQOConstraints.SMT (smtOC)
 import Nat () -- IsString RuntimeTerm
 
-tests :: SolverHandle -> [(String, IO Bool)]
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, assertBool)
+
+tests :: SolverHandle -> TestTree
 tests z3 =
-  [ (label, equiv z3 (step strict r t u) (ref z3 strict r t u))
-  | (label, strict, r, t, u) <- cases
-  ]
+  testGroup "LPOEquiv"
+    [ testCase label $ equiv z3 (step strict r t u) (ref z3 strict r t u) >>= assertBool label
+    | (label, strict, r, t, u) <- cases
+    ]
   where
     step :: Bool -> Relation -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
     step True  = lpoStrictSMTRel

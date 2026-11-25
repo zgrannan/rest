@@ -6,6 +6,13 @@ module QuickCheckTests where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
+import Test.Tasty (TestTree, testGroup, localOption)
+import Test.Tasty.QuickCheck
+  ( testProperty
+  , QuickCheckTests(..)
+  , QuickCheckMaxSize(..)
+  , QuickCheckMaxRatio(..)
+  )
 
 import Data.Hashable (Hashable)
 import Data.Maybe as Mb
@@ -146,17 +153,19 @@ prop_permits steps = SC.permits SC.noConstraints (toWQO steps)
 --   where
 --     types = t0::RuntimeTerm
 
-tests :: IO [()]
-tests = sequence
-        [
-        --  quickCheckWith stdArgs{maxDiscardRatio = 1000} prop_rpot2
-          quickCheckWith stdArgs prop_permits
-        , quickCheckWith stdArgs{maxDiscardRatio = 1000} prop_poTrans
-        , quickCheckWith stdArgs{maxDiscardRatio = 100} prop_wqoTrans
-        , putStrLn "Transitivity of RPO:"
-        , quickCheckWith stdArgs{maxDiscardRatio = 100} prop_rpoTrans
-        , putStrLn "RPO aligns with concrete:"
-        , quickCheckWith stdArgs{maxSize = 10, maxSuccess = 20, maxDiscardRatio = 100} (prop_rpoCons ?impl)
-        ]
+tests :: TestTree
+tests = testGroup "QuickCheck"
+  [ testProperty "permits" prop_permits
+  , localOption (QuickCheckMaxRatio 1000) $
+      testProperty "poTrans" prop_poTrans
+  , localOption (QuickCheckMaxRatio 100) $
+      testProperty "wqoTrans" prop_wqoTrans
+  , localOption (QuickCheckMaxRatio 100) $
+      testProperty "rpoTrans" prop_rpoTrans
+  , localOption (QuickCheckMaxSize 10) $
+      localOption (QuickCheckTests 20) $
+        localOption (QuickCheckMaxRatio 100) $
+          testProperty "rpoCons" (prop_rpoCons ?impl)
+  ]
   where
     ?impl = SC.strictOC
