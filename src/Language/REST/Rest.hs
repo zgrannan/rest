@@ -145,7 +145,7 @@ rest RESTParams{re,ru,ocImpl,workStrategy,initRes,target,etStrategy} t =
         accepted userRWs = M.fromList <$> runListT (do
           t' <- liftSet $ S.map fst userRWs
           guard $ L.notElem t' tsTerms
-          let ord = refine ocImpl lastOrdering ptTerm t'
+          ord <- ListT $ fmap (:[]) (refine ocImpl lastOrdering ptTerm t')
           ok <- lift $ isSat ocImpl ord
           guard ok
           return (t', ord))
@@ -188,7 +188,7 @@ rest RESTParams{re,ru,ocImpl,workStrategy,initRes,target,etStrategy} t =
             evalPaths = runListT $ do
               (t', r) <- ListT $ return (S.toList evalRWs)
               guard $ L.notElem t' tsTerms
-              let ord = refine ocImpl lastOrdering ptTerm t'
+              ord <- ListT $ fmap (:[]) (refine ocImpl lastOrdering ptTerm t')
               lift (shouldExplore t' ord et) >>= guard
               return (ts ++ [Step pt r ord True], PathTerm t' S.empty)
 

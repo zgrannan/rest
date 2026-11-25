@@ -37,7 +37,7 @@ type WQO = WQO.WQO
 data WQOConstraints impl m = OC
   {
     -- | @addConstraint wqo c@ adds constraints to @c@ to also permit the WQO @w@.
-    addConstraint       :: forall a. (Eq a, Ord a, Hashable a) => WQO a -> impl a -> impl a
+    addConstraint       :: forall a. (ToSMTVar a Int, Eq a, Ord a, Hashable a) => WQO a -> impl a -> impl a
 
     -- | @intersect c1 c2@ returns constraints to permit only WQOs permitted by both @c1@ and
     --   @c2@. Therefore the resulting constraints are stronger (less likely to be
@@ -70,7 +70,7 @@ isUnsatisfiable :: (Functor m, ToSMTVar a Int, Show a, Eq a, Ord a, Hashable a) 
 isUnsatisfiable OC{isSatisfiable} c = not <$> isSatisfiable c
 
 -- | Returns the constraints that permit a given WQO
-singleton :: (Eq a, Ord a, Hashable a) => WQOConstraints oc m -> WQO a -> oc a
+singleton :: (ToSMTVar a Int, Eq a, Ord a, Hashable a) => WQOConstraints oc m -> WQO a -> oc a
 singleton OC{addConstraint, noConstraints} c = addConstraint c noConstraints
 
 -- | Given a list of constraints @ocs@, returns constraints that permit only the WQOs
@@ -88,7 +88,7 @@ unionAll OC{union}         (x:xs) = L.foldl' union x xs
 -- | @intersectRelation oc impl (f, g, r)@ strengthens constraints represented by @impl@
 --   to also ensure that @f@ and @g@ are related via relation @r@ in permitted WQOs.
 intersectRelation ::
-  (Ord a, Eq a, Ord a, Hashable a, Show a) =>
+  (ToSMTVar a Int, Ord a, Eq a, Hashable a, Show a) =>
   WQOConstraints oc m -> oc a -> (a, a, Relation) -> oc a
 intersectRelation oc impl (f, g, r) =
   case nc r of

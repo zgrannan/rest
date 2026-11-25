@@ -6,7 +6,7 @@
 -- | This module defines a constraint generator for a multiset
 --   quasi-ordering. For more details, please see the definition
 --   of @mul@ in section 4.2.1 of the paper.
-module Language.REST.Internal.MultisetOrder (multisetOrder) where
+module Language.REST.Internal.MultisetOrder (multisetOrder, removeEQs, possibilities, Replace(..)) where
 
 import GHC.Generics
 import qualified Data.List as L

@@ -2,16 +2,22 @@
 
 module Language.REST where
 
-import Language.REST.OCAlgebra (OCAlgebra)
-import Language.REST.OCToAbstract
-import Language.REST.WQOConstraints.ADT (ConstraintsADT, adtOC)
-import Language.REST.RPO
+import Data.Text (Text)
+import Language.REST.OCAlgebra (OCAlgebra(..))
+import Language.REST.RPO (rpoSMT)
+import Language.REST.LPO (lpoSMT, lpoStrictSMT)
 import Language.REST.RuntimeTerm
-import Language.REST.Op
-import System.IO (Handle)
+import Language.REST.SMT
 
 
--- | 'adtRPO' Is an ordering constraint algebra derived from the recursive
--- path ordering; it is a useful general-purpose OCA.
-adtRPO :: (Handle, Handle) -> OCAlgebra (ConstraintsADT Op) RuntimeTerm IO
-adtRPO z3 = lift (adtOC z3) rpo
+-- | An ordering constraint algebra derived from the recursive path ordering.
+rpoOCA :: SolverHandle -> Text -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
+rpoOCA z3 prefix = smtOCA z3 prefix rpoSMT
+
+-- | An ordering constraint algebra derived from the lexicographic path ordering.
+lpoOCA :: SolverHandle -> Text -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
+lpoOCA z3 prefix = smtOCA z3 prefix lpoSMT
+
+-- | A strict version of 'lpoOCA'.
+lpoStrictOCA :: SolverHandle -> Text -> IO (OCAlgebra (SMTExpr Bool) RuntimeTerm IO)
+lpoStrictOCA z3 prefix = smtOCA z3 prefix lpoStrictSMT

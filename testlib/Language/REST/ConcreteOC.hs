@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Language.REST.ConcreteOC where
 
@@ -19,7 +20,7 @@ newtype ConcreteOC = ConcreteOC (S.Set (WQO.WQO Op))
 instance Show ConcreteOC where
   show (ConcreteOC ords) = show (S.size ords) ++ " orderings"
 
-concreteOC :: Monad m => S.Set Op -> AOC.OCAlgebra ConcreteOC RuntimeTerm m
+concreteOC :: forall m. Monad m => S.Set Op -> AOC.OCAlgebra ConcreteOC RuntimeTerm m
 concreteOC ops = AOC.OCAlgebra (return . isSat) refine (ConcreteOC (WQO.orderings ops)) union notStrongerThan
   where
     union (ConcreteOC ord1) (ConcreteOC ord2) = ConcreteOC $ S.union ord1 ord2
@@ -28,5 +29,5 @@ concreteOC ops = AOC.OCAlgebra (return . isSat) refine (ConcreteOC (WQO.ordering
     isSat :: ConcreteOC -> Bool
     isSat (ConcreteOC ords) = not $ S.null ords
 
-    refine :: ConcreteOC -> RuntimeTerm -> RuntimeTerm -> ConcreteOC
-    refine (ConcreteOC ords) t u = ConcreteOC (S.filter (\ord -> synGTE ord t u) ords)
+    refine :: ConcreteOC -> RuntimeTerm -> RuntimeTerm -> m ConcreteOC
+    refine (ConcreteOC ords) t u = pure $ ConcreteOC (S.filter (\ord -> synGTE ord t u) ords)

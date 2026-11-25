@@ -7,7 +7,7 @@
 
 -- | This module contains the implementation of the Recursive Path Quasi-Ordering,
 --   defined in section 4.2.1 of the REST paper
-module Language.REST.RPO (rpo, rpoGTE, synGTE) where
+module Language.REST.RPO (rpo, rpoGTE, synGTE, rpoSMT, rpoSMTRel) where
 
 import Prelude hiding (EQ, GT)
 
@@ -16,6 +16,8 @@ import Control.Monad.State.Strict
 import GHC.Generics
 import Data.Hashable
 import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as HS
+import qualified Data.List as L
 
 import qualified Language.REST.Internal.MultiSet as MS
 import           Language.REST.Op
@@ -26,6 +28,7 @@ import           Language.REST.Types
 import qualified Language.REST.RuntimeTerm as RT
 import           Language.REST.Internal.MultisetOrder
 import           Language.REST.Internal.Util
+import           Language.REST.SMT
 
 instance Show RuntimeTerm where
   show (App op trms) =
@@ -154,3 +157,49 @@ synGTM :: OpOrdering -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> Bool
 synGTM ordering xs ys = case removeEqBy (synEQ ordering) (MS.toList xs) (MS.toList ys) of
   ([] , [] ) -> False
   (xs', ys') -> all (\y -> any (\x -> rpoT ordering x y) xs') ys'
+
+-- | Direct SMT translation of the RPO constraint generator, without going
+--   through 'WQOConstraints'. @rpoSMTRel r t u@ is the SMT constraint on the
+--   weights of function symbols such that @t@ is related to @u@ by @r@ in the
+--   recursive path ordering.
+rpoSMTRel :: Relation -> RT.RuntimeTerm -> RT.RuntimeTerm -> SMTExpr Bool
+rpoSMTRel r t u = rpoSMT' r smtTrue (rpoTerm t) (rpoTerm u)
+
+-- | The GTE instance of 'rpoSMTRel'.
+rpoSMT :: RT.RuntimeTerm -> RT.RuntimeTerm -> SMTExpr Bool
+rpoSMT = rpoSMTRel GTE
+
+rpoSMT' :: Relation -> SMTExpr Bool -> RuntimeTerm -> RuntimeTerm -> SMTExpr Bool
+rpoSMT' r e t u
+  | t == u                              = if r == GT then smtFalse else e
+  | t `isSubtermOf` u                   = smtFalse
+  | u `isSubtermOf` t                   = if r == EQ then smtFalse else e
+  | App f ts <- t, App g us <- u, f == g = rpoMulSMT r e ts us
+  | App f ts <- t, App g us <- u         =
+      let eqPrec = smtEqual [toSMT f, toSMT g]
+          gtPrec = Greater (toSMT f) (toSMT g)
+          body
+            | r == EQ   = rpoMulSMT r eqPrec ts us
+            | otherwise = smtOr
+                             [ rpoMulSMT GT gtPrec (MS.singleton t) us
+                             , rpoMulSMT r  eqPrec ts us
+                             , rpoMulSMT GTE smtTrue ts (MS.singleton u)
+                             ]
+      in smtAnd [e, body]
+
+rpoMulSMT :: Relation -> SMTExpr Bool -> MultiSet RuntimeTerm -> MultiSet RuntimeTerm -> SMTExpr Bool
+rpoMulSMT r e ts0 us0 = uncurry go (removeEQs ts0 us0)
+  where
+    go ts us
+      | MS.null ts && MS.null us       = if r == GT then smtFalse else e
+      | not (MS.null ts) && MS.null us = if r == EQ then smtFalse else e
+      | MS.null ts && not (MS.null us) = smtFalse
+      | otherwise = smtOr [ posConstraints pos1 | pos1 <- HS.toList (possibilities r (MS.toList ts) (MS.toList us)) ]
+
+    posConstraints pos1 = L.foldl' apply e (HS.toList pos1)
+      where
+        apply acc (ReplaceOne t u) = rpoSMT' EQ acc t u
+        apply acc (Replace t ts')  =
+          if HS.null ts'
+            then acc
+            else smtAnd $ acc : map (rpoSMT' GT smtTrue t) (HS.toList ts')

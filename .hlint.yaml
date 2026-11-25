@@ -6,3 +6,6 @@
 
 # False positive?
 - ignore: {name: "Redundant seq"}
+
+# The following are kept for usability and style sake
+- ignore: {name: "Use tuple-section"}
