@@ -1,13 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Exercises every branch of the hand-written 'Eq', 'Ord' and 'Hashable'
---   instances for 'SMTExpr' introduced in the commit
---   \"Remove redundant conversions to untyped expressions\".
---
---   Raw nodes are built through the smart constructors with arguments chosen
---   to bypass their simplification, so the built values really are @And@,
---   @Or@, @Add@, @Equal@ and @GTE@ nodes. @Var@ nodes come from 'toSMT' for
---   'Op'.
+-- | Exercises the hand-written 'Eq', 'Ord' and 'Hashable' instances of 'SMTExpr'
 module SMTExprInstances where
 
 import Data.Hashable (hashWithSalt)
