@@ -13,6 +13,9 @@ import Language.REST.WQOConstraints as OC
 import Language.REST.Types
 import Language.REST.Op
 
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, assertBool)
+
 compareOp :: ConstraintGen impl Op Op Identity
 compareOp impl r oc c1 c2 = Identity $ intersectRelation impl oc (c1, c2, r)
 
@@ -30,10 +33,11 @@ unsat = do
   mn <- multisetNext
   return $ OC.intersectRelation strictOC' mn (Op "c", Op "a", GT)
 
-tests :: [(String, Bool)]
-tests =
-  [ ("Constraints",
-     SC.noConstraints /=
-     runIdentity (ms SC.noConstraints (M.fromList [Op "b", Op "c"]) (M.fromList [Op "a", Op "a"])))
-  , ("Unsat", SC.isUnsatisfiable $ runIdentity unsat)
+tests :: TestTree
+tests = testGroup "MultisetOrder"
+  [ testCase "Constraints" $ assertBool "Constraints" $
+      SC.noConstraints /=
+        runIdentity (ms SC.noConstraints (M.fromList [Op "b", Op "c"]) (M.fromList [Op "a", Op "a"]))
+  , testCase "Unsat" $ assertBool "Unsat" $
+      SC.isUnsatisfiable $ runIdentity unsat
   ]

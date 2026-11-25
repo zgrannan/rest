@@ -1,7 +1,9 @@
-name: Continuous integration
+name: Build & Test
 on:
   pull_request:
   push:
+    branches:
+      - master
 env:
   # Bump this number to invalidate the GH actions cache
   cache-version: 0

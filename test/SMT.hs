@@ -3,6 +3,9 @@ module SMT where
 import Language.REST.SMT
 import qualified Data.Map as M
 
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, assertBool)
+
 model :: String
 model = "(\n\
  \ (define-fun op_j () Int \n\
@@ -26,5 +29,8 @@ expected = M.fromList
   , ("op_<", "5")
   ]
 
-tests :: [(String, Bool)]
-tests = [("Parse SMT Model", parseModel model == expected)]
+tests :: TestTree
+tests = testGroup "SMT"
+  [ testCase "Parse SMT Model" $
+      assertBool "Parse SMT Model" (parseModel model == expected)
+  ]
