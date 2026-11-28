@@ -6,7 +6,17 @@ category:           Rewriting
 maintainer:         Zack Grannan <zgrannan@cs.ubc.ca>
 author:             Zack Grannan <zgrannan@cs.ubc.ca>
 license:            BSD-3-Clause
-description:        REST is a Rewriting library with online termination checking. For more details see the paper at https://arxiv.org/abs/2202.05872.
+description:
+    This package provides functions to determine if a sequence of terms has a
+    well-quasi ordering that makes it non-increasing. This is useful for
+    automatic theorem provers that need to decide when to stop exploring a
+    particular path in a proof.
+    .
+    Also contains auxiliary functions to visualize trees of rewrites with the
+    `dot` tool of the `graphviz` package.
+    .
+    See `README.md` for more details.
+
 synopsis:           Rewriting library with online termination checking
 license-file:       LICENSE
 
