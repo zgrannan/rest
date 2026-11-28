@@ -2,19 +2,32 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Language.REST.OCAlgebra where
 
--- | The "Ordering Constraint Algebra", as described in section 4.2 of the paper.
---  @OCAlgebra c a m@ is an OCA with language of constraints @c@, applied to terms
---  of type @a@. @m@ is the computation context for @isSat@.
+-- | Ordering Constraint Algebra: Operations to determine if there is a
+--   well-quasi ordering that makes a sequence of terms non-increasing.
+--
+-- @c@ is a type representing ordering constraints.
+--
+-- @a@ is the type of the terms in a sequence.
+--
+-- @m@ is a monad that allows to perform computations, such as checking the
+-- satisfiability of constraints.
+--
 data OCAlgebra c a m = OCAlgebra
-  { isSat  :: c -> m Bool       -- ^ Checks if the constraints are satisfiable
-  , refine :: c -> a -> a -> m c -- ^ @refine c t u@ strengthens @c@ to permit @t >= u@
-  , top    :: c                 -- ^ Initial constraints for use in REST
-
-  , union  :: c -> c -> c       -- ^ Computes the union of constraints; used in 'ExploredTerms' as an optimization
-                                --   A safe default implementation is @union c1 c2 = c2@
-
-  , notStrongerThan :: c -> c -> m Bool -- ^ @c1 `notStrongerThan c2@ if @c1@ permits all orderings allowed by @c2@
-                                        -- A safe default implementation is @notStrongerThan _ _ = return false@
+  { -- | Checks if the constraints are satisfiable
+    isSat  :: c -> m Bool
+    -- | @refine c t u@ strengthens @c@ to permit @t >= u@
+    --
+    -- Refine might emit bindings (e.g. constant definitions) to be used in
+    -- the satisfiability checks, in order to reduce the size of the
+    -- constraints (see https://github.com/zgrannan/rest/issues/16).
+  , refine :: c -> a -> a -> m c
+    -- | Allows any non-increasing ordering.
+  , top :: c
+    -- | @union c0 c1@ allows any of the orderings permitted by @c0@ or @c1@.
+  , union  :: c -> c -> c
+    -- | @c1 `notStrongerThan` c2 == True@ if @c1@ permits all orderings allowed
+    -- by @c2@.
+  , notStrongerThan :: c -> c -> m Bool
   }
 
 -- | @fuelOC n@ is an OCA that permits @n@ rewrite steps
